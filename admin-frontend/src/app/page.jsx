@@ -12,12 +12,15 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
 
-  // Clear any old data on mount
+  // If already logged in, redirect to dashboard
   useEffect(() => {
-    localStorage.clear();
+    const token = localStorage.getItem('token');
+    if (token) {
+      router.push('/dashboard');
+    }
   }, []);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     if (!email || !password) {
       setError('Please enter all credentials');
@@ -27,19 +30,46 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    // Simulate authentication
-    setTimeout(() => {
-      if (email === 'admin@gmail.com' && password === 'admin1234') {
-        localStorage.setItem('token', 'demo_session_token_99');
-        localStorage.setItem('admin_name', 'Princilla Savier');
-        localStorage.setItem('is_admin', 'true');
-        setIsSuccess(true);
-        setTimeout(() => router.push('/dashboard'), 800);
-      } else {
-        setError('Invalid credentials. Use admin@gmail.com / admin1234');
-        setLoading(false);
+    // Strict Admin Credential Enforcement
+    if (email !== 'admin@gmail.com' || password !== 'admin1234') {
+      setError('Access Restricted: Only the master administrator account can access this panel.');
+      setLoading(false);
+      return;
+    }
+
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+
+    try {
+      const response = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.detail || 'Invalid credentials');
       }
-    }, 1200);
+
+      const data = await response.json();
+
+      if (!data.user.is_admin) {
+        throw new Error('Authorized user but not an administrator');
+      }
+
+      // Save real data from backend
+      localStorage.setItem('token', data.access_token);
+      localStorage.setItem('admin_name', data.user.first_name + ' ' + data.user.last_name);
+      localStorage.setItem('is_admin', data.user.is_admin.toString());
+
+      setIsSuccess(true);
+      setTimeout(() => router.push('/dashboard'), 800);
+    } catch (err) {
+      setError(err.message || 'Connection to server failed');
+      setLoading(false);
+    }
   };
 
   const handleDemoLogin = () => {

@@ -36,6 +36,8 @@ class UserResponse(BaseModel):
     last_name: str
     email: str
     created_at: str
+    is_admin: bool = False
+    role: str = "user"
 
 class Token(BaseModel):
     access_token: str

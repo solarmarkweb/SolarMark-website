@@ -3,18 +3,38 @@
 import React, { useState, useEffect } from "react";
 import { Send, Loader2, Star, CheckCircle, ShieldCheck, Zap } from "lucide-react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function BookingPage() {
     const router = useRouter();
+    const [user, setUser] = useState(null);
 
     useEffect(() => {
+        // Check for logged in user
         const token = localStorage.getItem("auth_token");
-        if (!token) {
-            router.push("/login");
+        if (token) {
+            setUser({ token });
         }
-    }, [router]);
 
+        // Restore pending booking data if exists
+        const pendingData = localStorage.getItem("pending_booking");
+        if (pendingData) {
+            try {
+                const parsedData = JSON.parse(pendingData);
+                setFormData(parsedData);
+                localStorage.removeItem("pending_booking"); // Clear it so it doesn't persist forever
+
+                // Show a helpful tip
+                setStatus({
+                    type: 'info',
+                    message: 'Welcome back! Your booking details have been restored. You can now submit your request.'
+                });
+            } catch (e) {
+                console.error("Error parsing pending booking data", e);
+            }
+        }
+    }, []);
     const [formData, setFormData] = useState({
         firstName: "",
         lastName: "",
@@ -32,7 +52,7 @@ export default function BookingPage() {
     const [submitting, setSubmitting] = useState(false);
     const [status, setStatus] = useState({ type: '', message: '' });
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -42,6 +62,16 @@ export default function BookingPage() {
         e.preventDefault();
         setSubmitting(true);
         setStatus({ type: '', message: '' });
+
+        const token = localStorage.getItem("auth_token");
+
+        if (!token) {
+            // Save form data to local storage
+            localStorage.setItem("pending_booking", JSON.stringify(formData));
+            // Redirect to login with return parameter
+            router.push("/login?returnTo=/booking");
+            return;
+        }
 
         try {
             // Combine first and last name for the API
@@ -61,6 +91,7 @@ export default function BookingPage() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify(payload)
             });
@@ -206,7 +237,9 @@ export default function BookingPage() {
                             {status.message && (
                                 <div className={`mb-10 p-6 rounded-xl text-center shadow-sm ${status.type === 'success'
                                     ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-                                    : 'bg-red-50 text-red-700 border border-red-100'
+                                    : status.type === 'info'
+                                        ? 'bg-blue-50 text-blue-700 border border-blue-100'
+                                        : 'bg-red-50 text-red-700 border border-red-100'
                                     }`}>
                                     <p className="font-bold text-sm tracking-tight flex items-center justify-center gap-2">
                                         {status.type === 'success' && <CheckCircle size={18} />}
@@ -448,9 +481,9 @@ export default function BookingPage() {
                             {/* Privacy Note */}
                             <p className="text-xs text-slate-400 text-center mt-8 font-medium">
                                 By submitting this form, you agree to our{" "}
-                                <a href="/privacy" className="text-orange-600 hover:underline font-bold">Privacy Policy</a>
+                                <Link href="/privacy" className="text-orange-600 hover:underline font-bold">Privacy Policy</Link>
                                 {" "}and{" "}
-                                <a href="/terms" className="text-orange-600 hover:underline font-bold">Terms of Service</a>
+                                <Link href="/terms" className="text-orange-600 hover:underline font-bold">Terms of Service</Link>
                             </p>
                         </div>
                     </motion.div>

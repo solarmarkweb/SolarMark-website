@@ -5,7 +5,8 @@ import Link from "next/link";
 import {
     Sun, Menu, X, LogOut, User as UserIcon, ChevronDown,
     Thermometer, ClipboardList, Database, TrendingUp, CheckCircle,
-    Zap, Globe, Eye, Brain, FileText, Settings, Activity, Wrench, Target
+    Zap, Globe, Eye, Brain, FileText, Settings, Activity, Wrench, Target,
+    ChevronLeft, ChevronRight
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 
@@ -108,82 +109,78 @@ export default function Navbar() {
                             Home
                         </Link>
 
-                        {isLoggedIn && (
-                            <>
-                                {/* Solutions */}
-                                <div
-                                    className="relative group h-full flex items-center"
-                                    onMouseEnter={() => setOpenDropdown('solutions')}
-                                    onMouseLeave={() => setOpenDropdown(null)}
-                                >
-                                    <button
-                                        className={`flex items-center gap-1.5 px-4 py-2 text-sm font-bold transition-all duration-300 ${openDropdown === 'solutions' ? 'text-orange-600' : `${textColor} ${hoverTextColor}`}`}
-                                    >
-                                        Solutions
-                                        <ChevronDown size={14} className={`transition-transform duration-300 ${openDropdown === 'solutions' ? 'rotate-180' : ''}`} />
-                                    </button>
+                        {/* Solutions */}
+                        <div
+                            className="relative group h-full flex items-center"
+                            onMouseEnter={() => setOpenDropdown('solutions')}
+                            onMouseLeave={() => setOpenDropdown(null)}
+                        >
+                            <button
+                                className={`flex items-center gap-1.5 px-4 py-2 text-sm font-bold transition-all duration-300 ${openDropdown === 'solutions' ? 'text-orange-600' : `${textColor} ${hoverTextColor}`}`}
+                            >
+                                Solutions
+                                <ChevronDown size={14} className={`transition-transform duration-300 ${openDropdown === 'solutions' ? 'rotate-180' : ''}`} />
+                            </button>
 
-                                    <div
-                                        className={`absolute top-full left-1/2 -translate-x-1/2 mt-0 pt-2 w-[720px] transition-all duration-500 z-50 ${openDropdown === 'solutions' ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible translate-y-2'}`}
-                                    >
-                                        <div className="bg-white rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] border border-slate-100 p-10">
-                                            <div className="grid grid-cols-3 gap-12 text-left">
-                                                {solutionsMenu.map((phase) => (
-                                                    <div key={phase.phase}>
-                                                        <div className="text-base font-extrabold text-slate-900 mb-6 border-b border-slate-50 pb-2">
-                                                            {phase.phase}
-                                                        </div>
-                                                        <div className="space-y-4">
-                                                            {phase.items.map((item) => (
-                                                                <Link
-                                                                    key={item.name}
-                                                                    href={item.href}
-                                                                    className="block text-base font-medium text-slate-600 hover:text-orange-600 transition-colors"
-                                                                >
-                                                                    {item.name}
-                                                                </Link>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                ))}
+                            <div
+                                className={`absolute top-full left-1/2 -translate-x-1/2 mt-0 pt-2 w-[720px] transition-all duration-500 z-50 ${openDropdown === 'solutions' ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible translate-y-2'}`}
+                            >
+                                <div className="bg-white rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] border border-slate-100 p-10">
+                                    <div className="grid grid-cols-3 gap-12 text-left">
+                                        {solutionsMenu.map((phase) => (
+                                            <div key={phase.phase}>
+                                                <div className="text-base font-extrabold text-slate-900 mb-6 border-b border-slate-50 pb-2">
+                                                    {phase.phase}
+                                                </div>
+                                                <div className="space-y-4">
+                                                    {phase.items.map((item) => (
+                                                        <Link
+                                                            key={item.name}
+                                                            href={item.href}
+                                                            className="block text-base font-medium text-slate-600 hover:text-orange-600 transition-colors"
+                                                        >
+                                                            {item.name}
+                                                        </Link>
+                                                    ))}
+                                                </div>
                                             </div>
-                                        </div>
+                                        ))}
                                     </div>
                                 </div>
+                            </div>
+                        </div>
 
-                                {/* Platform */}
-                                <div
-                                    className="relative group h-full flex items-center"
-                                    onMouseEnter={() => setOpenDropdown('platform')}
-                                    onMouseLeave={() => setOpenDropdown(null)}
-                                >
-                                    <button
-                                        className={`flex items-center gap-1.5 px-4 py-2 text-sm font-bold transition-all duration-300 ${openDropdown === 'platform' ? 'text-orange-600' : `${textColor} ${hoverTextColor}`}`}
-                                    >
-                                        Platform
-                                        <ChevronDown size={14} className={`transition-transform duration-300 ${openDropdown === 'platform' ? 'rotate-180' : ''}`} />
-                                    </button>
+                        {/* Platform */}
+                        <div
+                            className="relative group h-full flex items-center"
+                            onMouseEnter={() => setOpenDropdown('platform')}
+                            onMouseLeave={() => setOpenDropdown(null)}
+                        >
+                            <button
+                                className={`flex items-center gap-1.5 px-4 py-2 text-sm font-bold transition-all duration-300 ${openDropdown === 'platform' ? 'text-orange-600' : `${textColor} ${hoverTextColor}`}`}
+                            >
+                                Platform
+                                <ChevronDown size={14} className={`transition-transform duration-300 ${openDropdown === 'platform' ? 'rotate-180' : ''}`} />
+                            </button>
 
-                                    <div
-                                        className={`absolute top-full left-0 mt-0 pt-2 w-64 transition-all duration-500 z-50 ${openDropdown === 'platform' ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible translate-y-2'}`}
-                                    >
-                                        <div className="bg-white rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] border border-slate-100 p-6 text-left">
-                                            <div className="space-y-4">
-                                                {platformMenu.map((item) => (
-                                                    <Link
-                                                        key={item.name}
-                                                        href={item.href}
-                                                        className="block text-base font-medium text-slate-600 hover:text-orange-600 transition-colors"
-                                                    >
-                                                        {item.name}
-                                                    </Link>
-                                                ))}
-                                            </div>
-                                        </div>
+                            <div
+                                className={`absolute top-full left-0 mt-0 pt-2 w-64 transition-all duration-500 z-50 ${openDropdown === 'platform' ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible translate-y-2'}`}
+                            >
+                                <div className="bg-white rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] border border-slate-100 p-6 text-left">
+                                    <div className="space-y-4">
+                                        {platformMenu.map((item) => (
+                                            <Link
+                                                key={item.name}
+                                                href={item.href}
+                                                className="block text-base font-medium text-slate-600 hover:text-orange-600 transition-colors"
+                                            >
+                                                {item.name}
+                                            </Link>
+                                        ))}
                                     </div>
                                 </div>
-                            </>
-                        )}
+                            </div>
+                        </div>
 
                         <Link href="/about" className={`px-4 py-2 text-sm font-bold transition-all duration-300 ${pathname === "/about" ? "text-orange-600" : `${textColor} ${hoverTextColor}`}`}>About</Link>
                         <Link href="/offers" className={`px-4 py-2 text-sm font-bold transition-all duration-300 ${pathname === "/offers" ? "text-orange-600" : `${textColor} ${hoverTextColor}`}`}>Offers</Link>
@@ -238,48 +235,46 @@ export default function Navbar() {
 
                 {/* Mobile Menu */}
                 {isMenuOpen && (
-                    <div className="lg:hidden mt-6 pb-8 border-t border-slate-100 pt-6 space-y-2 bg-white rounded-3xl p-6 shadow-2xl absolute top-full left-4 right-4 text-slate-900">
+                    <div className="lg:hidden mt-6 pb-8 border-t border-slate-100 pt-6 space-y-2 bg-white rounded-3xl p-6 shadow-2xl absolute top-full left-4 right-4 text-slate-900 max-h-[80vh] overflow-y-auto">
                         <Link href="/" className="block px-4 py-3 text-base font-bold text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl" onClick={() => setIsMenuOpen(false)}>Home</Link>
 
-                        {isLoggedIn && (
-                            <>
-                                <button
-                                    onClick={() => toggleDropdown('solutions-mobile')}
-                                    className="flex items-center justify-between w-full px-4 py-3 text-base font-bold text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl"
-                                >
-                                    Solutions
-                                    <ChevronDown size={18} className={`transition-transform duration-300 ${openDropdown === 'solutions-mobile' ? 'rotate-180' : ''}`} />
-                                </button>
-                                {openDropdown === 'solutions-mobile' && (
-                                    <div className="pl-6 space-y-4 py-2 border-l-2 border-orange-100 ml-4 mt-1">
-                                        {solutionsMenu.map((phase) => (
-                                            <div key={phase.phase}>
-                                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">{phase.phase}</div>
-                                                <div className="space-y-3">
-                                                    {phase.items.map((item) => (
-                                                        <Link key={item.name} href={item.href} className="block text-sm font-bold text-slate-600 hover:text-orange-600" onClick={() => setIsMenuOpen(false)}>{item.name}</Link>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        ))}
+                        {/* Solutions Mobile */}
+                        <button
+                            onClick={() => toggleDropdown('solutions-mobile')}
+                            className="flex items-center justify-between w-full px-4 py-3 text-base font-bold text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl"
+                        >
+                            Solutions
+                            <ChevronDown size={18} className={`transition-transform duration-300 ${openDropdown === 'solutions-mobile' ? 'rotate-180' : ''}`} />
+                        </button>
+                        {openDropdown === 'solutions-mobile' && (
+                            <div className="pl-6 space-y-4 py-2 border-l-2 border-orange-100 ml-4 mt-1">
+                                {solutionsMenu.map((phase) => (
+                                    <div key={phase.phase}>
+                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">{phase.phase}</div>
+                                        <div className="space-y-3">
+                                            {phase.items.map((item) => (
+                                                <Link key={item.name} href={item.href} className="block text-sm font-bold text-slate-600 hover:text-orange-600" onClick={() => setIsMenuOpen(false)}>{item.name}</Link>
+                                            ))}
+                                        </div>
                                     </div>
-                                )}
+                                ))}
+                            </div>
+                        )}
 
-                                <button
-                                    onClick={() => toggleDropdown('platform-mobile')}
-                                    className="flex items-center justify-between w-full px-4 py-3 text-base font-bold text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl"
-                                >
-                                    Platform
-                                    <ChevronDown size={18} className={`transition-transform duration-300 ${openDropdown === 'platform-mobile' ? 'rotate-180' : ''}`} />
-                                </button>
-                                {openDropdown === 'platform-mobile' && (
-                                    <div className="pl-6 py-2 border-l-2 border-orange-100 ml-4 mt-1 space-y-3">
-                                        {platformMenu.map((item) => (
-                                            <Link key={item.name} href={item.href} className="block text-sm font-bold text-slate-600 hover:text-orange-600" onClick={() => setIsMenuOpen(false)}>{item.name}</Link>
-                                        ))}
-                                    </div>
-                                )}
-                            </>
+                        {/* Platform Mobile */}
+                        <button
+                            onClick={() => toggleDropdown('platform-mobile')}
+                            className="flex items-center justify-between w-full px-4 py-3 text-base font-bold text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl"
+                        >
+                            Platform
+                            <ChevronDown size={18} className={`transition-transform duration-300 ${openDropdown === 'platform-mobile' ? 'rotate-180' : ''}`} />
+                        </button>
+                        {openDropdown === 'platform-mobile' && (
+                            <div className="pl-6 py-2 border-l-2 border-orange-100 ml-4 mt-1 space-y-3">
+                                {platformMenu.map((item) => (
+                                    <Link key={item.name} href={item.href} className="block text-sm font-bold text-slate-600 hover:text-orange-600" onClick={() => setIsMenuOpen(false)}>{item.name}</Link>
+                                ))}
+                            </div>
                         )}
 
                         <Link href="/about" className="block px-4 py-3 text-base font-bold text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl" onClick={() => setIsMenuOpen(false)}>About</Link>
@@ -299,4 +294,3 @@ export default function Navbar() {
         </nav>
     );
 }
-

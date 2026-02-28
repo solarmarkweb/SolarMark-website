@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 const api = axios.create({
     baseURL: API_URL,
@@ -45,7 +45,7 @@ api.interceptors.response.use(
                     sessionStorage.getItem('refresh_token');
 
                 if (refreshToken) {
-                    const response = await axios.post(`${API_URL}/api/refresh`, {
+                    const response = await axios.post(`${API_URL}/refresh`, {
                         refresh_token: refreshToken
                     });
 
@@ -77,11 +77,11 @@ api.interceptors.response.use(
 
 export const authAPI = {
     // Auth endpoints - these are correct with /api prefix
-    register: (userData) => api.post('/api/register', userData),
-    login: (credentials) => api.post('/api/login', credentials),
-    getProfile: () => api.get('/api/profile'),
-    verifyToken: () => api.get('/api/verify-token'),
-    logout: () => api.post('/api/logout'),
+    register: (userData) => api.post('/register', userData),
+    login: (credentials) => api.post('/login', credentials),
+    getProfile: () => api.get('/profile'),
+    verifyToken: () => api.get('/verify-token'),
+    logout: () => api.post('/logout'),
 
     // Drive Links endpoints
     saveLinks: (data) => api.post('/drive-links', data),

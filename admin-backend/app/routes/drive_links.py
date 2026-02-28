@@ -46,12 +46,46 @@ async def upload_pdf(
             raise HTTPException(status_code=400, detail="PDF file size should be less than 10MB")
         
         link_exists = collection.find_one({"_id": ObjectId(link_id)})
-        if not link_exists:
-            raise HTTPException(status_code=404, detail="Drive link not found")
         
-        user_email = link_exists.get("user_email")
-        user_name = link_exists.get("user_name")
-        user_id = link_exists.get("user_id")
+        user_email = ""
+        user_name = ""
+        user_id = ""
+        dl1 = ""
+        dl2 = ""
+
+        if link_exists:
+            user_email = link_exists.get("user_email")
+            user_name = link_exists.get("user_name")
+            user_id = link_exists.get("user_id")
+            dl1 = drive_link_1 or link_exists.get("drive_link_1", "")
+            dl2 = drive_link_2 or link_exists.get("drive_link_2", "")
+        else:
+            user_exists = db.users.find_one({"_id": ObjectId(link_id)})
+            if user_exists:
+                user_email = user_exists.get("email")
+                user_name = f"{user_exists.get('first_name', '')} {user_exists.get('last_name', '')}"
+                user_id = str(user_exists["_id"])
+                dl1 = drive_link_1 or ""
+                dl2 = drive_link_2 or ""
+            else:
+                image_exists = db.images.find_one({"_id": ObjectId(link_id)})
+                if image_exists:
+                    user_id = image_exists.get("user_id")
+                    user_name = image_exists.get("user_name")
+                    # Try to fetch fresh user info by ID for the email
+                    if user_id:
+                        user_rec = db.users.find_one({"_id": ObjectId(user_id)})
+                        if user_rec:
+                            user_email = user_rec.get("email")
+                            user_name = f"{user_rec.get('first_name', '')} {user_rec.get('last_name', '')}".strip()
+                    
+                    if not user_email: # Fallback
+                        user_email = image_exists.get("user_email")
+                        
+                    dl1 = drive_link_1 or ""
+                    dl2 = drive_link_2 or ""
+                else:
+                    raise HTTPException(status_code=404, detail="Drive link, User, or Image record not found")
         
         uploader_user = {
             "_id": ObjectId(user_id) if user_id and ObjectId.is_valid(user_id) else ObjectId(),
@@ -80,8 +114,8 @@ async def upload_pdf(
             "file_id": file_id,
             "filename": pdf.filename,
             "link_id": link_id,
-            "drive_link_1": drive_link_1 or link_exists.get("drive_link_1", ""),
-            "drive_link_2": drive_link_2 or link_exists.get("drive_link_2", ""),
+            "drive_link_1": dl1,
+            "drive_link_2": dl2,
             "user_id": str(uploader_user["_id"]),
             "user_email": uploader_user["email"],
             "user_name": f"{uploader_user.get('first_name', '')} {uploader_user.get('last_name', '')}".strip(),
@@ -96,15 +130,37 @@ async def upload_pdf(
         result = pdfs_collection.insert_one(pdf_document)
         pdf_id = str(result.inserted_id)
         
-        collection.update_one(
-            {"_id": ObjectId(link_id)},
-            {"$set": {
-                "has_pdf": True, 
-                "pdf_id": pdf_id,
-                "pdf_filename": pdf.filename,
-                "pdf_uploaded_at": datetime.utcnow()
-            }}
-        )
+        # If it's an image record, store the image type in the PDF document for better UX
+        if not link_exists:
+             image_exists = db.images.find_one({"_id": ObjectId(link_id)})
+             if image_exists:
+                 pdfs_collection.update_one(
+                     {"_id": ObjectId(pdf_id)},
+                     {"$set": {"report_type": image_exists.get("image_type", "general")}}
+                 )
+        
+        # If it's a direct drive link record
+        if link_exists:
+            collection.update_one(
+                {"_id": ObjectId(link_id)},
+                {"$set": {
+                    "has_pdf": True, 
+                    "pdf_id": pdf_id,
+                    "pdf_filename": pdf.filename,
+                    "pdf_uploaded_at": datetime.utcnow()
+                }}
+            )
+        else:
+            # If it's an image record
+            db.images.update_one(
+                {"_id": ObjectId(link_id)},
+                {"$set": {
+                    "has_pdf": True,
+                    "pdf_id": pdf_id,
+                    "pdf_filename": pdf.filename,
+                    "pdf_uploaded_at": datetime.utcnow()
+                }}
+            )
         
         return {
             "message": "PDF uploaded successfully",
@@ -126,27 +182,40 @@ async def upload_pdf(
 @router.get("/{link_id}/pdfs")
 def get_link_pdfs(link_id: str, current_user = Depends(get_current_user)):
     try:
-        pdfs = list(pdfs_collection.find({"link_id": link_id}).sort("uploaded_at", -1))
+        pdfs = list(pdfs_collection.find({
+            "$or": [
+                {"link_id": link_id},
+                {"user_id": link_id}
+            ]
+        }).sort("uploaded_at", -1))
         
-        return [
-            {
+        result = []
+        for pdf in pdfs:
+            uploaded_at = pdf.get("uploaded_at")
+            if isinstance(uploaded_at, datetime):
+                uploaded_at_str = uploaded_at.isoformat()
+            elif isinstance(uploaded_at, str):
+                uploaded_at_str = uploaded_at
+            else:
+                uploaded_at_str = datetime.utcnow().isoformat()
+            
+            result.append({
                 "pdf_id": str(pdf["_id"]),
                 "file_id": str(pdf.get("file_id", "")),
                 "filename": pdf.get("filename", ""),
-                "link_id": pdf.get("link_id", ""),
+                "link_id": str(pdf.get("link_id", "")),
                 "drive_link_1": pdf.get("drive_link_1", ""),
                 "drive_link_2": pdf.get("drive_link_2", ""),
                 "file_size": pdf.get("file_size", 0),
-                "uploaded_at": pdf.get("uploaded_at", datetime.utcnow()).isoformat(),
+                "uploaded_at": uploaded_at_str,
                 "uploaded_by": {
-                    "user_id": pdf.get("user_id", ""),
+                    "user_id": str(pdf.get("user_id", "")),
                     "user_email": pdf.get("user_email", ""),
                     "user_name": pdf.get("user_name", "")
                 },
                 "stored_in": pdf.get("stored_in", "unknown")
-            }
-            for pdf in pdfs
-        ]
+            })
+        return result
         
     except Exception as e:
         print(f"Error fetching PDFs: {e}")
@@ -155,8 +224,9 @@ def get_link_pdfs(link_id: str, current_user = Depends(get_current_user)):
 @router.get("/pdfs/my-pdfs")
 def get_my_pdfs(current_user = Depends(get_current_user)):
     try:
-        user_id = str(current_user["_id"])
+        user_id = current_user["id"]
         user_email = current_user.get("email", "")
+        print(f"DEBUG: Fetching PDFs for user_email: '{user_email}'")
         
         pdfs = list(pdfs_collection.find({"user_email": user_email}).sort("uploaded_at", -1))
         
@@ -175,6 +245,7 @@ def get_my_pdfs(current_user = Depends(get_current_user)):
                 "file_id": str(pdf.get("file_id", "")),
                 "filename": pdf.get("filename", ""),
                 "link_id": pdf.get("link_id", ""),
+                "report_type": pdf.get("report_type", ""), # Add this for specific categorization
                 "drive_link_1": pdf.get("drive_link_1", ""),
                 "drive_link_2": pdf.get("drive_link_2", ""),
                 "file_size": pdf.get("file_size", 0),
@@ -208,7 +279,7 @@ async def download_pdf(pdf_id: str, current_user = Depends(get_current_user)):
             raise HTTPException(status_code=404, detail="PDF not found")
         
         # Check authorization (owner or admin)
-        user_id = str(current_user["_id"])
+        user_id = current_user["id"]
         user_email = current_user["email"]
         
         # Simple ownership check for now
@@ -285,7 +356,7 @@ async def view_pdf(pdf_id: str):
 @router.delete("/pdf/{pdf_id}")
 async def delete_pdf(pdf_id: str, current_user = Depends(get_current_user)):
     try:
-        user_id = str(current_user["_id"])
+        user_id = current_user["id"]
         
         pdf_meta = pdfs_collection.find_one({"_id": ObjectId(pdf_id)})
         
@@ -331,37 +402,51 @@ async def delete_pdf(pdf_id: str, current_user = Depends(get_current_user)):
 def get_pdfs_by_link_user(link_id: str, current_user = Depends(get_current_user)):
     try:
         link = collection.find_one({"_id": ObjectId(link_id)})
-        if not link:
-            raise HTTPException(status_code=404, detail="Link not found")
+        link_user_id = None
+        if link:
+            link_user_id = link.get("user_id")
+        else:
+            user_exists = db.users.find_one({"_id": ObjectId(link_id)})
+            if user_exists:
+                link_user_id = str(user_exists["_id"])
+            else:
+                raise HTTPException(status_code=404, detail="Link or User not found")
         
-        link_user_id = link.get("user_id")
-        current_user_id = str(current_user["_id"])
+        current_user_id = current_user["id"]
         
         if link_user_id != current_user_id:
             raise HTTPException(status_code=403, detail="Not authorized to view these PDFs")
         
         pdfs = list(pdfs_collection.find({"link_id": link_id}).sort("uploaded_at", -1))
         
-        return [
-            {
+        result = []
+        for pdf in pdfs:
+            uploaded_at = pdf.get("uploaded_at")
+            if isinstance(uploaded_at, datetime):
+                uploaded_at_str = uploaded_at.isoformat()
+            elif isinstance(uploaded_at, str):
+                uploaded_at_str = uploaded_at
+            else:
+                uploaded_at_str = datetime.utcnow().isoformat()
+            
+            result.append({
                 "pdf_id": str(pdf["_id"]),
                 "file_id": str(pdf.get("file_id", "")),
                 "filename": pdf.get("filename", ""),
-                "link_id": pdf.get("link_id", ""),
+                "link_id": str(pdf.get("link_id", "")),
                 "drive_link_1": pdf.get("drive_link_1", ""),
                 "drive_link_2": pdf.get("drive_link_2", ""),
                 "file_size": pdf.get("file_size", 0),
-                "uploaded_at": pdf.get("uploaded_at", datetime.utcnow()).isoformat(),
+                "uploaded_at": uploaded_at_str,
                 "uploaded_by": {
-                    "user_id": pdf.get("user_id"),
-                    "user_email": pdf.get("user_email"),
-                    "user_name": pdf.get("user_name")
+                    "user_id": str(pdf.get("user_id", "")),
+                    "user_email": pdf.get("user_email", ""),
+                    "user_name": pdf.get("user_name", "")
                 },
                 "stored_in": pdf.get("stored_in", "unknown"),
                 "is_admin_upload": pdf.get("is_admin_upload", False)
-            }
-            for pdf in pdfs
-        ]
+            })
+        return result
         
     except Exception as e:
         print(f"Error fetching PDFs by link user: {e}")
@@ -374,7 +459,7 @@ def save_drive_links(payload: DriveLinkCreate, current_user = Depends(get_curren
     document = {
         "drive_link_1": payload.drive_link_1,
         "drive_link_2": payload.drive_link_2,
-        "user_id": str(current_user["_id"]),
+        "user_id": current_user["id"],
         "user_email": current_user["email"],
         "user_name": f"{current_user.get('first_name', '')} {current_user.get('last_name', '')}".strip(),
         "created_at": datetime.utcnow(),
@@ -389,7 +474,7 @@ def save_drive_links(payload: DriveLinkCreate, current_user = Depends(get_curren
         id=str(result.inserted_id),
         drive_link_1=payload.drive_link_1,
         drive_link_2=payload.drive_link_2,
-        user_id=str(current_user["_id"]),
+        user_id=current_user["id"],
         user_email=current_user["email"],
         user_name=f"{current_user.get('first_name', '')} {current_user.get('last_name', '')}".strip(),
         created_at=document["created_at"],
@@ -418,12 +503,12 @@ def get_drive_links():
             id=str(item["_id"]),
             drive_link_1=item.get("drive_link_1", ""),
             drive_link_2=item.get("drive_link_2", ""),
-            user_id=item.get("user_id", ""),
+            user_id=str(item.get("user_id", "")),
             user_email=item.get("user_email", ""),
             user_name=item.get("user_name", ""),
             created_at=created_at,
             has_pdf=item.get("has_pdf", False),
-            pdf_id=item.get("pdf_id"),
+            pdf_id=str(item.get("pdf_id")) if item.get("pdf_id") else None,
             pdf_filename=item.get("pdf_filename")
         ))
     
@@ -431,7 +516,7 @@ def get_drive_links():
 
 @router.get("/my-links", response_model=List[DriveLinkResponse])
 def get_my_drive_links(current_user = Depends(get_current_user)):
-    user_id = str(current_user["_id"])
+    user_id = current_user["id"]
     data = list(collection.find({"user_id": user_id}))
     
     result = []
@@ -450,12 +535,12 @@ def get_my_drive_links(current_user = Depends(get_current_user)):
             id=str(item["_id"]),
             drive_link_1=item.get("drive_link_1", ""),
             drive_link_2=item.get("drive_link_2", ""),
-            user_id=item.get("user_id", ""),
+            user_id=str(item.get("user_id", "")),
             user_email=item.get("user_email", ""),
             user_name=item.get("user_name", ""),
             created_at=created_at,
             has_pdf=item.get("has_pdf", False),
-            pdf_id=item.get("pdf_id"),
+            pdf_id=str(item.get("pdf_id")) if item.get("pdf_id") else None,
             pdf_filename=item.get("pdf_filename")
         ))
     
@@ -470,12 +555,12 @@ def get_user_drive_links(user_id: str):
             id=str(item["_id"]),
             drive_link_1=item.get("drive_link_1", ""),
             drive_link_2=item.get("drive_link_2", ""),
-            user_id=item.get("user_id", ""),
+            user_id=str(item.get("user_id", "")),
             user_email=item.get("user_email", ""),
             user_name=item.get("user_name", ""),
             created_at=item.get("created_at", datetime.utcnow()),
             has_pdf=item.get("has_pdf", False),
-            pdf_id=item.get("pdf_id"),
+            pdf_id=str(item.get("pdf_id")) if item.get("pdf_id") else None,
             pdf_filename=item.get("pdf_filename")
         )
         for item in data
@@ -484,7 +569,7 @@ def get_user_drive_links(user_id: str):
 @router.get("/my-links-with-pdfs")
 def get_my_links_with_pdfs(current_user = Depends(get_current_user)):
     try:
-        user_id = str(current_user["_id"])
+        user_id = current_user["id"]
         
         links = list(collection.find({"user_id": user_id}).sort("created_at", -1))
         pdfs = list(pdfs_collection.find({"user_id": user_id}))

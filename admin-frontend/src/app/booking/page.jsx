@@ -62,7 +62,7 @@ export default function BookingPage() {
     const [editMode, setEditMode] = useState(false);
     const [currentBookingId, setCurrentBookingId] = useState(null);
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
     // Fetch Bookings
     const fetchBookings = async () => {
@@ -343,7 +343,7 @@ export default function BookingPage() {
                             <tbody className="divide-y divide-gray-50">
                                 {loading ? (
                                     <tr>
-                                        <td colSpan="8" className="px-6 py-20 text-center">
+                                        <td colSpan="7" className="px-6 py-20 text-center">
                                             <div className="flex flex-col items-center">
                                                 <Loader2 className="w-8 h-8 text-orange-500 animate-spin mb-3" />
                                                 <span className="text-sm font-medium text-gray-500">Retrieving data...</span>
@@ -352,7 +352,7 @@ export default function BookingPage() {
                                     </tr>
                                 ) : paginatedBookings.length === 0 ? (
                                     <tr>
-                                        <td colSpan="8" className="px-6 py-20 text-center">
+                                        <td colSpan="7" className="px-6 py-20 text-center">
                                             <div className="flex flex-col items-center">
                                                 <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-4">
                                                     <Calendar className="w-6 h-6 text-gray-300" />

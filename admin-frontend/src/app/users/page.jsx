@@ -18,7 +18,7 @@ export default function UserManagementPage() {
     });
 
     // API configuration
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
     // Fetch all registered users from backend
     const fetchUsers = async () => {
@@ -28,7 +28,7 @@ export default function UserManagementPage() {
 
             const token = localStorage.getItem('token');
 
-            const response = await axios.get(`${API_URL}/api/users/all`, {
+            const response = await axios.get(`${API_URL}/users/all`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -78,7 +78,7 @@ export default function UserManagementPage() {
         try {
             const token = localStorage.getItem('token');
 
-            await axios.delete(`${API_URL}/api/users/${userId}`, {
+            await axios.delete(`${API_URL}/users/${userId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -105,11 +105,12 @@ export default function UserManagementPage() {
         if (!searchTerm) return true;
 
         const searchLower = searchTerm.toLowerCase();
+        const roleStr = user.is_admin ? 'Admin' : (user.role || 'User');
         return (
             (user.first_name && user.first_name.toLowerCase().includes(searchLower)) ||
             (user.last_name && user.last_name.toLowerCase().includes(searchLower)) ||
             (user.email && user.email.toLowerCase().includes(searchLower)) ||
-            (user.role && user.role.toLowerCase().includes(searchLower))
+            (roleStr.toLowerCase().includes(searchLower))
         );
     });
 
@@ -268,11 +269,11 @@ export default function UserManagementPage() {
                                             </div>
                                         </td>
                                         <td className="px-8 py-5">
-                                            <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${user.role === 'admin' || user.role === 'Admin'
+                                            <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${user.is_admin || user.role === 'admin' || user.role === 'Admin'
                                                 ? 'bg-red-50 text-red-600 border-red-100'
                                                 : 'bg-blue-50 text-blue-600 border-blue-100'
                                                 }`}>
-                                                {user.role || 'User'}
+                                                {user.is_admin || user.role === 'admin' || user.role === 'Admin' ? 'Admin' : (user.role || 'User')}
                                             </span>
                                         </td>
                                         <td className="px-8 py-5">

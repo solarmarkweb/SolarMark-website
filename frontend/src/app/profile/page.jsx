@@ -44,27 +44,42 @@ export default function ProfilePage() {
 
     const fetchProfileData = async () => {
         try {
+            setLoading(true);
             setError("");
 
-            // Check authentication
+            // Check authentication locally first
             if (!authAPI.isAuthenticated()) {
-                router.push("/login");
+                handleLogout();
                 return;
             }
 
-            // Get user info from storage
+            // 1. First set user from local storage for immediate UI feedback
             const userInfo = authAPI.getCurrentUser();
-            setUser(userInfo);
+            if (userInfo) setUser(userInfo);
 
-            // Fetch data in parallel
+            // 2. Then fetch fresh profile data from backend to verify session
             try {
-                // Get Bookings
-                const bookingsResponse = await authAPI.getMyBookings();
+                const profileRes = await authAPI.getProfile();
+                if (profileRes.data) {
+                    const freshUser = {
+                        id: profileRes.data.id,
+                        name: `${profileRes.data.first_name || ''} ${profileRes.data.last_name || ''}`.trim() || profileRes.data.email,
+                        email: profileRes.data.email
+                    };
+                    setUser(freshUser);
+
+                    // Update local storage names in case they changed
+                    localStorage.setItem('user_name', freshUser.name);
+                }
+
+                // Fetch data in parallel
+                const [bookingsResponse, pdfsData] = await Promise.all([
+                    authAPI.getMyBookings(),
+                    authAPI.getAllMyPDFs()
+                ]);
+
                 const bookingsData = bookingsResponse.data || [];
                 setBookings(bookingsData);
-
-                // Get PDFs
-                const pdfsData = await authAPI.getAllMyPDFs();
                 setPdfs(pdfsData);
 
                 // Calculate statistics
@@ -76,17 +91,17 @@ export default function ProfilePage() {
                 });
 
             } catch (err) {
-                console.error("Error fetching data:", err);
-                setError(err.message || "Failed to load data");
+                console.error("Session verification or data fetch failed:", err);
                 if (err.response?.status === 401) {
                     handleLogout();
                     return;
                 }
+                setError(err.message || "Failed to load profile data");
             }
 
         } catch (err) {
-            console.error("Error fetching profile data:", err);
-            setError(err.message || "Failed to load profile data");
+            console.error("Critical error in profile page:", err);
+            setError("An unexpected error occurred. Please try logging in again.");
         } finally {
             setLoading(false);
         }
@@ -404,9 +419,9 @@ export default function ProfilePage() {
                                     <div key={booking.id} className="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:border-orange-200 transition-all group relative">
                                         <div className="flex items-center justify-between mb-3">
                                             <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${booking.status === 'pending' ? 'bg-amber-100 text-amber-700' :
-                                                    booking.status === 'confirmed' ? 'bg-blue-100 text-blue-700' :
-                                                        booking.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
-                                                            'bg-red-100 text-red-700'
+                                                booking.status === 'confirmed' ? 'bg-blue-100 text-blue-700' :
+                                                    booking.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
+                                                        'bg-red-100 text-red-700'
                                                 }`}>
                                                 {booking.status}
                                             </span>
@@ -499,7 +514,15 @@ export default function ProfilePage() {
                                                 </div>
 
                                                 <div className="min-w-0">
-                                                    <h4 className="font-bold text-slate-900 text-sm truncate pr-4">{pdf.filename || "Unnamed Report"}</h4>
+                                                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                                                        <h4 className="font-bold text-slate-900 text-sm truncate pr-4">{pdf.filename || "Unnamed Report"}</h4>
+                                                        {pdf.report_type && (
+                                                            <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${pdf.report_type === 'rgb' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                                                                }`}>
+                                                                {pdf.report_type === 'rgb' ? 'DRONE DATA' : 'SITE PLAN'}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
                                                         <span>{formatDate(pdf.uploaded_at)}</span>
                                                         <span className="w-1 h-1 bg-slate-300 rounded-full"></span>

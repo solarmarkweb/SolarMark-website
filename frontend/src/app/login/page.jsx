@@ -1,14 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { Sun, Mail, Lock, ArrowRight, Github, Loader2, CheckCircle2 } from "lucide-react";
 import api from "@/lib/axios";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function LoginPage() {
+function LoginForm() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const returnTo = searchParams.get("returnTo");
     const [formData, setFormData] = useState({
         email: "",
         password: "",
@@ -37,7 +39,10 @@ export default function LoginPage() {
                 localStorage.setItem("user_email", formData.email);
 
                 setLoggedIn(true);
-                setTimeout(() => router.push("/profile"), 1500);
+                setTimeout(() => {
+                    const destination = returnTo || "/profile";
+                    router.push(destination);
+                }, 1500);
             }
         } catch (err) {
             setError(err.response?.data?.detail || "Invalid email or password");
@@ -162,5 +167,17 @@ export default function LoginPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-slate-50">
+                <Loader2 className="animate-spin text-orange-500" size={48} />
+            </div>
+        }>
+            <LoginForm />
+        </Suspense>
     );
 }

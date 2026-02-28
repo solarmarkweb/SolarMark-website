@@ -15,7 +15,7 @@ export default function ContactPage() {
     const [submitting, setSubmitting] = useState(false);
     const [status, setStatus] = useState({ type: '', message: '' });
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });

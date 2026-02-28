@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ExternalLink,
   Copy,
@@ -22,7 +22,12 @@ import {
   Download,
   ChevronDown,
   ChevronUp,
-  Search
+  Search,
+  Image as ImageIcon,
+  Map as MapIcon,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -36,8 +41,10 @@ export default function DriveLinksPage() {
   const [adminInfo, setAdminInfo] = useState(null);
   const [expandedRows, setExpandedRows] = useState({});
   const [linkPDFs, setLinkPDFs] = useState({});
-  const [searchTerm, setSearchTerm] = useState('');
+  const [imageStats, setImageStats] = useState({});
   const [expandedUserGroups, setExpandedUserGroups] = useState({}); // Track which user groups are expanded
+  const [allImages, setAllImages] = useState([]); // All image/KML records
+  const [searchTerm, setSearchTerm] = useState('');
 
   // PDF Upload states
   const [uploadingPdf, setUploadingPdf] = useState(false);
@@ -51,13 +58,20 @@ export default function DriveLinksPage() {
 
   // Loading PDFs state
   const [loadingPDFs, setLoadingPDFs] = useState({});
+  const [expandedUserReports, setExpandedUserReports] = useState({}); // Track user-level reports expansion
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+
+  const fileInputRef = useRef(null);
   const router = useRouter();
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
   useEffect(() => {
     checkAdminAuth();
     fetchLinks();
+    fetchAllImages();
   }, []);
 
   const checkAdminAuth = () => {
@@ -76,45 +90,67 @@ export default function DriveLinksPage() {
   const fetchLinks = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/drive-links`);
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch links');
+      // 1. Fetch all users
+      const usersResponse = await fetch(`${API_URL}/users/all`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!usersResponse.ok) throw new Error('Failed to fetch users');
+      const users = await usersResponse.json();
+
+      // 2. Fetch consolidated submission stats
+      let statsData = {};
+      try {
+        const statsResponse = await fetch(`${API_URL}/user-submission-stats`);
+        if (statsResponse.ok) {
+          statsData = await statsResponse.json();
+          setImageStats(statsData);
+        }
+      } catch (err) {
+        console.error('Error fetching submission stats:', err);
       }
 
-      const data = await response.json();
-      const sortedData = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      // Filter to users who have ANY submission (image or PDF)
+      const activeUsers = users.filter(u => statsData[u._id]);
+
+      const sortedData = activeUsers.map(u => ({
+        id: u._id,
+        user_id: u._id,
+        user_name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email,
+        user_email: u.email,
+        created_at: u.created_at || new Date().toISOString()
+      })).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
       setLinks(sortedData);
       setError('');
 
-      // Fetch PDFs for all links to show status immediately
-      const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
-      for (const link of sortedData) {
-        try {
-          const pdfResponse = await fetch(`${API_URL}/drive-links/${link.id}/pdfs`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-          
-          if (pdfResponse.ok) {
-            const pdfData = await pdfResponse.json();
-            setLinkPDFs(prev => ({ ...prev, [link.id]: pdfData }));
-          }
-        } catch (err) {
-          console.error(`Error fetching PDFs for link ${link.id}:`, err);
-          // Continue fetching other PDFs even if one fails
-        }
-      }
-
     } catch (err) {
-      setError('Error loading links. Please try again.');
-      console.error('Error fetching links:', err);
+      setError('Error loading user submissions. Please try again.');
+      console.error('Error fetching submissions:', err);
     } finally {
       setLoading(false);
     }
   };
+
+  const fetchAllImages = async () => {
+    try {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/all-user-images`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error('Failed to fetch all images');
+      const data = await response.json();
+      setAllImages(data);
+    } catch (err) {
+      console.error('Error fetching all images:', err);
+    }
+  };
+
+  // Reset pagination when searching or filtering
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedUser]);
 
   const deleteDriveLink = async (linkId) => {
     try {
@@ -147,6 +183,26 @@ export default function DriveLinksPage() {
       setDeletingLink(null);
       setShowDeleteConfirm(false);
       setLinkToDelete(null);
+    }
+  };
+
+  const handleDeleteImage = async (imageId, userId = null) => {
+    if (!confirm('Are you sure you want to delete this specific upload record?')) return;
+    try {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/images/${imageId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        setAllImages(prev => prev.filter(img => img.id !== imageId));
+        // Refresh main stats too
+        fetchLinks();
+        alert('✅ Record deleted successfully');
+      }
+    } catch (err) {
+      console.error('Error deleting image:', err);
+      setError(`Failed to delete record: ${err.message}`);
     }
   };
 
@@ -192,8 +248,32 @@ export default function DriveLinksPage() {
     }
   };
 
+  const triggerPdfUpload = (item) => {
+    setSelectedItemForUpload(item);
+    setTimeout(() => {
+      fileInputRef.current?.click();
+    }, 100);
+  };
+
   const toggleUserGroup = (userId) => {
-    setExpandedUserGroups(prev => ({ ...prev, [userId]: !prev[userId] }));
+    setExpandedUserGroups(prev => ({
+      [userId]: !prev[userId]
+    }));
+    // Also close report expansion if switching groups
+    setExpandedUserReports({});
+  };
+
+  const toggleUserReports = async (userId) => {
+    const isExpanded = expandedUserReports[userId];
+    setExpandedUserReports({
+      [userId]: !isExpanded
+    });
+    // Also close group expansion if switching to reports
+    setExpandedUserGroups({});
+
+    if (!isExpanded && (!linkPDFs[userId] || linkPDFs[userId].length === 0)) {
+      await fetchLinkPDFs(userId);
+    }
   };
 
   const confirmDelete = (link) => {
@@ -227,13 +307,18 @@ export default function DriveLinksPage() {
     const date = new Date(dateToParse);
     if (isNaN(date.getTime())) return 'Invalid Date';
 
-    return date.toLocaleDateString('en-US', {
+    const datePart = date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric',
+      day: 'numeric'
+    });
+
+    const timePart = date.toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit'
     });
+
+    return `${datePart} at ${timePart}`;
   };
 
   const formatFileSize = (bytes) => {
@@ -266,14 +351,18 @@ export default function DriveLinksPage() {
     const matchesSearch = !searchTerm ||
       link.user_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       link.user_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      link.drive_link_1?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      link.drive_link_2?.toLowerCase().includes(searchTerm.toLowerCase());
+      (() => {
+        const stats = imageStats[link.user_id];
+        const status = (stats?.has_rgb && stats?.has_thermal) ? 'done' :
+          (stats?.has_rgb || stats?.has_thermal) ? 'partial' : 'pending';
+        return status.includes(searchTerm.toLowerCase());
+      })();
     return matchesUser && matchesSearch;
   });
 
-  const totalLinks = links.length;
-  const totalUsers = new Set(links.map(link => link.user_id).filter(id => id && id !== 'anonymous')).size;
-  const totalPDFs = links.reduce((sum, link) => sum + (linkPDFs[link.id]?.length || 0), 0);
+  const totalLinks = Object.keys(imageStats).length;
+  const totalUsers = new Set(links.map(u => u.user_id)).size;
+  const totalPDFs = Object.values(imageStats).reduce((sum, stats) => sum + (stats.pdf_count || 0), 0);
 
   // Group links by user for grouped view
   const groupedLinks = filteredLinks.reduce((acc, link) => {
@@ -290,9 +379,26 @@ export default function DriveLinksPage() {
     return acc;
   }, {});
 
-  const groupedLinksArray = Object.values(groupedLinks).sort((a, b) =>
-    b.links.length - a.links.length // Sort by number of links descending
-  );
+  const groupedLinksArray = Object.values(groupedLinks).sort((a, b) => {
+    // Sort by most recent upload date (FILO / Newest First)
+    const userAImgs = allImages.filter(img => img.user_id === a.user_id);
+    const userBImgs = allImages.filter(img => img.user_id === b.user_id);
+
+    const latestA = userAImgs.length > 0
+      ? Math.max(...userAImgs.map(i => new Date(i.uploaded_at).getTime()))
+      : 0;
+    const latestB = userBImgs.length > 0
+      ? Math.max(...userBImgs.map(i => new Date(i.uploaded_at).getTime()))
+      : 0;
+
+    return latestB - latestA;
+  });
+
+  // Get current items for pagination
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = groupedLinksArray.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(groupedLinksArray.length / itemsPerPage);
 
   const handlePdfUpload = async (event, item) => {
     const file = event.target.files[0];
@@ -328,8 +434,6 @@ export default function DriveLinksPage() {
       const formData = new FormData();
       formData.append('pdf', file);
       formData.append('link_id', item.id);
-      formData.append('drive_link_1', item.drive_link_1);
-      formData.append('drive_link_2', item.drive_link_2);
 
       const response = await fetch(`${API_URL}/drive-links/upload-pdf`, {
         method: 'POST',
@@ -370,7 +474,11 @@ export default function DriveLinksPage() {
         await fetchLinkPDFs(item.id);
       }
 
+      // Re-fetch all submission stats to update the PDF count in the main table
+      await fetchLinks();
+
       alert(`✅ PDF uploaded successfully!\nFile: ${data.filename}`);
+      fetchAllImages(); // Refresh image list if relevant
 
       setTimeout(() => {
         setUploadingPdf(false);
@@ -419,6 +527,60 @@ export default function DriveLinksPage() {
     }
   };
 
+  const viewPDF = async (pdfId) => {
+    try {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/drive-links/pdf/view/${pdfId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to view PDF');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (err) {
+      console.error('Error viewing PDF:', err);
+      setError('Failed to view PDF');
+    }
+  };
+
+  const deletePDF = async (pdfId, userId) => {
+    if (!confirm('Are you sure you want to delete this report? This action cannot be undone.')) return;
+
+    try {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/drive-links/pdf/${pdfId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete PDF');
+      }
+
+      // Refresh the PDF list for this specific user/link
+      if (userId) {
+        await fetchLinkPDFs(userId);
+      }
+
+      // Update the main statistics
+      fetchLinks();
+
+      alert('✅ Report deleted successfully');
+
+    } catch (err) {
+      console.error('Error deleting PDF:', err);
+      setError(`Failed to delete PDF: ${err.message}`);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#f8fafc]">
       {/* Header */}
@@ -430,8 +592,8 @@ export default function DriveLinksPage() {
                 <Folder className="w-5 h-5 text-orange-600" />
               </div>
               <div>
-                <h1 className="text-sm font-semibold text-gray-900">Drive Links Repository</h1>
-                <p className="text-[11px] text-gray-400 font-medium">Manage all portfolio links</p>
+                <h1 className="text-sm font-semibold text-gray-900">User Uploads</h1>
+                <p className="text-[11px] text-gray-400 font-medium">Manage user images & PDFs</p>
               </div>
             </div>
 
@@ -493,9 +655,9 @@ export default function DriveLinksPage() {
               </div>
 
               <p className="text-gray-600 mb-6 text-sm">
-                Are you sure you want to delete this drive link?
+                Are you sure you want to delete this user's records?
                 <br />
-                <span className="font-medium block mt-2 text-xs text-gray-800 truncate">{linkToDelete.drive_link_1?.substring(0, 50)}...</span>
+                <span className="font-medium block mt-2 text-xs text-gray-800 truncate">{linkToDelete.user_name}</span>
                 <span className="text-xs text-red-600 mt-2 block">
                   ⚠️ This will also delete all associated PDF files!
                 </span>
@@ -524,7 +686,7 @@ export default function DriveLinksPage() {
                   ) : (
                     <>
                       <Trash2 className="w-4 h-4 mr-2" />
-                      Delete Link
+                      Delete Records
                     </>
                   )}
                 </button>
@@ -538,7 +700,7 @@ export default function DriveLinksPage() {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {[
-            { label: 'Total Links', count: totalLinks, color: 'text-blue-600', bg: 'bg-white', icon: <LinkIcon className="w-5 h-5" /> },
+            { label: 'Total Users (w/ uploads)', count: totalLinks, color: 'text-blue-600', bg: 'bg-white', icon: <LinkIcon className="w-5 h-5" /> },
             { label: 'Active Users', count: totalUsers, color: 'text-green-600', bg: 'bg-white', icon: <Users className="w-5 h-5" /> },
             { label: 'Uploaded PDFs', count: totalPDFs, color: 'text-purple-600', bg: 'bg-white', icon: <FileText className="w-5 h-5" /> },
             { label: 'Filtered Results', count: filteredLinks.length, color: 'text-orange-600', bg: 'bg-white', icon: <Hash className="w-5 h-5" /> },
@@ -565,7 +727,7 @@ export default function DriveLinksPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search by user, email, or link..."
+                placeholder="Search by user, email, or status..."
                 className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -581,7 +743,7 @@ export default function DriveLinksPage() {
               >
                 {uniqueUsers.map(user => (
                   <option key={user.id} value={user.id}>
-                    {user.id === 'all' ? '👥 All Users' : `👤 ${user.name}`}
+                    {user.id === 'all' ? '� All Accounts' : `👤 ${user.name}`}
                   </option>
                 ))}
               </select>
@@ -593,329 +755,372 @@ export default function DriveLinksPage() {
             <table className="w-full text-left border-collapse table-fixed min-w-[1400px]">
               <thead>
                 <tr className="bg-gray-50/50 border-b border-gray-100">
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-widest w-[220px]">User Info</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-widest w-[400px]">Drive Links</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-widest w-[180px]">Upload Date</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-widest w-[180px]">PDF Status</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-widest w-[250px]">Actions</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-widest w-[280px]">Submission / File</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-widest w-[160px]">Status</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-widest w-[220px]">Reports / Date</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-widest w-[200px] text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {loading ? (
                   <tr>
-                    <td colSpan="5" className="px-6 py-20 text-center">
+                    <td colSpan="4" className="px-6 py-20 text-center">
                       <div className="flex flex-col items-center">
                         <Loader2 className="w-8 h-8 text-orange-500 animate-spin mb-3" />
-                        <span className="text-sm font-medium text-gray-500">Loading drive links...</span>
+                        <span className="text-sm font-medium text-gray-500">Loading user records...</span>
                       </div>
                     </td>
                   </tr>
-                ) : groupedLinksArray.length === 0 ? (
+                ) : currentItems.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="px-6 py-20 text-center">
+                    <td colSpan="4" className="px-6 py-20 text-center">
                       <div className="flex flex-col items-center">
                         <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-4">
                           <LinkIcon className="w-6 h-6 text-gray-300" />
                         </div>
-                        <h3 className="text-sm font-bold text-gray-900">No drive links found</h3>
+                        <h3 className="text-sm font-bold text-gray-900">No user records found</h3>
                         <p className="text-xs text-gray-400 mt-1">Try adjusting your filters or search terms.</p>
                       </div>
                     </td>
                   </tr>
                 ) : (
-                  groupedLinksArray.map((group) => (
-                    <>
+                  currentItems.map((group) => (
+                    <React.Fragment key={`group-${group.user_id}`}>
                       {/* User Group Header */}
                       <tr
                         key={`group-header-${group.user_id}`}
-                        className="bg-blue-50/40 border-t-2 border-blue-200 hover:bg-blue-50/60 cursor-pointer transition-colors"
+                        className="bg-orange-50/40 border-t-2 border-orange-200 hover:bg-orange-50/60 cursor-pointer transition-colors"
                         onClick={() => toggleUserGroup(group.user_id)}
                       >
-                        <td colSpan="5" className="px-6 py-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center shadow-sm ${group.user_name && group.user_name !== 'Anonymous User'
-                                ? 'bg-gradient-to-br from-blue-500 to-blue-600'
-                                : 'bg-gradient-to-br from-gray-400 to-gray-500'
-                                }`}>
-                                <span className="text-white font-semibold text-sm">
-                                  {getUserInitials(group.user_name)}
-                                </span>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center">
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center shadow-sm ${group.user_name && group.user_name !== 'Anonymous User'
+                              ? 'bg-gray-900'
+                              : 'bg-gray-400'
+                              }`}>
+                              <span className="text-white font-semibold text-sm">
+                                {getUserInitials(group.user_name)}
+                              </span>
+                            </div>
+                            <div className="ml-3">
+                              <div className="text-sm font-bold text-gray-900">
+                                {group.user_name || 'Anonymous User'}
                               </div>
-                              <div className="ml-3">
-                                <div className="text-sm font-bold text-gray-900">
-                                  {group.user_name || 'Anonymous User'}
-                                </div>
-                                <div className="flex items-center text-xs text-gray-500 mt-0.5">
-                                  <Mail className="w-3 h-3 mr-1" />
-                                  <span>{group.user_email || 'anonymous@example.com'}</span>
-                                </div>
+                              <div className="flex items-center text-xs text-gray-400 mt-0.5">
+                                <Mail className="w-3 h-3 mr-1" />
+                                <span className="truncate max-w-[120px]">{group.user_email || 'anonymous@example.com'}</span>
                               </div>
                             </div>
-                            <div className="flex items-center gap-3">
-                              <span className="px-3 py-1.5 bg-orange-100 text-orange-700 rounded-full text-xs font-bold border border-orange-200">
-                                {group.links.length} {group.links.length === 1 ? 'Submission' : 'Submissions'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          {(() => {
+                            const stats = imageStats[group.user_id];
+                            const statusLabel = (stats?.has_rgb && stats?.has_thermal) ? 'DONE' :
+                              (stats?.has_rgb || stats?.has_thermal) ? 'PARTIAL' : 'PENDING';
+                            const statusColor = statusLabel === 'DONE' ? 'bg-green-100 text-green-700 border-green-200' :
+                              statusLabel === 'PARTIAL' ? 'bg-amber-100 text-amber-700 border-amber-200' :
+                                'bg-rose-100 text-rose-700 border-rose-200';
+                            return (
+                              <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${statusColor} uppercase tracking-wider`}>
+                                {statusLabel}
                               </span>
+                            );
+                          })()}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={() => toggleUserReports(group.user_id)}
+                              className={`px-3 py-1.5 rounded-lg text-[10px] font-black border transition-all flex items-center hover:shadow-md active:scale-95 ${(imageStats[group.user_id]?.pdf_count > 0) ? 'bg-orange-600 text-white border-orange-600 shadow-orange-900/10' : 'bg-white text-gray-400 border-gray-200'}`}
+                            >
+                              <FileText className="w-3.5 h-3.5 mr-2" />
+                              REPORTS: {imageStats[group.user_id]?.pdf_count || 0}
+                            </button>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-3">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); triggerPdfUpload({ id: group.user_id }); }}
+                              className="px-4 py-2 bg-gray-900 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 transition-all flex items-center shadow-sm"
+                            >
+                              <Upload className="w-3.5 h-3.5 mr-2 text-orange-400" />
+                              UPLOAD REPORT
+                            </button>
+                            <div className="p-1 rounded-full hover:bg-orange-50 transition-colors">
                               {expandedUserGroups[group.user_id] ? (
-                                <ChevronUp className="w-5 h-5 text-gray-500" />
+                                <ChevronUp className="w-5 h-5 text-orange-600" />
                               ) : (
-                                <ChevronDown className="w-5 h-5 text-gray-500" />
+                                <ChevronDown className="w-5 h-5 text-orange-600" />
                               )}
                             </div>
                           </div>
                         </td>
                       </tr>
 
-                      {/* Individual Links for this User - Only show when expanded */}
-                      {expandedUserGroups[group.user_id] && group.links.map((item, linkIndex) => (
-                        <>
-                          {/* Main Row - Individual Link */}
-                          <tr
-                            key={`link-${item.id}`}
-                            className="hover:bg-gray-50/80 transition-colors group cursor-pointer bg-white"
-                            onClick={() => toggleRow(item.id)}
-                          >
-                            {/* Number Column (instead of user) */}
-                            <td className="px-6 py-4">
-                              <div className="pl-6 flex items-center">
-                                <span className="text-xs font-bold text-gray-400">#{linkIndex + 1}</span>
+                      {/* Expanded Section for ALL User Reports */}
+                      {expandedUserReports[group.user_id] && (
+                        <tr className="bg-orange-50/10 border-l-4 border-orange-500">
+                          <td colSpan="4" className="px-6 py-6">
+                            <div className="max-w-4xl mx-auto md:mx-0">
+                              <div className="flex items-center justify-between mb-4">
+                                <h4 className="text-[11px] font-black text-gray-900 uppercase tracking-[0.2em] flex items-center">
+                                  <FileText className="w-4 h-4 mr-2 text-orange-600" />
+                                  Master Inspection Reports
+                                </h4>
+                                <span className="text-[10px] font-bold text-gray-400">{linkPDFs[group.user_id]?.length || 0} DOCUMENTS FOUND</span>
                               </div>
-                            </td>
 
-                            {/* Links Column */}
-                            <td className="px-6 py-4">
-                              <div className="space-y-2">
-                                {/* Link 1 */}
-                                <div className="flex items-center space-x-2">
-                                  <div className="w-5 h-5 bg-blue-100 rounded flex items-center justify-center flex-shrink-0">
-                                    <span className="text-[10px] font-bold text-blue-600">1</span>
-                                  </div>
-                                  <a
-                                    href={item.drive_link_1}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-600 hover:text-blue-800 text-xs font-medium truncate max-w-[250px] hover:underline"
-                                    titleTitle={item.drive_link_1}
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    {item.drive_link_1}
-                                  </a>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      copyToClipboard(item.drive_link_1);
-                                    }}
-                                    className={`p-1 rounded transition-all ${copiedLink === item.drive_link_1
-                                      ? 'bg-green-100 text-green-600'
-                                      : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'
-                                      }`}
-                                    title="Copy"
-                                  >
-                                    <Copy className="w-3 h-3" />
-                                  </button>
+                              {loadingPDFs[group.user_id] ? (
+                                <div className="flex items-center justify-center py-10 bg-white/50 rounded-xl border border-gray-100">
+                                  <Loader2 className="w-5 h-5 text-orange-600 animate-spin mr-3" />
+                                  <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Compiling all reports...</span>
                                 </div>
-                                {/* Link 2 */}
-                                <div className="flex items-center space-x-2">
-                                  <div className="w-5 h-5 bg-green-100 rounded flex items-center justify-center flex-shrink-0">
-                                    <span className="text-[10px] font-bold text-green-600">2</span>
-                                  </div>
-                                  <a
-                                    href={item.drive_link_2}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-green-600 hover:text-green-800 text-xs font-medium truncate max-w-[250px] hover:underline"
-                                    title={item.drive_link_2}
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    {item.drive_link_2}
-                                  </a>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      copyToClipboard(item.drive_link_2);
-                                    }}
-                                    className={`p-1 rounded transition-all ${copiedLink === item.drive_link_2
-                                      ? 'bg-green-100 text-green-600'
-                                      : 'text-gray-400 hover:text-green-600 hover:bg-green-50'
-                                      }`}
-                                    title="Copy"
-                                  >
-                                    <Copy className="w-3 h-3" />
-                                  </button>
-                                </div>
-                              </div>
-                            </td>
-
-                            {/* Date Column */}
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center text-sm text-gray-600">
-                                <Calendar className="w-3.5 h-3.5 mr-2 text-gray-400" />
-                                <span className="text-xs">{formatDate(item.created_at)}</span>
-                              </div>
-                            </td>
-
-                            {/* PDF Status */}
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center text-xs">
-                                {linkPDFs[item.id]?.length > 0 ? (
-                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold bg-green-100 text-green-700 border border-green-200 uppercase tracking-wider">
-                                    <FileText className="w-3 h-3 mr-1" />
-                                    {linkPDFs[item.id].length} PDF(s)
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold bg-gray-100 text-gray-500 border border-gray-200 uppercase tracking-wider">
-                                    No PDFs
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-
-                            {/* Actions Column */}
-                            <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                              <div className="flex items-center gap-2">
-                                {/* Upload PDF */}
-                                <div className="relative">
-                                  <input
-                                    type="file"
-                                    id={`pdf-upload-${item.id}`}
-                                    className="hidden"
-                                    accept=".pdf,application/pdf"
-                                    onChange={(e) => handlePdfUpload(e, item)}
-                                    disabled={uploadingPdf && selectedItemForUpload?.id === item.id}
-                                  />
-                                  <label
-                                    htmlFor={`pdf-upload-${item.id}`}
-                                    className={`inline-flex items-center px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${uploadingPdf && selectedItemForUpload?.id === item.id
-                                      ? 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed'
-                                      : 'bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-500 hover:text-white'
-                                      }`}
-                                    title="Upload PDF"
-                                  >
-                                    {uploadingPdf && selectedItemForUpload?.id === item.id ? (
-                                      <>
-                                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                                        {uploadProgress}%
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Upload className="w-3 h-3 mr-1" />
-                                        ADD PDF
-                                      </>
-                                    )}
-                                  </label>
-                                </div>
-
-                                {/* View PDFs */}
-                                <button
-                                  onClick={() => toggleRow(item.id)}
-                                  className="inline-flex items-center px-3 py-1.5 rounded-lg text-[10px] font-bold bg-purple-50 text-purple-600 border border-purple-100 hover:bg-purple-500 hover:text-white transition-all"
-                                  title="View PDFs"
-                                >
-                                  {expandedRows[item.id] ? (
-                                    <>
-                                      <ChevronUp className="w-3 h-3 mr-1" />
-                                      HIDE
-                                    </>
-                                  ) : (
-                                    <>
-                                      <ChevronDown className="w-3 h-3 mr-1" />
-                                      VIEW
-                                    </>
-                                  )}
-                                </button>
-
-                                {/* Delete */}
-                                <button
-                                  onClick={() => confirmDelete(item)}
-                                  className="inline-flex items-center px-3 py-1.5 rounded-lg text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-100 hover:bg-rose-500 hover:text-white transition-all"
-                                  title="Delete Link"
-                                >
-                                  <Trash2 className="w-3 h-3 mr-1" />
-                                  DELETE
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-
-                          {/* Expanded Row - PDFs */}
-                          {expandedRows[item.id] && (
-                            <tr className="bg-gray-50">
-                              <td colSpan="5" className="px-6 py-4">
-                                <div className="bg-white rounded-lg border border-gray-200 p-4 ml-12">
-                                  <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3 flex items-center">
-                                    <FileText className="w-4 h-4 mr-2 text-purple-600" />
-                                    Attached PDF Files
-                                  </h4>
-
-                                  {loadingPDFs[item.id] ? (
-                                    <div className="flex items-center justify-center py-8">
-                                      <Loader2 className="w-5 h-5 text-gray-400 animate-spin mr-2" />
-                                      <span className="text-xs text-gray-500">Loading PDFs...</span>
-                                    </div>
-                                  ) : linkPDFs[item.id]?.length > 0 ? (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                      {linkPDFs[item.id].map((pdf) => (
-                                        <div
-                                          key={pdf.id}
-                                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-purple-300 hover:bg-purple-50/50 transition-all group"
+                              ) : linkPDFs[group.user_id]?.length > 0 ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  {linkPDFs[group.user_id].map(pdf => (
+                                    <div key={pdf.pdf_id} className="group relative flex items-center justify-between p-4 bg-white border border-gray-100 rounded-xl hover:shadow-xl transition-all border-l-4 border-l-gray-900 overflow-hidden">
+                                      <div className="flex items-center min-w-0">
+                                        <div className="p-2 bg-gray-50 rounded-lg mr-3 group-hover:bg-gray-900 transition-colors shrink-0">
+                                          <FileText className="w-4 h-4 text-orange-600 group-hover:text-white" />
+                                        </div>
+                                        <div className="min-w-0">
+                                          <div className="text-[11px] font-black text-gray-900 truncate uppercase tracking-tight pr-2">{pdf.filename}</div>
+                                          <div className="text-[9px] font-bold text-gray-400 mt-1 flex items-center gap-3">
+                                            <span className="flex items-center"><Calendar className="w-3 h-3 mr-1 text-orange-600" /> {formatDate(pdf.uploaded_at)}</span>
+                                            <span className="w-1 h-1 bg-gray-200 rounded-full"></span>
+                                            <span className="flex items-center uppercase">{pdf.report_type === 'rgb' ? 'Drone Data' : pdf.report_type === 'thermal' ? 'Site Plan' : 'Standard Report'}</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <button
+                                          onClick={() => viewPDF(pdf.pdf_id)}
+                                          className="px-4 py-2 bg-white text-gray-900 border border-gray-200 hover:bg-gray-50 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-sm active:scale-95 shrink-0"
                                         >
-                                          <div className="flex items-center min-w-0 flex-1">
-                                            <div className="w-8 h-8 bg-red-100 rounded flex items-center justify-center flex-shrink-0">
-                                              <FileText className="w-4 h-4 text-red-600" />
+                                          VIEW
+                                        </button>
+                                        <button
+                                          onClick={() => downloadPDF(pdf.pdf_id, pdf.filename)}
+                                          className="px-4 py-2 bg-orange-600 text-white hover:bg-orange-700 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-sm active:scale-95 shrink-0"
+                                        >
+                                          DOWNLOAD
+                                        </button>
+                                        <button
+                                          onClick={() => deletePDF(pdf.pdf_id, group.user_id)}
+                                          className="p-2 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-lg transition-all border border-rose-100 shadow-sm shrink-0"
+                                          title="Delete Report"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="py-12 text-center bg-white/40 rounded-xl border border-dashed border-gray-200">
+                                  <FileText className="w-8 h-8 text-orange-100 mx-auto mb-3" />
+                                  <div className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">No reports have been generated for this user yet.</div>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+
+                      {/* Unified Upload Activity Table */}
+                      {expandedUserGroups[group.user_id] && (
+                        <tr className="bg-gray-50/30">
+                          <td colSpan="4" className="px-6 py-6 border-b border-gray-100">
+                            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden overflow-x-auto max-w-[1500px]">
+                              <table className="w-full text-left border-collapse min-w-[1000px]">
+                                <thead>
+                                  <tr className="bg-gray-50/50 border-b border-gray-100">
+                                    <th className="px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Upload Date & Time</th>
+                                    <th className="px-6 py-3 text-[10px] font-black text-center text-gray-900 uppercase tracking-widest border-l border-gray-100">Drone Data</th>
+                                    <th className="px-6 py-3 text-[10px] font-black text-center text-orange-600 uppercase tracking-widest border-l border-gray-100">Site Plan</th>
+                                    <th className="px-6 py-3 text-[10px] font-black text-right uppercase tracking-widest border-l border-gray-100">Actions</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50">
+                                  {(() => {
+                                    const userImgs = allImages.filter(img => img.user_id === group.user_id);
+
+                                    // Group by timestamp
+                                    const timeGroups = userImgs.reduce((acc, img) => {
+                                      const timeKey = formatDate(img.uploaded_at);
+                                      if (!acc[timeKey]) {
+                                        acc[timeKey] = { time: timeKey, rgb: null, thermal: null, raw_date: img.uploaded_at };
+                                      }
+                                      if (img.image_type === 'rgb') acc[timeKey].rgb = img;
+                                      if (img.image_type === 'thermal') acc[timeKey].thermal = img;
+                                      return acc;
+                                    }, {});
+
+                                    const sortedGroups = Object.values(timeGroups).sort((a, b) =>
+                                      new Date(b.raw_date).getTime() - new Date(a.raw_date).getTime()
+                                    );
+
+                                    return sortedGroups.length > 0 ? sortedGroups.map((entry, idx) => (
+                                      <tr key={idx} className="hover:bg-blue-50/10 transition-colors group">
+                                        <td className="px-6 py-4">
+                                          <div className="flex flex-col">
+                                            <div className="flex items-center text-[12px] font-bold text-gray-900 mb-1">
+                                              <Calendar className="w-3.5 h-3.5 mr-2 text-gray-400" />
+                                              {entry.time.split(' at ')[0]}
                                             </div>
-                                            <div className="ml-3 min-w-0 flex-1">
-                                              <p className="text-xs font-semibold text-gray-900 truncate" title={pdf.filename}>
-                                                {pdf.filename}
-                                              </p>
-                                              <p className="text-[10px] text-gray-500">
-                                                {formatFileSize(pdf.file_size)} • {formatDate(pdf.uploaded_at)}
-                                              </p>
+                                            <div className="flex items-center text-[10px] font-bold text-gray-400">
+                                              <Clock className="w-3 h-3 mr-2" />
+                                              {entry.time.split(' at ')[1]}
                                             </div>
                                           </div>
-                                          <button
-                                            onClick={() => downloadPDF(pdf.pdf_id, pdf.filename)}
-                                            className="ml-2 p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-100 rounded transition-all flex-shrink-0"
-                                            title="Download PDF"
-                                          >
-                                            <Download className="w-4 h-4" />
-                                          </button>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <div className="text-center py-8">
-                                      <FileText className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                                      <p className="text-xs text-gray-500">No PDFs uploaded yet</p>
-                                      <p className="text-[10px] text-gray-400 mt-1">Use the "ADD PDF" button to upload files</p>
-                                    </div>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          )}
-                        </>
-                      ))}
-                    </>
+                                        </td>
+
+                                        {/* Drone Data Column */}
+                                        <td className="px-6 py-4 border-l border-gray-50">
+                                          <div className="flex justify-center">
+                                            {entry.rgb ? (
+                                              <div className="flex flex-col items-center gap-1">
+                                                <span className="px-2 py-0.5 bg-gray-900 text-white rounded text-[9px] font-black uppercase flex items-center">
+                                                  <CheckCircle className="w-3 h-3 mr-1 text-orange-400" /> UPLOADED
+                                                </span>
+                                              </div>
+                                            ) : (
+                                              <span className="text-[9px] font-black text-gray-200">PENDING</span>
+                                            )}
+                                          </div>
+                                        </td>
+
+                                        {/* Site Plan Column */}
+                                        <td className="px-6 py-4 border-l border-gray-50">
+                                          <div className="flex justify-center">
+                                            {entry.thermal ? (
+                                              <div className="flex flex-col items-center gap-1">
+                                                <span className="px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-[9px] font-black uppercase flex items-center">
+                                                  <CheckCircle className="w-3 h-3 mr-1" /> UPLOADED
+                                                </span>
+                                              </div>
+                                            ) : (
+                                              <span className="text-[9px] font-black text-gray-200">PENDING</span>
+                                            )}
+                                          </div>
+                                        </td>
+
+                                        {/* Actions Column */}
+                                        <td className="px-6 py-4 border-l border-gray-50 text-right">
+                                          <div className="flex justify-end gap-2">
+                                            {entry.rgb && (
+                                              <button
+                                                onClick={() => handleDeleteImage(entry.rgb.id)}
+                                                className="p-1.5 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                                                title="Delete Drone Data Batch"
+                                              >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                              </button>
+                                            )}
+                                            {entry.thermal && (
+                                              <button
+                                                onClick={() => handleDeleteImage(entry.thermal.id)}
+                                                className="p-1.5 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all border-l border-gray-100 ml-1 pl-3"
+                                                title="Delete Site Plan Batch"
+                                              >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                              </button>
+                                            )}
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    )) : (
+                                      <tr>
+                                        <td colSpan="4" className="px-6 py-12 text-center">
+                                          <div className="flex flex-col items-center">
+                                            <ImageIcon className="w-8 h-8 text-gray-200 mb-3" />
+                                            <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">No activity found yet</span>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })()}
+                                </tbody>
+                              </table>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   ))
                 )}
               </tbody>
             </table>
           </div>
 
-          {/* Footer */}
-          {!loading && filteredLinks.length > 0 && (
-            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between mt-auto">
-              <div className="flex items-center text-xs text-gray-500 font-medium">
-                Showing <span className="mx-1 text-gray-900 font-bold">{filteredLinks.length}</span> of
-                <span className="mx-1 text-gray-900 font-bold">{totalLinks}</span> total links
+          {/* Pagination Controls */}
+          {groupedLinksArray.length > 0 && (
+            <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center sm:text-left">
+                Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, groupedLinksArray.length)} of {groupedLinksArray.length} accounts
               </div>
-              <div className="text-xs text-gray-500 bg-white px-3 py-1.5 rounded-lg border border-gray-200">
-                <span className="font-medium">Live Data</span> • Last updated: {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="p-2 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+                  title="Previous Page"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(page => {
+                      if (totalPages <= 7) return true;
+                      if (page === 1 || page === totalPages) return true;
+                      return Math.abs(page - currentPage) <= 1;
+                    })
+                    .map((page, index, array) => (
+                      <React.Fragment key={page}>
+                        {index > 0 && array[index - 1] !== page - 1 && (
+                          <span className="px-2 text-gray-300 text-xs">...</span>
+                        )}
+                        <button
+                          onClick={() => setCurrentPage(page)}
+                          className={`min-w-[32px] h-8 px-2 rounded-lg text-xs font-black transition-all ${currentPage === page
+                            ? 'bg-orange-600 text-white shadow-md shadow-orange-900/20 border-orange-600'
+                            : 'bg-white text-gray-600 border border-gray-200 hover:border-orange-500 hover:text-orange-600'
+                            }`}
+                        >
+                          {page}
+                        </button>
+                      </React.Fragment>
+                    ))
+                  }
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages || totalPages === 0}
+                  className="p-2 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+                  title="Next Page"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
             </div>
           )}
         </div>
+
       </main>
+
+      {/* Hidden PDF file input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={(e) => handlePdfUpload(e, selectedItemForUpload)}
+        accept="application/pdf"
+        style={{ display: 'none' }}
+      />
     </div>
   );
 }
+

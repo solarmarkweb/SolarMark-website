@@ -71,44 +71,70 @@ async def login(login_data: UserLogin):
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
-    """Dependency to get current user from token - Modified to be optional/bypassable"""
-    # Try to validate token if present
+    """Dependency to get current user from token - Enforces strict authentication"""
+    if not token:
+        # Check if the user is in a state where a bypass was intended (NOT recommended for production)
+        # But for now, we strictly require a token to avoid session switching issues.
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated. Please login.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     try:
-        if token:
-            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-            user_id: str = payload.get("sub")
-            if user_id:
-                user = get_user_by_id(user_id)
-                if user:
-                    return user
-    except Exception:
-        pass # Fall through to default user
-    
-    # Return a default admin user if authentication fails or is missing
-    # This allows the app to work without a strict login for now
-    default_admin = db.users.find_one({"email": "admin@gmail.com"})
-    if not default_admin:
-        # Create a basic dummy user if not found in DB
-        default_admin = {
-            "_id": ObjectId("507f1f77bcf86cd799439011"), # Mock ID
-            "email": "admin@gmail.com",
-            "first_name": "Admin",
-            "last_name": "User",
-            "is_admin": True
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not validate credentials",
+            )
+        
+        user = get_user_by_id(user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found",
+            )
+            
+        # Normalize to a consistent dict with 'id', 'name', 'email'
+        return {
+            "id": str(user["_id"]),
+            "name": f"{user.get('first_name', '')} {user.get('last_name', '')}".strip() or user.get("email", "user"),
+            "email": user.get("email", ""),
+            "first_name": user.get("first_name", ""),
+            "last_name": user.get("last_name", ""),
+            "is_admin": user.get("is_admin", False),
         }
-    return default_admin
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session expired or invalid",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/profile", response_model=UserResponse)
 async def get_profile(current_user = Depends(get_current_user)):
     """Get current user profile"""
-    return format_user_response(current_user)
+    # current_user is already normalized with 'id', 'name', 'email' keys
+    return {
+        "id": current_user["id"],
+        "first_name": current_user.get("first_name", ""),
+        "last_name": current_user.get("last_name", ""),
+        "email": current_user["email"],
+        "created_at": current_user.get("created_at", datetime.utcnow()).isoformat()
+        if hasattr(current_user.get("created_at"), "isoformat")
+        else str(current_user.get("created_at", ""))
+    }
 
 @router.get("/verify-token")
 async def verify_token(current_user = Depends(get_current_user)):
     """Verify token validity"""
     return {
         "valid": True,
-        "user_id": str(current_user["_id"]),
+        "user_id": current_user["id"],
         "email": current_user["email"]
     }
 
@@ -141,14 +167,23 @@ async def get_all_users(current_user = Depends(get_current_user)):
     users = list(db.users.find())
     formatted_users = []
     for user in users:
+        created_at = user.get("created_at")
+        if isinstance(created_at, datetime):
+            created_at_str = created_at.isoformat()
+        elif isinstance(created_at, str):
+            created_at_str = created_at
+        else:
+            created_at_str = datetime.utcnow().isoformat()
+
         formatted_users.append({
             "_id": str(user["_id"]),
             "first_name": user.get("first_name", ""),
             "last_name": user.get("last_name", ""),
             "email": user.get("email", ""),
             "role": user.get("role", "user"),
+            "is_admin": user.get("is_admin", False),
             "status": user.get("status", "active"),
-            "created_at": user.get("created_at", datetime.utcnow()).isoformat()
+            "created_at": created_at_str
         })
     return formatted_users
 

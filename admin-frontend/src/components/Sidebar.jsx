@@ -45,6 +45,11 @@ const Sidebar = () => {
             icon: <Users size={20} />,
             path: '/users',
         },
+        {
+            title: 'Legal Documents',
+            icon: <Shield size={20} />,
+            path: '/legal',
+        },
     ];
 
     return (

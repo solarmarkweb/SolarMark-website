@@ -26,15 +26,32 @@ def create_contact(payload: ContactCreate):
 @router.get("/", response_model=List[ContactResponse])
 def get_all_contacts(current_user = Depends(get_current_user)):
     """Admin endpoint to see all contact requests"""
-    # Assuming any logged in admin can see contacts
     data = list(collection.find().sort("created_at", -1))
-    return [
-        ContactResponse(
+    
+    formatted_contacts = []
+    for item in data:
+        # Pydantic ContactResponse expects a datetime
+        created_at = item.get("created_at")
+        if not isinstance(created_at, datetime):
+            if isinstance(created_at, str):
+                try:
+                    # Attempt simple ISO parsing or fallback
+                    item["created_at"] = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+                except:
+                    item["created_at"] = datetime.utcnow()
+            else:
+                item["created_at"] = datetime.utcnow()
+        
+        formatted_contacts.append(ContactResponse(
             id=str(item["_id"]),
-            **item
-        )
-        for item in data
-    ]
+            first_name=item.get("first_name", "Anonymous"),
+            last_name=item.get("last_name", ""),
+            email=item.get("email", ""),
+            message=item.get("message", ""),
+            status=item.get("status", "new"),
+            created_at=item["created_at"]
+        ))
+    return formatted_contacts
 
 @router.patch("/{contact_id}", response_model=ContactResponse)
 def update_contact_status(contact_id: str, payload: ContactUpdate, current_user = Depends(get_current_user)):

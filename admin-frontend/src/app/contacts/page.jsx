@@ -32,7 +32,7 @@ export default function ContactsAdminPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
     const parseContactDate = (dateString) => {
         if (!dateString) return null;
@@ -102,7 +102,7 @@ export default function ContactsAdminPage() {
         if (!confirm('Are you sure you want to delete this contact request?')) return;
 
         try {
-            const token = localStorage.getItem('token');  
+            const token = localStorage.getItem('token');
             const response = await fetch(`${API_URL}/contacts/${id}`, {
                 method: 'DELETE',
                 headers: {
@@ -214,7 +214,7 @@ export default function ContactsAdminPage() {
                             <tbody className="divide-y divide-gray-50">
                                 {loading ? (
                                     <tr>
-                                        <td colSpan="4" className="px-6 py-20 text-center text-gray-500 font-medium">
+                                        <td colSpan="5" className="px-6 py-20 text-center text-gray-500 font-medium">
                                             <div className="flex flex-col items-center">
                                                 <Loader2 className="w-8 h-8 text-orange-500 animate-spin mb-3" />
                                                 Loading inquiries...
@@ -223,7 +223,7 @@ export default function ContactsAdminPage() {
                                     </tr>
                                 ) : paginatedContacts.length === 0 ? (
                                     <tr>
-                                        <td colSpan="4" className="px-6 py-20 text-center flex flex-col items-center">
+                                        <td colSpan="5" className="px-6 py-20 text-center flex flex-col items-center">
                                             <MessageSquare className="w-12 h-12 text-gray-100 mb-4" />
                                             <h3 className="text-sm font-bold text-gray-900">No inquiry found</h3>
                                         </td>
