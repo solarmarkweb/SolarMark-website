@@ -55,14 +55,21 @@ function LoginForm() {
     return (
         <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 pt-20 md:pt-0">
             {/* Left Side - Visual */}
-            <div className="hidden md:flex md:w-1/2 bg-orange-600 relative overflow-hidden items-center justify-center p-12">
-                <div className="absolute top-0 left-0 w-full h-full opacity-10">
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] border-[60px] border-white rounded-full"></div>
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] border-[40px] border-white rounded-full"></div>
-                </div>
+            <div className="hidden md:flex md:w-1/2 relative overflow-hidden items-center justify-center p-12 bg-slate-900">
+                <img
+                    src="/solar_panel_inspection.png"
+                    alt="Solar Panel Inspection"
+                    className="absolute inset-0 w-full h-full object-cover opacity-70"
+                />
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-600/20 to-slate-900/60"></div>
+
                 <div className="relative z-10 text-white max-w-md">
-                    <h2 className="text-5xl font-bold mb-8 leading-tight tracking-tight">Welcome back to the future of auditing.</h2>
-                    <p className="text-orange-100 text-xl font-medium mb-8">Access your dashboard to monitor your solar assets and track your inspection reports in real-time.</p>
+                    <div className="mb-8 inline-flex items-center space-x-2 px-3 py-1 bg-orange-500/20 border border-orange-500/30 rounded-full backdrop-blur-md">
+                        <CheckCircle2 size={16} className="text-orange-400" />
+                        <span className="text-xs font-bold uppercase tracking-wider text-orange-200">Trusted Inspection Platform</span>
+                    </div>
+                    <h2 className="text-5xl font-bold mb-8 leading-tight tracking-tight">Expert Solar Inspection Services.</h2>
+                    <p className="text-orange-50/90 text-xl font-medium mb-8">Access your dashboard to monitor your solar assets and track your inspection reports in real-time.</p>
                 </div>
             </div>
 

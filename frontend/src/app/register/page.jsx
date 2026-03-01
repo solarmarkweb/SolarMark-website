@@ -81,30 +81,33 @@ export default function RegisterPage() {
 
     return (
         <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 pt-20 md:pt-0">
-            {/* Left Side - Visual */}
-            <div className="hidden md:flex md:w-1/2 bg-orange-600 relative overflow-hidden items-center justify-center p-12">
-                <div className="absolute top-0 left-0 w-full h-full opacity-10">
-                    <div className="absolute -top-20 -left-20 w-[400px] h-[400px] bg-white rounded-full blur-[100px]"></div>
+            {/* Left Side - Visual with Puzzle Animation */}
+            <div className="hidden md:flex md:w-1/2 relative overflow-hidden items-center justify-center p-12 bg-slate-900 group">
+                <div className="absolute inset-0 grid grid-cols-3 grid-rows-4 gap-1 p-2 opacity-90">
+                    {[...Array(12)].map((_, i) => (
+                        <div
+                            key={i}
+                            className="relative overflow-hidden rounded-sm transition-all duration-1000 ease-out shadow-2xl border border-white/5"
+                            style={{
+                                backgroundImage: "url('/solar_thermal_scan.png')",
+                                backgroundSize: "300% 400%",
+                                backgroundPosition: `${(i % 3) * 50}% ${Math.floor(i / 3) * 33.33}%`,
+                                transform: `translate(${(Math.random() - 0.5) * 200}%, ${(Math.random() - 0.5) * 200}%) rotate(${Math.random() * 90}deg)`,
+                                animation: `puzzleIn 1.5s forwards ${i * 0.1}s`
+                            }}
+                        />
+                    ))}
                 </div>
-                <div className="relative z-10 text-white max-w-md">
-                    <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center mb-10">
-                        <ShieldCheck size={32} className="text-white" />
-                    </div>
-                    <h2 className="text-5xl font-bold mb-10 leading-tight tracking-tight">Start your journey to energy independence.</h2>
-                    <ul className="space-y-6 mb-8">
-                        {[
-                            "High-precision thermal audits",
-                            "AI-powered fault detection",
-                            "Certified drone pilots",
-                            "Actionable efficiency reports"
-                        ].map((item, i) => (
-                            <li key={i} className="flex items-center space-x-4 text-orange-50 font-medium text-lg">
-                                <div className="w-6 h-6 rounded-lg bg-orange-400 flex items-center justify-center text-[10px] font-bold">✓</div>
-                                <span>{item}</span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
+
+                <style jsx>{`
+                    @keyframes puzzleIn {
+                        to {
+                            transform: translate(0, 0) rotate(0);
+                        }
+                    }
+                `}</style>
+
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-900/60 z-0"></div>
             </div>
 
             {/* Right Side - Form */}

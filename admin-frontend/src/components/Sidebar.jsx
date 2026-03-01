@@ -101,28 +101,12 @@ const Sidebar = () => {
                     );
                 })}
 
-                <div className="mt-12">
-                    <p className="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">
-                        Preferences
-                    </p>
-                    <button className="w-full flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-all duration-300 group text-slate-400">
-                        <Settings size={20} className="text-slate-500 group-hover:text-amber-400" />
-                        <span className="text-sm font-semibold tracking-tight">Settings</span>
-                    </button>
-                </div>
+               
             </nav>
 
             {/* User Support / Footer */}
             <div className="p-4 border-t border-slate-800/50 bg-slate-900/50">
-                <div className="px-4 py-4 rounded-2xl bg-slate-800/50 border border-slate-700/50 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center border border-slate-600">
-                        <Shield size={16} className="text-blue-400" />
-                    </div>
-                    <div>
-                        <p className="text-xs font-bold text-white">Admin Access</p>
-                        <p className="text-[10px] text-slate-500 font-medium">Verified Identity</p>
-                    </div>
-                </div>
+               
 
                 <button
                     onClick={() => {
