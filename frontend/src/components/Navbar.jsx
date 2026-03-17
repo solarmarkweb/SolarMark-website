@@ -92,9 +92,9 @@ export default function Navbar() {
                 <div className="flex justify-between items-center">
                     {/* Logo */}
                     <Link href="/" className="flex items-center group">
-                        <img 
-                            src="/solar_mark_logo.svg" 
-                            alt="SolarMark Logo" 
+                        <img
+                            src="/solar_mark_logo.svg"
+                            alt="SolarMark Logo"
                             className={`h-8 w-auto transition-all duration-300 ${(isScrolled || !isDarkHeroPage) ? "" : "brightness-0 invert"}`}
                         />
                     </Link>

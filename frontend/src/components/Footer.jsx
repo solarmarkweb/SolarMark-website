@@ -50,9 +50,9 @@ const Footer = () => {
                     {/* Brand */}
                     <div className="col-span-2">
                         <Link href="/" className="flex items-center mb-4">
-                            <img 
-                                src="/solar_mark_logo.svg" 
-                                alt="SolarMark Logo" 
+                            <img
+                                src="/solar_mark_logo.svg"
+                                alt="SolarMark Logo"
                                 className="h-8 w-auto"
                             />
                         </Link>

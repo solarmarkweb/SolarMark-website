@@ -2161,12 +2161,25 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="relative pt-24 pb-12 lg:pt-32 lg:pb-24 overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full -z-10 bg-gradient-to-tr from-orange-50 to-blue-50"></div>
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-orange-200/30 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-1/2 -left-24 w-72 h-72 bg-blue-200/20 rounded-full blur-3xl"></div>
+      <section className="relative pt-24 pb-12 lg:pt-32 lg:pb-32 overflow-hidden bg-white">
+        {/* Dynamic Background Elements */}
+        <div className="absolute top-0 left-0 w-full h-full -z-10 bg-slate-50/50"></div>
+        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-orange-100/20 rounded-full blur-[120px] -mr-96 -mt-96 animate-pulse"></div>
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-100/10 rounded-full blur-[100px] -ml-64 -mb-64"></div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Subtle Grid Overlay */}
+        <div className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:40px_40px]"></div>
+
+        <div className="absolute inset-0 z-0">
+          <img
+            src="/premium-solar-farm.png"
+            alt="Solar background"
+            className="w-full h-full object-cover opacity-[0.03]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-white via-transparent to-white"></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center max-w-4xl mx-auto">
             <div className="inline-flex items-center space-x-2 bg-orange-100 text-orange-700 px-4 py-1.5 rounded-full font-medium text-sm mb-6 animate-bounce">
               <Sun size={16} />
@@ -2537,7 +2550,9 @@ export default function HomePage() {
                 <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 via-orange-500 to-emerald-500"></div>
 
                 <div className="aspect-[4/3] bg-slate-800 rounded-[2.5rem] overflow-hidden flex flex-col items-center justify-center relative group">
-                  <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?q=80&w=2072&auto=format&fit=crop')] bg-cover bg-center opacity-20 transition-opacity duration-700 group-hover:opacity-40"></div>
+                  <div className="absolute inset-0 bg-[url('/premium-solar-farm.png')] bg-cover bg-center opacity-20 transition-opacity duration-700 group-hover:opacity-40"></div>
+
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-60"></div>
 
                   <Activity className="text-orange-500 w-16 h-16 absolute animate-pulse opacity-20" />
 
@@ -2598,8 +2613,92 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Image Upload Section */}
+      {/* NEW: Global Scale Section */}
+      <section className="py-24 bg-white relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+            >
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.3em] mb-8">
+                <Globe size={14} className="text-blue-400" />
+                Global Deployment
+              </div>
+              <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-8 uppercase tracking-tighter leading-[0.9]">
+                Scaling Solar <br />
+                <span className="text-orange-600">Across Continents</span>
+              </h2>
+              <p className="text-slate-600 text-lg mb-10 leading-relaxed">
+                Whether it's a 100MW utility site in the desert or a distributed portfolio across Europe, our standardized inspection protocol ensures consistent, high-fidelity data everywhere.
+              </p>
 
+              <div className="grid grid-cols-2 gap-8">
+                <div>
+                  <p className="text-4xl font-black text-slate-900">15GW+</p>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Assets Managed</p>
+                </div>
+                <div>
+                  <p className="text-4xl font-black text-slate-900">450k+</p>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Anomalies Detected</p>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="relative p-2"
+            >
+              <div className="relative rounded-[3rem] overflow-hidden shadow-2xl border border-slate-100">
+                <img src="/premium-solar-farm.png" alt="Global Solar Asset" className="w-full h-[500px] object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
+                <div className="absolute bottom-10 left-10 text-white">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-3 h-3 rounded-full bg-orange-500 animate-ping"></div>
+                    <span className="text-xs font-black uppercase tracking-[0.2em]">Active Survey India</span>
+                  </div>
+                  <p className="text-sm font-bold opacity-80 uppercase tracking-widest leading-relaxed">Rajasthan 250MW Utility Phase IV</p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* NEW: Enterprise Feature Grid */}
+      <section className="py-24 bg-slate-900 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-orange-600/10 rounded-full blur-[150px]"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-20">
+            <div>
+              <span className="text-orange-500 font-black text-[10px] uppercase tracking-[0.4em] mb-4 block">Platform Core</span>
+              <h2 className="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter">Enterprise <span className="text-orange-500 italic">Capabilities</span></h2>
+            </div>
+            <p className="text-slate-400 text-sm max-w-sm mt-6 lg:mt-0 font-bold uppercase tracking-widest leading-relaxed">
+              Designed for reliability, security, and velocity in large-scale renewable operations.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              { icon: Cpu, title: "Edge Analytics", desc: "Process datasets at the source with zero latency AI on-device processing." },
+              { icon: Database, title: "Historical Vault", desc: "Track every asset's degradation over decades with cryptographically secure logging." },
+              { icon: ShieldCheck, title: "Audit Ready", desc: "Automated compliance reports formatted for insurance and financial institutions." }
+            ].map((feat, i) => (
+              <div key={i} className="p-10 rounded-[2.5rem] bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.07] transition-all group">
+                <div className="w-14 h-14 rounded-2xl bg-orange-600/20 text-orange-500 flex items-center justify-center mb-8 group-hover:bg-orange-600 group-hover:text-white transition-all">
+                  <feat.icon size={28} />
+                </div>
+                <h3 className="text-lg font-black text-white uppercase tracking-widest mb-4">{feat.title}</h3>
+                <p className="text-slate-500 text-xs font-bold leading-relaxed tracking-wide uppercase">{feat.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* Solutions & Platforms Grid Section */}
       <section className="py-16 md:py-24 bg-slate-50 relative overflow-hidden">
