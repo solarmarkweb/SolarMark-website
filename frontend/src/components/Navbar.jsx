@@ -91,13 +91,12 @@ export default function Navbar() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center">
                     {/* Logo */}
-                    <Link href="/" className="flex items-center gap-3 group">
-                        <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center group-hover:bg-orange-700 transition-all duration-300 shadow-xl shadow-orange-600/20">
-                            <Sun className="h-6 w-6 text-white" />
-                        </div>
-                        <span className={`text-2xl font-bold tracking-tight transition-colors ${logoTextColor}`}>
-                            Solar<span className="text-orange-600">Mark</span>
-                        </span>
+                    <Link href="/" className="flex items-center group">
+                        <img 
+                            src="/solar_mark_logo.svg" 
+                            alt="SolarMark Logo" 
+                            className={`h-8 w-auto transition-all duration-300 ${(isScrolled || !isDarkHeroPage) ? "" : "brightness-0 invert"}`}
+                        />
                     </Link>
 
                     {/* Desktop Navigation */}

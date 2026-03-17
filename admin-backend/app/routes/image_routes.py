@@ -115,16 +115,8 @@ async def upload_images(files: List[UploadFile], image_type: str, current_user: 
         # Check Google Drive is configured before doing anything
         try:
             drive_service = get_drive_service()
-        except FileNotFoundError:
-            raise HTTPException(
-                status_code=503,
-                detail=(
-                    "Google Drive is not configured. "
-                    "Please place service-account.json in the admin-backend/ directory "
-                    "and set ADMIN_GOOGLE_DRIVE_FOLDER_ID in .env. "
-                    "See server logs for full setup instructions."
-                )
-            )
+        except FileNotFoundError as e:
+            raise HTTPException(status_code=503, detail=str(e))
 
         # Get or create user's main folder in admin's Drive
         user_folder = await get_or_create_user_folder(current_user)
@@ -199,7 +191,7 @@ async def upload_images(files: List[UploadFile], image_type: str, current_user: 
                 "drive_file_id": drive_file_id,
                 "drive_file_url": drive_file_url,
                 "file_size": drive_file_size,
-                "uploaded_at": image_doc["uploaded_at"].isoformat(),
+                "uploaded_at": image_doc["uploaded_at"].isoformat() if image_doc.get("uploaded_at") else datetime.utcnow().isoformat(),
                 "status": "active"
             }
             
@@ -318,15 +310,8 @@ async def get_user_drive_folder(current_user: dict = Depends(get_current_user)):
             "folder_url": folder_info["folder_url"],
             "admin_drive_url": admin_drive_url
         }
-    except FileNotFoundError:
-        raise HTTPException(
-            status_code=503,
-            detail=(
-                "Google Drive is not configured. "
-                "Please place service-account.json in admin-backend/ and "
-                "set ADMIN_GOOGLE_DRIVE_FOLDER_ID in .env."
-            )
-        )
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         logger.error(f"Error getting user drive folder: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

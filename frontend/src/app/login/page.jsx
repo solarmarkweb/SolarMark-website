@@ -77,9 +77,12 @@ function LoginForm() {
             <div className="flex-1 flex items-center justify-center p-6 md:p-20">
                 <div className="w-full max-w-md">
                     <div className="text-center mb-10">
-                        <Link href="/" className="inline-flex items-center space-x-2 mb-8 group">
-                            <Sun className="h-10 w-10 text-orange-500 transition-transform duration-500" />
-                            <span className="text-3xl font-bold tracking-tight text-slate-900">Solar<span className="text-orange-600">Mark</span></span>
+                        <Link href="/" className="inline-flex items-center mb-8">
+                            <img
+                                src="/solar_mark_logo.svg"
+                                alt="SolarMark Logo"
+                                className="h-10 w-auto"
+                            />
                         </Link>
                         <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Sign in to your account</h1>
                         <p className="text-slate-500 mt-2 font-medium">Professional solar management at your fingertips</p>

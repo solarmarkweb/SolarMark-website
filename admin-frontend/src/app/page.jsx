@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Shield, Mail, Lock, Loader2, Sun, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 export default function LoginPage() {
@@ -87,13 +88,14 @@ export default function LoginPage() {
         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-10 shadow-2xl">
           {/* Logo */}
           <div className="flex flex-col items-center mb-10">
-            <div className="w-16 h-16 bg-orange-600 rounded-2xl flex items-center justify-center mb-4 shadow-xl shadow-orange-900/40 transform -rotate-6">
-              <Sun className="text-white fill-white" size={32} />
-            </div>
-            <h1 className="text-3xl font-black text-white tracking-tighter uppercase">
-              Solar<span className="text-orange-500 italic">Admin</span>
-            </h1>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.3em] mt-2">
+            <Link href="/" className="block">
+              <img 
+                src="/solar_mark_logo.svg" 
+                alt="SolarMark Logo" 
+                className="h-16 w-auto"
+              />
+            </Link>
+            <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.3em] mt-4">
               System Authentication
             </p>
           </div>

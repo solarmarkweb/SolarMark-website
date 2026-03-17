@@ -74,10 +74,12 @@ class GoogleDriveService:
             raise FileNotFoundError("No authentication file found for Google Drive.")
 
         except Exception as e:
+            logger.error(f"Actual Google Drive error: {str(e)}")
+            logger.error(traceback.format_exc())
             msg = (
-                f"\n\n❌ GOOGLE DRIVE SETUP REQUIRED ❌\n"
+                f"\n\n[GOOGLE DRIVE SETUP REQUIRED]\n"
                 f"{'='*60}\n"
-                f"Google Drive token.json not found!\n"
+                f"Google Drive token.json not found or invalid! Error: {str(e)}\n"
                 f"Service Accounts (like the one you created) NO LONGER WORK for free personal @gmail.com accounts due to a 0-byte quota policy by Google.\n\n"
                 f"You must use User OAuth instead.\n"
                 f"Steps to fix:\n"
@@ -88,7 +90,7 @@ class GoogleDriveService:
                 f"  5. Click 'DOWNLOAD JSON' and rename it to 'credentials.json'\n"
                 f"  6. Place 'credentials.json' in your 'admin-backend' folder.\n"
                 f"  7. Run the auth script I just created for you: 'python setup_drive_auth.py'\n"
-                f"     or 'venv\Scripts\python setup_drive_auth.py'\n"
+                f"     or 'venv\\Scripts\\python setup_drive_auth.py'\n"
                 f"  8. It will open your browser, ask you to log in to your Google Drive, and save a 'token.json'.\n"
                 f"{'='*60}\n"
             )
@@ -124,7 +126,8 @@ class GoogleDriveService:
                 return folder_id, folder_url
 
             # 2. If it does not exist, create folder metadata
-            file_metadata = {
+            from typing import Any
+            file_metadata: dict[str, Any] = {
                 'name': folder_name,
                 'mimeType': 'application/vnd.google-apps.folder',
             }

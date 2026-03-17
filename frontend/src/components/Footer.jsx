@@ -7,8 +7,7 @@ import {
     Twitter,
     Linkedin,
     Instagram,
-    Mail,
-    Sun
+    Mail
 } from "lucide-react";
 
 const Footer = () => {
@@ -50,13 +49,12 @@ const Footer = () => {
                 <div className="grid grid-cols-2 md:grid-cols-6 gap-8 mb-12">
                     {/* Brand */}
                     <div className="col-span-2">
-                        <Link href="/" className="flex items-center gap-2 mb-4">
-                            <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center">
-                                <Sun className="h-5 w-5 text-white" />
-                            </div>
-                            <span className="text-lg font-bold text-slate-900">
-                                Solar<span className="text-orange-600">Mark</span>
-                            </span>
+                        <Link href="/" className="flex items-center mb-4">
+                            <img 
+                                src="/solar_mark_logo.svg" 
+                                alt="SolarMark Logo" 
+                                className="h-8 w-auto"
+                            />
                         </Link>
                         <p className="text-sm text-slate-600 mb-6 max-w-xs">
                             Maximize performance across the solar lifecycle with AI-powered insights and automated tracking.

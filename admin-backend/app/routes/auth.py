@@ -17,11 +17,21 @@ from jose import JWTError, jwt
 from app.db import db
 from bson import ObjectId
 
+from app.utils.otp_service import otp_service
+
 router = APIRouter(prefix="/api", tags=["Authentication"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login", auto_error=False)
 
 @router.post("/register", response_model=Token)
 async def register(user_data: UserRegister):
+    # Check if email is verified via OTP
+    verified = await otp_service.is_verified(user_data.email)
+    if not verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email not verified. Please verify your email first."
+        )
+
     user_dict = user_data.dict()
 
     # Create user

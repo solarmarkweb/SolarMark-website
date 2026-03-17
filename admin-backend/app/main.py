@@ -81,6 +81,15 @@ except ImportError as e:
     print(f"⚠️  Legal router not loaded: {e}")
     logger.warning(f"Legal router not loaded: {e}")
 
+try:
+    from app.routes.otp_routes import router as otp_router
+    app.include_router(otp_router)
+    print("✅ OTP router loaded successfully")
+    logger.info("OTP router loaded successfully")
+except ImportError as e:
+    print(f"⚠️  OTP router not loaded: {e}")
+    logger.warning(f"OTP router not loaded: {e}")
+
 @app.get("/")
 def root():
     return {
