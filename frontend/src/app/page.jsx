@@ -2161,68 +2161,212 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="relative pt-24 pb-12 lg:pt-32 lg:pb-32 overflow-hidden bg-white">
-        {/* Dynamic Background Elements */}
-        <div className="absolute top-0 left-0 w-full h-full -z-10 bg-slate-50/50"></div>
-        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-orange-100/20 rounded-full blur-[120px] -mr-96 -mt-96 animate-pulse"></div>
-        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-100/10 rounded-full blur-[100px] -ml-64 -mb-64"></div>
+      <section className="relative pt-32 pb-20 lg:pt-40 lg:pb-32 overflow-hidden bg-white perspective-1000">
+        {/* Advanced Background System */}
+        <div className="absolute inset-0 -z-10 overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-full bg-slate-50/20"></div>
+          
+          {/* 3D Floating Particles */}
+          {[...Array(20)].map((_, i) => (
+            <motion.div
+              key={i}
+              animate={{
+                y: [0, -100, 0],
+                x: [0, i % 2 === 0 ? 50 : -50, 0],
+                opacity: [0.1, 0.3, 0.1],
+                scale: [1, 1.5, 1],
+              }}
+              transition={{
+                duration: 10 + i,
+                repeat: Infinity,
+                delay: i * 0.5,
+              }}
+              className="absolute w-1 h-1 bg-orange-400/30 rounded-full"
+              style={{
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+              }}
+            />
+          ))}
 
-        {/* Subtle Grid Overlay */}
-        <div className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:40px_40px]"></div>
-
-        <div className="absolute inset-0 z-0">
-          <img
-            src="/premium-solar-farm.png"
-            alt="Solar background"
-            className="w-full h-full object-cover opacity-[0.03]"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-white via-transparent to-white"></div>
+          <motion.div
+            animate={{
+              scale: [1, 1.2, 1],
+              rotate: [0, 5, 0],
+            }}
+            transition={{ duration: 20, repeat: Infinity }}
+            className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] bg-gradient-to-br from-orange-200/20 to-blue-200/10 rounded-full blur-[140px]"
+          ></motion.div>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center max-w-4xl mx-auto">
-            <div className="inline-flex items-center space-x-2 bg-orange-100 text-orange-700 px-4 py-1.5 rounded-full font-medium text-sm mb-6 animate-bounce">
-              <Sun size={16} />
-              <span>Next-Gen Solar Technology</span>
-            </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            
+            {/* Left Content Column */}
+            <motion.div 
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              whileHover={{ rotateY: -5, rotateX: 2 }}
+              className="lg:col-span-12 xl:col-span-6 text-center lg:text-left transition-all duration-500 preserve-3d"
+            >
+              <div className="inline-flex items-center space-x-2 bg-orange-100 text-orange-700 px-4 py-1.5 rounded-full font-black text-[9px] uppercase tracking-[0.3em] mb-6 border border-orange-200/50">
+                <div className="w-1.5 h-1.5 rounded-full bg-orange-600 animate-pulse"></div>
+                <span>Autonomous Solar Intelligence</span>
+              </div>
 
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-5xl md:text-7xl font-extrabold text-slate-900 tracking-tight mb-8"
-            >
-              Expert <span className="text-orange-600">Solar Inspection</span> Services
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-xl text-slate-600 mb-10 leading-relaxed"
-            >
-              Ensure your solar infrastructure is operating at peak performance with our professional drone-based inspection solutions.
-            </motion.p>
+              <motion.h1
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+                className="text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tighter mb-6 uppercase leading-[1.1]"
+              >
+                Expert <span className="text-orange-600 italic">Solar</span> <br />
+                <span className="relative">
+                  Inspection 
+                  <motion.span 
+                    animate={{ opacity: [0.3, 0.6, 0.3] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="absolute -inset-1 blur-lg bg-orange-500/20 rounded-full -z-10"
+                  ></motion.span>
+                </span>
+                <br />
+                Solutions
+              </motion.h1>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4"
-            >
-              <>
+              <motion.p
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                className="text-sm md:text-base text-slate-500 mb-10 leading-relaxed font-semibold max-w-xl mx-auto lg:mx-0 opacity-80"
+              >
+                Elevate your asset performance with autonomous drone <br className="hidden md:block" />
+                thermography and precision-grade AI defect analytics.
+              </motion.p>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
                 <Link
                   href="#inspection-form"
-                  className="w-full sm:w-auto px-8 py-4 bg-orange-600 text-white rounded-xl font-semibold shadow-lg shadow-orange-200 hover:bg-orange-700 hover:-translate-y-1 transition-all flex items-center justify-center uppercase tracking-wider"
+                  className="w-full sm:w-auto px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] shadow-xl shadow-slate-200 hover:bg-orange-600 hover:-translate-y-1 transition-all flex items-center justify-center gap-3"
                 >
-                  Book Inspection <ArrowRight className="ml-2" size={20} />
+                  Book Scan <ArrowRight size={16} />
                 </Link>
                 <Link
                   href="/about"
-                  className="w-full sm:w-auto px-8 py-4 bg-white text-slate-900 border border-slate-200 rounded-xl font-semibold hover:bg-slate-50 transition-all flex items-center justify-center shadow-sm uppercase tracking-wider"
+                  className="w-full sm:w-auto px-8 py-4 bg-white text-slate-900 border border-slate-200 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] hover:bg-slate-50 hover:border-orange-200 transition-all shadow-sm"
                 >
-                  Learn More
+                  Tech Specs
                 </Link>
-              </>
+              </div>
+
+              <div className="mt-12 flex items-center justify-center lg:justify-start gap-6 opacity-40 grayscale scale-90 origin-left">
+                <div className="flex flex-col">
+                  <span className="text-xl font-black text-slate-900">500+</span>
+                  <span className="text-[8px] font-bold uppercase tracking-[0.2em]">Plants Scanned</span>
+                </div>
+                <div className="w-[1px] h-6 bg-slate-200"></div>
+                <div className="flex flex-col">
+                  <span className="text-xl font-black text-slate-900">2.5GW</span>
+                  <span className="text-[8px] font-bold uppercase tracking-[0.2em]">Asset Capacity</span>
+                </div>
+              </div>
             </motion.div>
+
+            {/* Right Professional Visual Column */}
+            <div className="lg:col-span-12 xl:col-span-6 relative perspective-1000 hidden lg:block py-10">
+              <div className="relative w-full aspect-[4/3] flex items-center justify-center">
+                
+                {/* 1. Backdrop Coordinate Grid (Enterprise Tech Feel) */}
+                <div className="absolute inset-0 opacity-[0.05] pointer-events-none" 
+                     style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
+
+                {/* 2. Main Terminal Hub (Perspective Device) */}
+                <motion.div
+                  style={{ transformStyle: "preserve-3d" }}
+                  whileHover={{ rotateY: 10, rotateX: -5 }}
+                  transition={{ type: "spring", stiffness: 100, damping: 30 }}
+                  className="relative z-20 w-[85%] h-[85%] rounded-[2.5rem] bg-slate-900 p-1.5 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.4)] border border-white/10"
+                >
+                  <div className="w-full h-full rounded-[2.2rem] overflow-hidden relative">
+                    <img
+                      src="/drone-command-ui.png"
+                      alt="Solar Command Hub"
+                      className="w-full h-full object-cover scale-105"
+                    />
+                    
+                    {/* Professional Horizon Scanner */}
+                    <motion.div 
+                      animate={{ top: ["0%", "100%", "0%"] }}
+                      transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+                      className="absolute left-0 right-0 h-[2px] bg-orange-500/50 shadow-[0_0_20px_rgba(249,115,22,0.8)] z-30"
+                    ></motion.div>
+
+                    {/* AI Target Reticles (Small Overlay icons) */}
+                    <div className="absolute inset-0 z-20 pointer-events-none">
+                      <div className="absolute top-1/4 left-1/3 w-16 h-16 border border-orange-500/30 rounded-lg animate-pulse"></div>
+                      <div className="absolute bottom-1/3 right-1/4 w-12 h-12 border border-blue-500/30 rounded-full animate-ping [animation-duration:3s]"></div>
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* 3. Data Widget A: Thermal Analysis (Structured UI Look) */}
+                <motion.div
+                  animate={{ y: [0, -10, 0] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute -top-4 -right-4 z-30 w-52 bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl border border-slate-100 overflow-hidden"
+                >
+                  <div className="px-3 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Spectral View</span>
+                    <div className="flex gap-1">
+                      <div className="w-1 h-1 rounded-full bg-red-500 animate-pulse"></div>
+                      <div className="w-1 h-1 rounded-full bg-slate-200"></div>
+                    </div>
+                  </div>
+                  <div className="p-2">
+                    <img src="/solar_thermal_scan.png" className="w-full h-24 object-cover rounded-lg mb-2" />
+                    <div className="flex items-center justify-between px-1">
+                      <span className="text-[9px] font-bold text-slate-800">TEMP_VAR</span>
+                      <span className="text-[9px] font-black text-red-600">+12.4°C</span>
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* 4. Data Widget B: Geospatial Telemetry */}
+                <motion.div
+                  animate={{ y: [0, 15, 0] }}
+                  transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                  className="absolute -bottom-8 -left-8 z-30 w-48 bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 overflow-hidden"
+                >
+                  <div className="px-3 py-2 border-b border-white/5 flex items-center gap-2">
+                    <Globe size={10} className="text-blue-400" />
+                    <span className="text-[8px] font-black text-white uppercase tracking-widest">Site Survey</span>
+                  </div>
+                  <div className="p-3 space-y-2">
+                    <img src="/agri-drone-survey.png" className="w-full h-20 object-cover rounded-lg opacity-80" />
+                    <div className="space-y-1">
+                      <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
+                        <motion.div 
+                          animate={{ width: ["10%", "90%"] }} 
+                          transition={{ duration: 4, repeat: Infinity }}
+                          className="h-full bg-blue-500"
+                        ></motion.div>
+                      </div>
+                      <div className="flex justify-between text-[7px] font-bold text-slate-400 uppercase tracking-tighter">
+                        <span>Scanning...</span>
+                        <span>82%</span>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* 5. Minimal Telemetry Nodes */}
+                <div className="absolute top-[15%] left-[5%] z-40 flex items-center gap-2 px-3 py-2 bg-white rounded-full shadow-lg border border-slate-50">
+                  <Cpu size={12} className="text-orange-600" />
+                  <span className="text-[8px] font-black text-slate-900 uppercase tracking-widest">Edge Analysis ON</span>
+                </div>
+
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
