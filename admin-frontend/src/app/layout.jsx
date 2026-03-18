@@ -15,7 +15,7 @@ export default function RootLayout({ children }) {
       <body className="antialiased bg-[#f8fafc]">
         <div className="flex">
           {!isLoginPage && <Sidebar />}
-          <main className={`flex-1 ${isLoginPage ? '' : 'ml-64'} min-h-screen`}>
+          <main className={`flex-1 ${isLoginPage ? '' : 'ml-56'} min-h-screen`}>
             {children}
           </main>
         </div>

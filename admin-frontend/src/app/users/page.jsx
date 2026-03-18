@@ -143,12 +143,12 @@ export default function UserManagementPage() {
     }, []);
 
     return (
-        <div className="p-8 pb-20">
+        <div className="p-6 pb-20">
             {/* Page Header */}
-            <div className="flex justify-between items-end mb-8">
+            <div className="flex justify-between items-end mb-6">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight">User Management</h1>
-                    <p className="text-gray-500 mt-1 font-medium">Manage all registered users in the system</p>
+                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">User Management</h1>
+                    <p className="text-gray-500 mt-1 font-medium text-xs">Manage all registered users in the system</p>
                 </div>
                 <div className="flex gap-3">
                     <button

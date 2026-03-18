@@ -23,8 +23,12 @@ class OTPService:
 
     async def send_otp_email(self, recipient_email: str, otp: str):
         # Load credentials from environment in case they've changed
+        from dotenv import load_dotenv
+        load_dotenv(override=True)
         self.email_user = os.getenv("EMAIL_USER")
         self.email_password = os.getenv("EMAIL_PASSWORD")
+        
+        logger.info(f"DEBUG: Attempting to send OTP via {self.email_user}")
 
         if not self.email_user or not self.email_password:
             logger.error("Email credentials not configured in .env")

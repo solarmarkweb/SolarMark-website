@@ -78,8 +78,8 @@ export default function Navbar() {
 
     // Style logic
     const navBg = isScrolled
-        ? "bg-white/95 backdrop-blur-md shadow-lg shadow-slate-200/20 py-3"
-        : isDarkHeroPage ? "bg-transparent py-6" : "bg-white/80 backdrop-blur-md py-6";
+        ? "bg-white/95 backdrop-blur-md shadow-lg shadow-slate-200/20 py-2"
+        : isDarkHeroPage ? "bg-transparent py-4" : "bg-white/80 backdrop-blur-md py-4";
 
     const textColor = (isScrolled || !isDarkHeroPage) ? "text-slate-600" : "text-white/80";
     const activeTextColor = (isScrolled || !isDarkHeroPage) ? "text-orange-600" : "text-white";
@@ -95,7 +95,7 @@ export default function Navbar() {
                         <img
                             src="/solar_mark_logo.svg"
                             alt="SolarMark Logo"
-                            className={`h-8 w-auto transition-all duration-300 ${(isScrolled || !isDarkHeroPage) ? "" : "brightness-0 invert"}`}
+                            className={`h-7 w-auto transition-all duration-300 ${(isScrolled || !isDarkHeroPage) ? "" : "brightness-0 invert"}`}
                         />
                     </Link>
 
@@ -103,7 +103,7 @@ export default function Navbar() {
                     <div className="hidden lg:flex items-center gap-2">
                         <Link
                             href="/"
-                            className={`px-4 py-2 text-sm font-bold transition-all duration-300 ${pathname === "/" ? "text-orange-600" : `${textColor} ${hoverTextColor}`}`}
+                            className={`px-3 py-2 text-xs font-bold transition-all duration-300 ${pathname === "/" ? "text-orange-600" : `${textColor} ${hoverTextColor}`}`}
                         >
                             Home
                         </Link>
@@ -115,7 +115,7 @@ export default function Navbar() {
                             onMouseLeave={() => setOpenDropdown(null)}
                         >
                             <button
-                                className={`flex items-center gap-1.5 px-4 py-2 text-sm font-bold transition-all duration-300 ${openDropdown === 'solutions' ? 'text-orange-600' : `${textColor} ${hoverTextColor}`}`}
+                                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold transition-all duration-300 ${openDropdown === 'solutions' ? 'text-orange-600' : `${textColor} ${hoverTextColor}`}`}
                             >
                                 Solutions
                                 <ChevronDown size={14} className={`transition-transform duration-300 ${openDropdown === 'solutions' ? 'rotate-180' : ''}`} />
@@ -156,7 +156,7 @@ export default function Navbar() {
                             onMouseLeave={() => setOpenDropdown(null)}
                         >
                             <button
-                                className={`flex items-center gap-1.5 px-4 py-2 text-sm font-bold transition-all duration-300 ${openDropdown === 'platform' ? 'text-orange-600' : `${textColor} ${hoverTextColor}`}`}
+                                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold transition-all duration-300 ${openDropdown === 'platform' ? 'text-orange-600' : `${textColor} ${hoverTextColor}`}`}
                             >
                                 Platform
                                 <ChevronDown size={14} className={`transition-transform duration-300 ${openDropdown === 'platform' ? 'rotate-180' : ''}`} />
@@ -181,10 +181,10 @@ export default function Navbar() {
                             </div>
                         </div>
 
-                        <Link href="/about" className={`px-4 py-2 text-sm font-bold transition-all duration-300 ${pathname === "/about" ? "text-orange-600" : `${textColor} ${hoverTextColor}`}`}>About</Link>
-                        <Link href="/offers" className={`px-4 py-2 text-sm font-bold transition-all duration-300 ${pathname === "/offers" ? "text-orange-600" : `${textColor} ${hoverTextColor}`}`}>Offers</Link>
-                        <Link href="/booking" className={`px-4 py-2 text-sm font-bold transition-all duration-300 ${pathname === "/booking" ? "text-orange-600" : `${textColor} ${hoverTextColor}`}`}>Bookings</Link>
-                        <Link href="/contact" className={`px-4 py-2 text-sm font-bold transition-all duration-300 ${pathname === "/contact" ? "text-orange-600" : `${textColor} ${hoverTextColor}`}`}>Contact</Link>
+                        <Link href="/about" className={`px-3 py-2 text-xs font-bold transition-all duration-300 ${pathname === "/about" ? "text-orange-600" : `${textColor} ${hoverTextColor}`}`}>About</Link>
+                        <Link href="/offers" className={`px-3 py-2 text-xs font-bold transition-all duration-300 ${pathname === "/offers" ? "text-orange-600" : `${textColor} ${hoverTextColor}`}`}>Offers</Link>
+                        <Link href="/booking" className={`px-3 py-2 text-xs font-bold transition-all duration-300 ${pathname === "/booking" ? "text-orange-600" : `${textColor} ${hoverTextColor}`}`}>Bookings</Link>
+                        <Link href="/contact" className={`px-3 py-2 text-xs font-bold transition-all duration-300 ${pathname === "/contact" ? "text-orange-600" : `${textColor} ${hoverTextColor}`}`}>Contact</Link>
                     </div>
 
                     {/* Desktop Actions */}
@@ -209,13 +209,13 @@ export default function Navbar() {
                             <>
                                 <Link
                                     href="/login"
-                                    className={`text-sm font-bold transition-colors ${(isScrolled || !isDarkHeroPage) ? "text-slate-600 hover:text-orange-600" : "text-white hover:text-orange-400"}`}
+                                    className={`text-xs font-bold transition-colors ${(isScrolled || !isDarkHeroPage) ? "text-slate-600 hover:text-orange-600" : "text-white hover:text-orange-400"}`}
                                 >
                                     Log In
                                 </Link>
                                 <Link
                                     href="/register"
-                                    className={`px-8 py-3 text-sm font-bold rounded-xl transition-all duration-300 shadow-xl ${(isScrolled || !isDarkHeroPage) ? "bg-slate-900 text-white hover:bg-slate-800 shadow-slate-200" : "bg-orange-600 text-white hover:bg-orange-700 shadow-orange-900/20"}`}
+                                    className={`px-6 py-2.5 text-xs font-bold rounded-xl transition-all duration-300 shadow-xl ${(isScrolled || !isDarkHeroPage) ? "bg-slate-900 text-white hover:bg-slate-800 shadow-slate-200" : "bg-orange-600 text-white hover:bg-orange-700 shadow-orange-900/20"}`}
                                 >
                                     Register
                                 </Link>

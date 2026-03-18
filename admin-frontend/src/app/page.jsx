@@ -85,7 +85,7 @@ export default function LoginPage() {
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/20 rounded-full blur-[120px] animate-pulse"></div>
 
       <div className="max-w-md w-full relative z-10">
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-10 shadow-2xl">
+        <div className="bg-white rounded-[2.5rem] p-10 shadow-2xl shadow-slate-900/10 border border-slate-100">
           {/* Logo */}
           <div className="flex flex-col items-center mb-10">
             <Link href="/" className="block">
@@ -95,7 +95,7 @@ export default function LoginPage() {
                 className="h-16 w-auto"
               />
             </Link>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.3em] mt-4">
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-[0.3em] mt-4">
               System Authentication
             </p>
           </div>
@@ -109,7 +109,7 @@ export default function LoginPage() {
                   placeholder="Admin Email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all font-medium"
+                  className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all font-medium"
                 />
               </div>
 
@@ -120,7 +120,7 @@ export default function LoginPage() {
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all font-medium"
+                  className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all font-medium"
                 />
               </div>
             </div>
@@ -156,7 +156,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-10 pt-8 border-t border-white/5 flex flex-col items-center gap-4">
+          <div className="mt-10 pt-8 border-t border-slate-100 flex flex-col items-center gap-4">
             <button
               onClick={handleDemoLogin}
               className="text-slate-500 hover:text-orange-500 text-[10px] font-bold uppercase tracking-widest transition-colors"
