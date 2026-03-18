@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Sun, Mail, Lock, User, ArrowRight, ShieldCheck, Loader2 } from "lucide-react";
+import { Sun, Mail, Lock, User, ArrowRight, ShieldCheck, Loader2, Eye, EyeOff } from "lucide-react";
 import axios from "axios";
 import api from "@/lib/axios";
 import { useRouter } from "next/navigation";
@@ -21,6 +21,7 @@ export default function RegisterPage() {
     const [error, setError] = useState("");
     const [success, setSuccess] = useState(false);
     const [step, setStep] = useState(1); // 1: Details, 2: OTP
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -221,11 +222,18 @@ export default function RegisterPage() {
                                                 name="password"
                                                 value={formData.password}
                                                 onChange={handleChange}
-                                                type="password"
-                                                className="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all shadow-sm font-medium"
+                                                type={showPassword ? "text" : "password"}
+                                                className="w-full pl-11 pr-12 py-4 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all shadow-sm font-medium"
                                                 placeholder="••••••••"
                                                 minLength="6"
                                             />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-orange-600 transition-colors focus:outline-none"
+                                            >
+                                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                            </button>
                                         </div>
                                     </div>
 

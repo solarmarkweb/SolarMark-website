@@ -2,7 +2,7 @@
 
 import React, { useState, Suspense } from "react";
 import Link from "next/link";
-import { Sun, Mail, Lock, ArrowRight, Github, Loader2, CheckCircle2 } from "lucide-react";
+import { Sun, Mail, Lock, ArrowRight, Github, Loader2, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import api from "@/lib/axios";
 
 import { useRouter, useSearchParams } from "next/navigation";
@@ -18,6 +18,7 @@ function LoginForm() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [loggedIn, setLoggedIn] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -132,11 +133,18 @@ function LoginForm() {
                                         name="password"
                                         value={formData.password}
                                         onChange={handleChange}
-                                        type="password"
-                                        className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all shadow-sm font-medium"
+                                        type={showPassword ? "text" : "password"}
+                                        className="w-full pl-12 pr-12 py-4 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all shadow-sm font-medium"
                                         placeholder="••••••••"
                                         minLength="6"
                                     />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-orange-600 transition-colors focus:outline-none"
+                                    >
+                                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                    </button>
                                 </div>
                             </div>
 
@@ -152,22 +160,6 @@ function LoginForm() {
                                 )}
                             </button>
 
-                            <div className="relative py-4 flex items-center">
-                                <div className="flex-grow border-t border-slate-200"></div>
-                                <span className="flex-shrink mx-4 text-slate-400 text-[10px] font-bold uppercase tracking-widest whitespace-nowrap">Or login with</span>
-                                <div className="flex-grow border-t border-slate-200"></div>
-                            </div>
-
-                            <div className="flex space-x-4">
-                                <button type="button" className="flex-1 py-3 px-4 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-center space-x-2">
-                                    <img src="https://www.google.com/favicon.ico" alt="Google" className="w-4 h-4" />
-                                    <span className="text-sm font-bold text-slate-700">Google</span>
-                                </button>
-                                <button type="button" className="flex-1 py-3 px-4 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-center space-x-2">
-                                    <Github size={18} className="text-slate-900" />
-                                    <span className="text-sm font-bold text-slate-700">GitHub</span>
-                                </button>
-                            </div>
                         </form>
                     )}
 
