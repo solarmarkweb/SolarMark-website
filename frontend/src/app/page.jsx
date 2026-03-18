@@ -1552,6 +1552,8 @@ export default function HomePage() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [dragActive, setDragActive] = useState({ rgb: false, thermal: false });
   const [uploadProgress, setUploadProgress] = useState({ rgb: 0, thermal: 0 });
+  const [sitePhotos, setSitePhotos] = useState([]);
+  const [loadingPhotos, setLoadingPhotos] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -1712,12 +1714,33 @@ export default function HomePage() {
   useEffect(() => {
     const name = localStorage.getItem("user_name");
     const token = localStorage.getItem("auth_token");
+    setUserName(name || '');
     if (token && name) {
       setUser({ name, token });
-      setUserName(name.replace(/\s+/g, '_').toLowerCase()); // Convert username for filename
       fetchUserImages();
     }
+    fetchSitePhotos();
   }, []);
+
+  const fetchSitePhotos = async () => {
+    try {
+      setLoadingPhotos(true);
+      const response = await fetch(`${API_URL}/site-photos`);
+      if (response.ok) {
+        const data = await response.json();
+        setSitePhotos(data);
+      }
+    } catch (err) {
+      console.error('Error fetching site photos:', err);
+    } finally {
+      setLoadingPhotos(false);
+    }
+  };
+
+  const getDynamicPhoto = (category, defaultImage) => {
+    const photo = sitePhotos.find(p => p.category === category);
+    return photo ? `${API_URL.replace('/api', '')}${photo.url}` : defaultImage;
+  };
 
   const fetchUserImages = async () => {
     try {
@@ -2165,7 +2188,7 @@ export default function HomePage() {
         {/* Advanced Background System */}
         <div className="absolute inset-0 -z-10 overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-full bg-slate-50/20"></div>
-          
+
           {/* 3D Floating Particles */}
           {[...Array(20)].map((_, i) => (
             <motion.div
@@ -2201,9 +2224,9 @@ export default function HomePage() {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            
+
             {/* Left Content Column */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: -50 }}
               animate={{ opacity: 1, x: 0 }}
               whileHover={{ rotateY: -5, rotateX: 2 }}
@@ -2222,8 +2245,8 @@ export default function HomePage() {
               >
                 Expert <span className="text-orange-600 italic">Solar</span> <br />
                 <span className="relative">
-                  Inspection 
-                  <motion.span 
+                  Inspection
+                  <motion.span
                     animate={{ opacity: [0.3, 0.6, 0.3] }}
                     transition={{ duration: 2, repeat: Infinity }}
                     className="absolute -inset-1 blur-lg bg-orange-500/20 rounded-full -z-10"
@@ -2274,10 +2297,10 @@ export default function HomePage() {
             {/* Right Professional Visual Column */}
             <div className="lg:col-span-12 xl:col-span-6 relative perspective-1000 hidden lg:block py-10">
               <div className="relative w-full aspect-[4/3] flex items-center justify-center">
-                
+
                 {/* 1. Backdrop Coordinate Grid (Enterprise Tech Feel) */}
-                <div className="absolute inset-0 opacity-[0.05] pointer-events-none" 
-                     style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
+                <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
+                  style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
 
                 {/* 2. Main Terminal Hub (Perspective Device) */}
                 <motion.div
@@ -2288,13 +2311,13 @@ export default function HomePage() {
                 >
                   <div className="w-full h-full rounded-[2.2rem] overflow-hidden relative">
                     <img
-                      src="/drone-command-ui.png"
+                      src={getDynamicPhoto('Main Hero', '/drone-command-ui.png')}
                       alt="Solar Command Hub"
                       className="w-full h-full object-cover scale-105"
                     />
-                    
+
                     {/* Professional Horizon Scanner */}
-                    <motion.div 
+                    <motion.div
                       animate={{ top: ["0%", "100%", "0%"] }}
                       transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
                       className="absolute left-0 right-0 h-[2px] bg-orange-500/50 shadow-[0_0_20px_rgba(249,115,22,0.8)] z-30"
@@ -2322,7 +2345,7 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="p-2">
-                    <img src="/solar_thermal_scan.png" className="w-full h-24 object-cover rounded-lg mb-2" />
+                    <img src={getDynamicPhoto('Spectral View', '/solar_thermal_scan.png')} className="w-full h-24 object-cover rounded-lg mb-2" />
                     <div className="flex items-center justify-between px-1">
                       <span className="text-[9px] font-bold text-slate-800">TEMP_VAR</span>
                       <span className="text-[9px] font-black text-red-600">+12.4°C</span>
@@ -2341,11 +2364,11 @@ export default function HomePage() {
                     <span className="text-[8px] font-black text-white uppercase tracking-widest">Site Survey</span>
                   </div>
                   <div className="p-3 space-y-2">
-                    <img src="/agri-drone-survey.png" className="w-full h-20 object-cover rounded-lg opacity-80" />
+                    <img src={getDynamicPhoto('Site Survey', '/agri-drone-survey.png')} className="w-full h-20 object-cover rounded-lg opacity-80" />
                     <div className="space-y-1">
                       <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
-                        <motion.div 
-                          animate={{ width: ["10%", "90%"] }} 
+                        <motion.div
+                          animate={{ width: ["10%", "90%"] }}
                           transition={{ duration: 4, repeat: Infinity }}
                           className="h-full bg-blue-500"
                         ></motion.div>
@@ -2694,7 +2717,10 @@ export default function HomePage() {
                 <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 via-orange-500 to-emerald-500"></div>
 
                 <div className="aspect-[4/3] bg-slate-800 rounded-[2.5rem] overflow-hidden flex flex-col items-center justify-center relative group">
-                  <div className="absolute inset-0 bg-[url('/premium-solar-farm.png')] bg-cover bg-center opacity-20 transition-opacity duration-700 group-hover:opacity-40"></div>
+                  <div 
+                    className="absolute inset-0 bg-cover bg-center opacity-20 transition-opacity duration-700 group-hover:opacity-40"
+                    style={{ backgroundImage: `url(${getDynamicPhoto('Precision Intelligence', '/premium-solar-farm.png')})` }}
+                  ></div>
 
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-60"></div>
 
@@ -2797,7 +2823,7 @@ export default function HomePage() {
               className="relative p-2"
             >
               <div className="relative rounded-[3rem] overflow-hidden shadow-2xl border border-slate-100">
-                <img src="/premium-solar-farm.png" alt="Global Solar Asset" className="w-full h-[500px] object-cover" />
+                <img src={getDynamicPhoto('Global Deployment', '/premium-solar-farm.png')} alt="Global Solar Asset" className="w-full h-[500px] object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
                 <div className="absolute bottom-10 left-10 text-white">
                   <div className="flex items-center gap-3 mb-2">
@@ -2925,10 +2951,16 @@ export default function HomePage() {
                   className="group relative h-[400px] w-[300px] md:w-[380px] flex-shrink-0 rounded-[2.5rem] overflow-hidden cursor-pointer shadow-xl shadow-slate-200 hover:shadow-orange-200/50 transition-all duration-700 snap-center"
                 >
                   {/* Image Layer */}
-                  <div
-                    className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-110"
-                    style={{ backgroundImage: `url(${service.image})` }}
-                  ></div>
+                  {(() => {
+                    const dynamicPhoto = sitePhotos.find(p => p.category === service.name);
+                    const bgImageUrl = dynamicPhoto ? `${API_URL.replace('/api', '')}${dynamicPhoto.url}` : service.image;
+                    return (
+                      <div
+                        className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-110"
+                        style={{ backgroundImage: `url(${bgImageUrl})` }}
+                      ></div>
+                    );
+                  })()}
 
                   {/* Glassmorphism Overlays */}
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent group-hover:via-slate-900/60 transition-all duration-500"></div>
@@ -2976,6 +3008,7 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Dynamic Services Grid */}
       {/* Inspection Form Section */}
       <section id="inspection-form" className="py-12 md:py-16 bg-slate-50 relative overflow-hidden">
         <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-orange-200/20 rounded-full blur-[100px]" />
@@ -3026,246 +3059,245 @@ export default function HomePage() {
                   </p>
                 </div>
               )}
-
               <form onSubmit={handleFormSubmit} className="space-y-4">
-                {/* First Name & Last Name */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2 group">
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                      First Name*
-                    </label>
-                    <input
-                      type="text"
-                      name="firstName"
-                      required
-                      placeholder="Jane"
-                      value={formData.firstName}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
-                    />
-                  </div>
-                  <div className="space-y-2 group">
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                      Last Name*
-                    </label>
-                    <input
-                      type="text"
-                      name="lastName"
-                      required
-                      placeholder="Doe"
-                      value={formData.lastName}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
-                    />
-                  </div>
-                </div>
-
-                {/* Work Email & Job Title */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2 group">
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                      Work Email*
-                    </label>
-                    <input
-                      type="email"
-                      name="workEmail"
-                      required
-                      placeholder="jane@company.com"
-                      value={formData.workEmail}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
-                    />
-                  </div>
-                  <div className="space-y-2 group">
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                      Job Title*
-                    </label>
-                    <input
-                      type="text"
-                      name="jobTitle"
-                      required
-                      placeholder="Operations Manager"
-                      value={formData.jobTitle}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
-                    />
-                  </div>
-                </div>
-
-                {/* Phone Number & Country */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2 group">
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                      Phone Number*
-                    </label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      required
-                      placeholder="+1 (555) 000-0000"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
-                    />
-                  </div>
-                  <div className="space-y-2 group">
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                      Country*
-                    </label>
-                    <div className="relative">
-                      <select
-                        name="country"
-                        required
-                        value={formData.country}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
-                      >
-                        <option value="">Please Select</option>
-                        {countries.map((country) => (
-                          <option key={country} value={country}>{country}</option>
-                        ))}
-                      </select>
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Company Name & Company Type */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2 group">
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                      Company Name*
-                    </label>
-                    <input
-                      type="text"
-                      name="companyName"
-                      required
-                      placeholder="SolarMark"
-                      value={formData.companyName}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
-                    />
-                  </div>
-
-                  <div className="space-y-2 group">
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                      Company Type*
-                    </label>
-                    <div className="relative">
-                      <select
-                        name="companyType"
-                        required
-                        value={formData.companyType}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
-                      >
-                        <option value="">Please Select</option>
-                        {companyTypes.map((type) => (
-                          <option key={type} value={type}>{type}</option>
-                        ))}
-                      </select>
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Solar Capacity & Referral Source */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2 group">
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                      Solar Capacity*
-                    </label>
-                    <div className="relative">
-                      <select
-                        name="solarCapacity"
-                        required
-                        value={formData.solarCapacity}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
-                      >
-                        <option value="">Please Select</option>
-                        {solarCapacities.map((capacity) => (
-                          <option key={capacity} value={capacity}>{capacity}</option>
-                        ))}
-                      </select>
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 group">
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                      Referral Source*
-                    </label>
-                    <div className="relative">
-                      <select
-                        name="referralSource"
-                        required
-                        value={formData.referralSource}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
-                      >
-                        <option value="">Please Select</option>
-                        {referralSources.map((source) => (
-                          <option key={source} value={source}>{source}</option>
-                        ))}
-                      </select>
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Additional Information */}
+              {/* First Name & Last Name */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2 group">
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                    Additional Information you want to share with us
+                    First Name*
                   </label>
-                  <textarea
-                    name="additionalInfo"
-                    rows="4"
-                    placeholder=""
-                    value={formData.additionalInfo}
+                  <input
+                    type="text"
+                    name="firstName"
+                    required
+                    placeholder="Jane"
+                    value={formData.firstName}
                     onChange={handleChange}
-                    className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none resize-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
-                  ></textarea>
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
+                  />
+                </div>
+                <div className="space-y-2 group">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
+                    Last Name*
+                  </label>
+                  <input
+                    type="text"
+                    name="lastName"
+                    required
+                    placeholder="Doe"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
+                  />
+                </div>
+              </div>
+
+              {/* Work Email & Job Title */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2 group">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
+                    Work Email*
+                  </label>
+                  <input
+                    type="email"
+                    name="workEmail"
+                    required
+                    placeholder="jane@company.com"
+                    value={formData.workEmail}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
+                  />
+                </div>
+                <div className="space-y-2 group">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
+                    Job Title*
+                  </label>
+                  <input
+                    type="text"
+                    name="jobTitle"
+                    required
+                    placeholder="Operations Manager"
+                    value={formData.jobTitle}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
+                  />
+                </div>
+              </div>
+
+              {/* Phone Number & Country */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2 group">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
+                    Phone Number*
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    required
+                    placeholder="+1 (555) 000-0000"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
+                  />
+                </div>
+                <div className="space-y-2 group">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
+                    Country*
+                  </label>
+                  <div className="relative">
+                    <select
+                      name="country"
+                      required
+                      value={formData.country}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
+                    >
+                      <option value="">Please Select</option>
+                      {countries.map((country) => (
+                        <option key={country} value={country}>{country}</option>
+                      ))}
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Company Name & Company Type */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2 group">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
+                    Company Name*
+                  </label>
+                  <input
+                    type="text"
+                    name="companyName"
+                    required
+                    placeholder="SolarMark"
+                    value={formData.companyName}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
+                  />
                 </div>
 
-                <div className="pt-2">
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="w-full py-3.5 md:py-5 bg-orange-600 text-white rounded-2xl font-bold text-sm md:text-lg shadow-xl shadow-orange-200 hover:bg-orange-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest"
-                  >
-                    {submitting ? (
-                      <>
-                        <Loader2 className="animate-spin w-6 h-6" />
-                        Processing Request...
-                      </>
-                    ) : (
-                      <>
-                        Submit Inspection Request
-                        <Send size={24} />
-                      </>
-                    )}
-                  </button>
+                <div className="space-y-2 group">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
+                    Company Type*
+                  </label>
+                  <div className="relative">
+                    <select
+                      name="companyType"
+                      required
+                      value={formData.companyType}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
+                    >
+                      <option value="">Please Select</option>
+                      {companyTypes.map((type) => (
+                        <option key={type} value={type}>{type}</option>
+                      ))}
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                    </div>
+                  </div>
                 </div>
-              </form>
-            </motion.div>
-          </div>
+              </div>
+
+              {/* Solar Capacity & Referral Source */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2 group">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
+                    Solar Capacity*
+                  </label>
+                  <div className="relative">
+                    <select
+                      name="solarCapacity"
+                      required
+                      value={formData.solarCapacity}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
+                    >
+                      <option value="">Please Select</option>
+                      {solarCapacities.map((capacity) => (
+                        <option key={capacity} value={capacity}>{capacity}</option>
+                      ))}
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2 group">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
+                    Referral Source*
+                  </label>
+                  <div className="relative">
+                    <select
+                      name="referralSource"
+                      required
+                      value={formData.referralSource}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
+                    >
+                      <option value="">Please Select</option>
+                      {referralSources.map((source) => (
+                        <option key={source} value={source}>{source}</option>
+                      ))}
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Additional Information */}
+              <div className="space-y-2 group">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
+                  Additional Information you want to share with us
+                </label>
+                <textarea
+                  name="additionalInfo"
+                  rows="4"
+                  placeholder=""
+                  value={formData.additionalInfo}
+                  onChange={handleChange}
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none resize-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
+                ></textarea>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full py-3.5 md:py-5 bg-orange-600 text-white rounded-2xl font-bold text-sm md:text-lg shadow-xl shadow-orange-200 hover:bg-orange-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest"
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="animate-spin w-6 h-6" />
+                      Processing Request...
+                    </>
+                  ) : (
+                    <>
+                      Submit Inspection Request
+                      <Send size={24} />
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </motion.div>
         </div>
-      </section>
+    </div>
+      </section >
 
-      {/* The Inspection Algorithm Section */}
-      <section className="py-20 md:py-24 bg-[#06080c] relative overflow-hidden text-white border-y border-white/5">
-        {/* Deep Field Glows */}
-        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px] -translate-y-1/2 opacity-50"></div>
+    {/* The Inspection Algorithm Section */ }
+    < section className = "py-20 md:py-24 bg-[#06080c] relative overflow-hidden text-white border-y border-white/5" >
+      {/* Deep Field Glows */ }
+      < div className = "absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px] -translate-y-1/2 opacity-50" ></div >
         <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-orange-600/10 rounded-full blur-[120px] translate-y-1/2 opacity-50"></div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -3346,30 +3378,30 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-      </section>
+      </section >
 
-      {/* CTA Section */}
-      {
-        !user && (
-          <section className="py-16 md:py-20 bg-orange-600 relative overflow-hidden">
-            <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
-              <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-8 uppercase tracking-tight">
-                Ready to switch to cleaner, cheaper energy?
-              </h2>
-              <p className="text-orange-100 text-xl mb-10 font-medium italic">
-                Join thousands of satisfied homeowners who have already made the switch.
-              </p>
-              <Link
-                href="/register"
-                className="inline-flex items-center px-6 py-3.5 md:px-10 md:py-5 bg-white text-orange-600 rounded-2xl font-bold text-sm md:text-lg shadow-xl hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
-              >
-                Start Your Journey <ArrowRight className="ml-2" />
-              </Link>
-            </div>
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full -translate-x-1/2 translate-y-1/3"></div>
-          </section>
-        )
-      }
+    {/* CTA Section */ }
+  {
+    !user && (
+      <section className="py-16 md:py-20 bg-orange-600 relative overflow-hidden">
+        <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
+          <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-8 uppercase tracking-tight">
+            Ready to switch to cleaner, cheaper energy?
+          </h2>
+          <p className="text-orange-100 text-xl mb-10 font-medium italic">
+            Join thousands of satisfied homeowners who have already made the switch.
+          </p>
+          <Link
+            href="/register"
+            className="inline-flex items-center px-6 py-3.5 md:px-10 md:py-5 bg-white text-orange-600 rounded-2xl font-bold text-sm md:text-lg shadow-xl hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
+          >
+            Start Your Journey <ArrowRight className="ml-2" />
+          </Link>
+        </div>
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full -translate-x-1/2 translate-y-1/3"></div>
+      </section>
+    )
+  }
     </div >
   );
 }

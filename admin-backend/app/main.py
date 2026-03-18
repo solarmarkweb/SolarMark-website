@@ -92,6 +92,15 @@ except ImportError as e:
     print(f"⚠️  OTP router not loaded: {e}")
     logger.warning(f"OTP router not loaded: {e}")
 
+try:
+    from app.routes.site_photos import router as site_photos_router
+    app.include_router(site_photos_router, prefix="/api", tags=["site-photos"])
+    print("✅ Site photos router loaded successfully")
+    logger.info("Site photos router loaded successfully")
+except ImportError as e:
+    print(f"⚠️  Site photos router not loaded: {e}")
+    logger.warning(f"Site photos router not loaded: {e}")
+
 @app.get("/")
 def root():
     return {
@@ -103,7 +112,8 @@ def root():
             "bookings": "/api/bookings/*",
             "contacts": "/api/contacts/*",
             "images": "/api/images/*",
-            "legal": "/api/legal/*"
+            "legal": "/api/legal/*",
+            "site_photos": "/api/site-photos/*"
         }
     }
 

@@ -13,7 +13,8 @@ import {
     ChevronRight,
     Shield,
     Sun,
-    Link as LinkIcon
+    Link as LinkIcon,
+    Camera
 } from 'lucide-react';
 
 const Sidebar = () => {
@@ -49,6 +50,11 @@ const Sidebar = () => {
             title: 'Legal Documents',
             icon: <Shield size={20} />,
             path: '/legal',
+        },
+        {
+            title: 'Site Photos',
+            icon: <Camera size={20} />,
+            path: '/site-photos',
         },
     ];
 
