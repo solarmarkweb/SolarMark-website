@@ -5,7 +5,6 @@ import os
 import shutil
 from datetime import datetime
 from bson import ObjectId
-import motor.motor_asyncio
 from app.db import db
 from app.routes.auth import get_current_user
 
