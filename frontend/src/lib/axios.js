@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:8000/api",
+  baseURL: "https://admin-backend-591983072009.asia-south1.run.app/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -29,7 +29,7 @@ api.interceptors.response.use(
         const refreshToken = localStorage.getItem("refresh_token");
 
         const res = await axios.post(
-          "http://localhost:8000/api/refresh",
+          "https://admin-backend-591983072009.asia-south1.run.app/api/refresh",
           { refresh_token: refreshToken }
         );
 

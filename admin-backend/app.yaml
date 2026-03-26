@@ -1,0 +1,17 @@
+runtime: python311
+
+instance_class: F1
+
+entrypoint: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+
+env_variables:
+  MONGO_URI: "mongodb+srv://Admin:solarpanel@test.japmv1y.mongodb.net/?appName=Test"
+  DATABASE_NAME: "solarpanel"
+  SECRET_KEY: "2rFV8HqEBUMdJPpeyild6WDKIs4qKwwPIMgaHFkyR-k"
+  GOOGLE_DRIVE_SERVICE_ACCOUNT_PATH: "service-account.json"
+  ADMIN_GOOGLE_DRIVE_URL: "https://drive.google.com/drive/folders/1K4GoAGGhVgqTJ0ajboq_ai6lFcn5XUcl"
+  ADMIN_GOOGLE_DRIVE_FOLDER_ID: "1K4GoAGGhVgqTJ0ajboq_ai6lFcn5XUcl"
+  EMAIL_HOST: "smtp.gmail.com"
+  EMAIL_PORT: "587"
+  EMAIL_USER: "solarmarkweb@gmail.com"
+  EMAIL_PASSWORD: "afeayfawzflbegdv"

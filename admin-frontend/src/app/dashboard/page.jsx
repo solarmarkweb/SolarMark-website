@@ -13,7 +13,7 @@ import {
   PieChart, Pie, Cell, Legend
 } from 'recharts';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://admin-backend-591983072009.asia-south1.run.app/api';
 
 function StatCard({ title, value, icon: Icon, color, bg, sub, loading }) {
   return (

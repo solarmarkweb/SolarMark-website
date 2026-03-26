@@ -12,7 +12,7 @@
 // import { authAPI } from "@/lib/api";
 // import { useRouter } from "next/navigation";
 
-// const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
 
 // export default function HomePage() {
 //   const router = useRouter();
@@ -1534,7 +1534,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { authAPI } from "@/lib/api";
 import { useRouter } from "next/navigation";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://admin-backend-591983072009.asia-south1.run.app/api';
 
 export default function HomePage() {
   const router = useRouter();

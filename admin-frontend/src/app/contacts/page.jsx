@@ -32,7 +32,7 @@ export default function ContactsAdminPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://admin-backend-591983072009.asia-south1.run.app/api';
 
     const parseContactDate = (dateString) => {
         if (!dateString) return null;

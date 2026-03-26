@@ -66,7 +66,7 @@ export default function DriveLinksPage() {
 
   const fileInputRef = useRef(null);
   const router = useRouter();
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://admin-backend-591983072009.asia-south1.run.app/api';
 
   useEffect(() => {
     checkAdminAuth();

@@ -18,7 +18,10 @@ pydantic[email]==2.5.0
 email-validator==2.0.0
 
 # CORS
-fastapi-cors==0.1.0
+# fastapi-cors not needed
 
 # PDF Generation
 reportlab==4.0.7
+
+# Multipart for form data
+python-multipart

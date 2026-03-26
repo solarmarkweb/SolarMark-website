@@ -1,0 +1,25 @@
+.gcloudignore
+.git
+.gitignore
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+bin/
+lib/
+include/
+obj/
+uploads/
+tests/
+scripts/
+seed_admin.py
+setup_drive_auth.py
+credentials.json
+# token.json should be uploaded if it is used for auth on server, but usually better in Secret Manager
+# However, for a simple manual deploy, uploading it might work.
+# token.json
