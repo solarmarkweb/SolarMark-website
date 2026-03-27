@@ -5,6 +5,7 @@ import os
 import random
 import logging
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
 from app.db import db
 
 # Configure logging
@@ -22,17 +23,22 @@ class OTPService:
         return str(random.randint(100000, 999999))
 
     async def send_otp_email(self, recipient_email: str, otp: str):
-        # Load credentials from environment in case they've changed
-        from dotenv import load_dotenv
-        load_dotenv(override=True)
+        # Only load .env if it exists, to avoid potential issues in production
+        if os.path.exists(".env"):
+            load_dotenv(override=True)
+            logger.info("DEBUG: Loaded environment variables from .env")
+        else:
+            logger.info("DEBUG: Using system environment variables (no .env found)")
+
         self.email_user = os.getenv("EMAIL_USER")
         self.email_password = os.getenv("EMAIL_PASSWORD")
         
         logger.info(f"DEBUG: Attempting to send OTP via {self.email_user}")
 
         if not self.email_user or not self.email_password:
-            logger.error("Email credentials not configured in .env")
-            return False
+            msg = "ERROR: Email credentials (EMAIL_USER/EMAIL_PASSWORD) NOT found in environment/env"
+            logger.error(msg)
+            return False, msg
 
         msg = MIMEMultipart()
         msg['From'] = f"SolarMark <{self.email_user}>"
@@ -64,26 +70,31 @@ class OTPService:
         msg.attach(MIMEText(body, 'html'))
 
         try:
-            server = smtplib.SMTP(self.email_host, self.email_port)
+            logger.info(f"DEBUG: Connecting to SMTP server {self.email_host}:{self.email_port}")
+            server = smtplib.SMTP(self.email_host, self.email_port, timeout=10)
             server.starttls()
             if self.email_user and self.email_password:
-                server.login(self.email_user, self.email_password)
+                logger.info(f"DEBUG: Attempting login for {self.email_user}")
+                server.login(str(self.email_user), str(self.email_password))
             else:
                 logger.error("Email credentials missing during login attempt")
-                return False
+                return False, "Email credentials missing during login attempt"
             server.send_message(msg)
             server.quit()
             logger.info(f"OTP email sent successfully to {recipient_email}")
-            return True
+            return True, "Success"
         except smtplib.SMTPAuthenticationError:
-            logger.error("SMTP Authentication failed. Please check your EMAIL_USER and EMAIL_PASSWORD (use an App Password for Gmail).")
-            return False
+            msg = "SMTP Authentication failed. Please check your EMAIL_USER and EMAIL_PASSWORD (use an App Password for Gmail)."
+            logger.error(msg)
+            return False, msg
         except smtplib.SMTPConnectError:
-            logger.error(f"Failed to connect to SMTP server at {self.email_host}:{self.email_port}")
-            return False
+            msg = f"Failed to connect to SMTP server at {self.email_host}:{self.email_port}"
+            logger.error(msg)
+            return False, msg
         except Exception as e:
-            logger.error(f"Unexpected error sending email: {str(e)}")
-            return False
+            msg = f"Unexpected error sending email: {str(e)}"
+            logger.error(msg)
+            return False, msg
 
     async def save_otp(self, email: str, otp: str):
         expiry = datetime.utcnow() + timedelta(minutes=10)

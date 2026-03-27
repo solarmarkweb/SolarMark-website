@@ -18,12 +18,12 @@ async def request_otp(data: OTPRequest):
     email = data.email
     otp = otp_service.generate_otp()
     await otp_service.save_otp(email, otp)
-    sent = await otp_service.send_otp_email(email, otp)
+    sent, error_msg = await otp_service.send_otp_email(email, otp)
     
     if not sent:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to send verification email"
+            detail=f"Verification email failed: {error_msg}"
         )
         
     return {"message": "Verification code sent to your email"}
