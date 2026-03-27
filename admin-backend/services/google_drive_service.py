@@ -58,9 +58,13 @@ class GoogleDriveService:
                 creds = Credentials.from_authorized_user_file(token_path, self.SCOPES)
                 
                 if creds and creds.expired and creds.refresh_token:
-                    creds.refresh(Request())
-                    with open(token_path, 'w') as token:
-                        token.write(creds.to_json())
+                    try:
+                        creds.refresh(Request())
+                        with open(token_path, 'w') as token:
+                            token.write(creds.to_json())
+                        logger.info(f"Refreshed and updated Google Drive token at: {token_path}")
+                    except Exception as e:
+                        logger.warning(f"Could not write refreshed token back to disk: {e}. Refreshed token will still be used in memory.")
                         
                 return build('drive', 'v3', credentials=creds)
             

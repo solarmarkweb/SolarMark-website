@@ -38,12 +38,12 @@ async def upload_pdf(
         if not pdf.content_type or "pdf" not in pdf.content_type.lower():
             raise HTTPException(status_code=400, detail="File must be a PDF")
         
-        MAX_SIZE = 10 * 1024 * 1024
+        MAX_SIZE = 50 * 1024 * 1024
         content = await pdf.read()
         file_size = len(content)
         
         if file_size > MAX_SIZE:
-            raise HTTPException(status_code=400, detail="PDF file size should be less than 10MB")
+            raise HTTPException(status_code=400, detail="PDF file size should be less than 50MB")
         
         link_exists = collection.find_one({"_id": ObjectId(link_id)})
         

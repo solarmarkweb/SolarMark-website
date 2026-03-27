@@ -410,8 +410,8 @@ export default function DriveLinksPage() {
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      setError('PDF file size should be less than 10MB');
+    if (file.size > 50 * 1024 * 1024) {
+      setError('PDF file size should be less than 50MB');
       return;
     }
 

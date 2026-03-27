@@ -133,16 +133,9 @@ async def upload_images(files: List[UploadFile], image_type: str, current_user: 
         )
         
         for file in files:
-            # Determine if this file is valid for the chosen category
-            is_valid = False
+            # Determine if this file is valid for the chosen category - Both RGB and Thermal are images
             file_ext = file.filename.split('.')[-1].lower() if '.' in file.filename else ''
-            
-            if image_type.lower() == "rgb":
-                # Drone Images category MUST be an image
-                is_valid = file.content_type and file.content_type.startswith('image/')
-            else:
-                # Site Plan category MUST be a KML file strictly
-                is_valid = file_ext == 'kml' or file.content_type == 'application/vnd.google-earth.kml+xml'
+            is_valid = file.content_type and file.content_type.startswith('image/')
             
             if not is_valid:
                 logger.warning(f"Skipping unsupported or mismatched file for {image_type}: {file.filename}")
@@ -191,7 +184,7 @@ async def upload_images(files: List[UploadFile], image_type: str, current_user: 
                 "drive_file_id": drive_file_id,
                 "drive_file_url": drive_file_url,
                 "file_size": drive_file_size,
-                "uploaded_at": image_doc["uploaded_at"].isoformat() if image_doc.get("uploaded_at") else datetime.utcnow().isoformat(),
+                "uploaded_at": image_doc["uploaded_at"].isoformat() if hasattr(image_doc.get("uploaded_at"), "isoformat") else datetime.utcnow().isoformat(),
                 "status": "active"
             }
             
