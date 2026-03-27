@@ -5,6 +5,8 @@ import { Send, Loader2, Star, CheckCircle, ShieldCheck, Zap } from "lucide-react
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { authAPI } from "@/lib/api";
+
 
 export default function BookingPage() {
     const router = useRouter();
@@ -34,7 +36,20 @@ export default function BookingPage() {
                 console.error("Error parsing pending booking data", e);
             }
         }
+
+        // Load Razorpay script
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.async = true;
+        document.body.appendChild(script);
+
+        return () => {
+            if (document.body.contains(script)) {
+                document.body.removeChild(script);
+            }
+        };
     }, []);
+
     const [formData, setFormData] = useState({
         firstName: "",
         lastName: "",
@@ -108,7 +123,6 @@ export default function BookingPage() {
                 type: 'success',
                 message: 'Thank you! Your request has been received. Someone from our team will be in touch with you shortly.'
             });
-
             // Reset form
             setFormData({
                 firstName: "",
@@ -124,6 +138,11 @@ export default function BookingPage() {
                 additionalInfo: ""
             });
 
+            // Trigger Subscription after successful booking
+            // Your actual Plan ID from Razorpay Dashboard
+            const PLAN_ID = "plan_SW8QqyydKfxjra"; 
+            await handleSubscription(PLAN_ID); 
+
         } catch (error) {
             console.error("Error submitting booking:", error);
             setStatus({
@@ -132,6 +151,64 @@ export default function BookingPage() {
             });
         } finally {
             setSubmitting(false);
+        }
+    };
+
+    const handleSubscription = async (planId) => {
+        try {
+            setStatus({ type: 'info', message: 'Initiating secure subscription...' });
+            
+            // 1. Create Subscription on Backend
+            const subRes = await authAPI.createSubscription(planId);
+            const subscription = subRes.data;
+
+            // 2. Open Razorpay Checkout for Subscription
+            const options = {
+                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_SMd37A0ZIau7vE",
+                subscription_id: subscription.id,
+                name: "SolarMark Subscription",
+                description: "Monthly Inspection Plan",
+                image: "https://images.pexels.com/photos/9875415/pexels-photo-9875415.jpeg?auto=compress&cs=tinysrgb&w=200",
+                handler: async (response) => {
+                    // 3. Verify Subscription on Backend
+                    try {
+                        setSubmitting(true);
+                        const verifyRes = await authAPI.verifySubscription({
+                            razorpay_subscription_id: response.razorpay_subscription_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                        });
+                        
+                        if (verifyRes.data.status === "success") {
+                            setStatus({ 
+                                type: 'success', 
+                                message: 'Subscription successful! Your account is now active.' 
+                            });
+                        }
+                    } catch (err) {
+                        setStatus({ type: 'error', message: 'Subscription verification failed. Please contact support.' });
+                    } finally {
+                        setSubmitting(false);
+                    }
+                },
+                prefill: {
+                    name: `${formData.firstName} ${formData.lastName}`,
+                    email: formData.workEmail,
+                    contact: formData.phone,
+                },
+                theme: { color: "#f97316" },
+                modal: {
+                    ondismiss: function() {
+                        setStatus({ type: 'info', message: 'Subscription step skipped. Some features may be locked.' });
+                    }
+                }
+            };
+
+            const rzp = new window.Razorpay(options);
+            rzp.open();
+        } catch (error) {
+            console.error("Subscription initiation failed:", error);
+            setStatus({ type: 'error', message: 'Could not initiate subscription. Request received, but payment failed.' });
         }
     };
 

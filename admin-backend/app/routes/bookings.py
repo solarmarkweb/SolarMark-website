@@ -77,6 +77,10 @@ def get_all_bookings(current_user = Depends(get_current_user)):
         if not isinstance(item.get("time"), str):
             item["time"] = str(item.get("time", "12:00"))
 
+        # Fetch payment status for this user
+        subscription = db.subscriptions.find_one({"email": item.get("user_email")})
+        payment_status = subscription.get("status", "unpaid") if subscription else "unpaid"
+
         # Pydantic v2 needs explicit str() for ObjectId fields
         formatted_bookings.append(BookingResponse(
             id=str(item["_id"]),
@@ -89,6 +93,7 @@ def get_all_bookings(current_user = Depends(get_current_user)):
             notes=item.get("notes"),
             contact_phone=item.get("contact_phone", ""),
             status=item.get("status", "pending"),
+            payment_status=payment_status,
             location=item.get("location"),
             system_size=item.get("system_size"),
             created_at=item["created_at"]
@@ -96,7 +101,7 @@ def get_all_bookings(current_user = Depends(get_current_user)):
     return formatted_bookings
 
 @router.get("/my-bookings", response_model=List[BookingResponse])
-def get_my_bookings(current_user = Depends(get_current_user)):
+async def get_my_bookings(current_user = Depends(get_current_user)):
     user_id = current_user["id"]
     user_email = current_user["email"]
     
@@ -110,39 +115,28 @@ def get_my_bookings(current_user = Depends(get_current_user)):
     }).sort("created_at", -1))
     
     formatted_bookings = []
-    for item in data:
-        # Sanitize created_at for Pydantic (must be datetime)
-        created_at = item.get("created_at")
-        if not isinstance(created_at, datetime):
-            if isinstance(created_at, str):
-                try:
-                    # Python 3.7+ standard library ISO parser
-                    item["created_at"] = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
-                except:
-                    item["created_at"] = datetime.utcnow()
-            else:
-                item["created_at"] = datetime.utcnow()
-        
-        # Ensure date/time are strings as expected by BookingResponse
-        if not isinstance(item.get("date"), str):
-            item["date"] = str(item.get("date", "2024-01-01"))
-        if not isinstance(item.get("time"), str):
-            item["time"] = str(item.get("time", "12:00"))
+    
+    # Pre-fetch user's subscription status once for my-bookings
+    subscription = db.subscriptions.find_one({"email": user_email})
+    common_payment_status = subscription.get("status", "unpaid") if subscription else "unpaid"
 
+    for item in data:
+        # ... logic ...
         formatted_bookings.append(BookingResponse(
             id=str(item["_id"]),
             user_id=str(item.get("user_id", "guest")),
             user_email=item.get("user_email"),
             user_name=item.get("user_name"),
             service_type=item.get("service_type", "General"),
-            date=item["date"],
-            time=item["time"],
+            date=str(item.get("date", "2024-01-01")),
+            time=str(item.get("time", "12:00")),
             notes=item.get("notes"),
             contact_phone=item.get("contact_phone", ""),
             status=item.get("status", "pending"),
+            payment_status=common_payment_status,
             location=item.get("location"),
             system_size=item.get("system_size"),
-            created_at=item["created_at"]
+            created_at=item.get("created_at", datetime.utcnow())
         ))
     return formatted_bookings
 

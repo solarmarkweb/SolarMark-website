@@ -343,6 +343,13 @@ export const authAPI = {
         }
     },
 
+    // Payments & Subscriptions
+    createPaymentOrder: (amount) => api.post(`/payments/create-order?amount=${amount}`),
+    verifyPayment: (paymentData) => api.post('/payments/verify-payment', paymentData),
+    createSubscription: (planId) => api.post(`/payments/create-subscription?plan_id=${planId}`),
+    verifySubscription: (subData) => api.post('/payments/verify-subscription', subData),
+    getPaymentHistory: () => api.get('/payments/history'),
+
     // Clear all auth data
     clearAuthData: () => {
         if (typeof window === 'undefined') return;

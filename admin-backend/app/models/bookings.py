@@ -42,6 +42,7 @@ class BookingResponse(BaseModel):
     notes: Optional[str]
     contact_phone: str
     status: str
+    payment_status: Optional[str] = "unpaid"
     location: Optional[str] = None
     system_size: Optional[str] = None
     created_at: datetime

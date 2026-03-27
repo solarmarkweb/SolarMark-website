@@ -337,13 +337,14 @@ export default function BookingPage() {
                                     <th className="px-4 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-widest w-[220px]">Company + Site</th>
                                     <th className="px-4 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-widest w-[200px]">Additional</th>
                                     <th className="px-4 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-widest w-[110px]">Status</th>
+                                    <th className="px-4 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-widest w-[110px]">Payment</th>
                                     <th className="px-4 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-widest w-[200px]">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
                                 {loading ? (
                                     <tr>
-                                        <td colSpan="7" className="px-6 py-20 text-center">
+                                        <td colSpan="8" className="px-6 py-20 text-center">
                                             <div className="flex flex-col items-center">
                                                 <Loader2 className="w-8 h-8 text-orange-500 animate-spin mb-3" />
                                                 <span className="text-sm font-medium text-gray-500">Retrieving data...</span>
@@ -352,7 +353,7 @@ export default function BookingPage() {
                                     </tr>
                                 ) : paginatedBookings.length === 0 ? (
                                     <tr>
-                                        <td colSpan="7" className="px-6 py-20 text-center">
+                                        <td colSpan="8" className="px-6 py-20 text-center">
                                             <div className="flex flex-col items-center">
                                                 <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-4">
                                                     <Calendar className="w-6 h-6 text-gray-300" />
@@ -370,6 +371,15 @@ export default function BookingPage() {
                                         // Simple extraction for Additional Info if it's at the end
                                         const additionalInfoMatch = booking.notes?.match(/Additional Info:([\s\S]*)/);
                                         const additionalInfo = additionalInfoMatch ? additionalInfoMatch[1].trim() : '';
+
+                                        const getPaymentStyles = (status) => {
+                                            switch (status) {
+                                                case 'active': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+                                                case 'created': return 'bg-amber-100 text-amber-700 border-amber-200';
+                                                case 'cancelled': return 'bg-gray-100 text-gray-400 border-gray-200';
+                                                default: return 'bg-rose-50 text-rose-600 border-rose-100';
+                                            }
+                                        };
 
                                         return (
                                             <tr key={booking.id} className="hover:bg-gray-50/80 transition-colors group">
@@ -444,6 +454,11 @@ export default function BookingPage() {
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider ${getStatusStyles(booking.status)}`}>
                                                         {booking.status}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider ${getPaymentStyles(booking.payment_status)}`}>
+                                                        {booking.payment_status === 'active' ? 'PAID' : (booking.payment_status || 'UNPAID')}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">

@@ -101,6 +101,15 @@ except ImportError as e:
     print(f"⚠️  Site photos router not loaded: {e}")
     logger.warning(f"Site photos router not loaded: {e}")
 
+try:
+    from app.routes.payments import router as payments_router
+    app.include_router(payments_router, prefix="/api", tags=["payments"])
+    print("✅ Payments router loaded successfully")
+    logger.info("Payments router loaded successfully")
+except ImportError as e:
+    print(f"⚠️  Payments router not loaded: {e}")
+    logger.warning(f"Payments router not loaded: {e}")
+
 @app.get("/")
 def root():
     return {
@@ -113,7 +122,8 @@ def root():
             "contacts": "/api/contacts/*",
             "images": "/api/images/*",
             "legal": "/api/legal/*",
-            "site_photos": "/api/site-photos/*"
+            "site_photos": "/api/site-photos/*",
+            "payments": "/api/payments/*"
         }
     }
 

@@ -24,4 +24,8 @@ email-validator==2.0.0
 reportlab==4.0.7
 
 # Multipart for form data
-python-multipart
+python-multipart
+
+# Payment Gateway
+razorpay==1.4.1
+
