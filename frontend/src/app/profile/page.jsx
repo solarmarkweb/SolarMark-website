@@ -15,6 +15,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { authAPI } from "@/lib/api";
+import ContentProtection from "@/components/ContentProtection";
 
 export default function ProfilePage() {
     const router = useRouter();
@@ -41,6 +42,8 @@ export default function ProfilePage() {
     const [comparingReports, setComparingReports] = useState(false);
     const [sortBy, setSortBy] = useState('uploaded_at');
     const [sortOrder, setSortOrder] = useState('desc');
+    const [showViewModal, setShowViewModal] = useState(false);
+    const [viewingBlob, setViewingBlob] = useState(null);
 
     const fetchProfileData = async () => {
         try {
@@ -113,8 +116,8 @@ export default function ProfilePage() {
         setShowPaymentModal(true);
     };
 
-    // Actual download after "payment"
-    const processDownload = async () => {
+    // Actual visualization after "payment" (or directly)
+    const processVisualization = async () => {
         if (!selectedPdf) return;
 
         const pdf = selectedPdf;
@@ -128,25 +131,17 @@ export default function ProfilePage() {
 
             // Create blob from response
             const blob = new Blob([response.data], { type: 'application/pdf' });
-
-            // Create download link
             const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = pdf.filename || 'document.pdf';
-            document.body.appendChild(a);
-            a.click();
-
-            // Cleanup
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
+            
+            setViewingBlob(url);
+            setShowViewModal(true);
 
         } catch (err) {
-            console.error('Error downloading PDF:', err);
+            console.error('Error fetching report data:', err);
             if (err.response?.status === 401) {
                 handleLogout();
             } else {
-                setError(err.message || "Failed to download PDF");
+                setError(err.message || "Failed to load visualization data");
             }
         } finally {
             setDownloadingPdf(null);
@@ -494,68 +489,70 @@ export default function ProfilePage() {
                                 )}
                             </div>
 
-                            <div className="space-y-3">
-                                {pdfs.length > 0 ? pdfs.map((pdf) => {
-                                    const isSelected = selectedReports.includes(pdf.pdf_id);
-                                    return (
-                                        <div key={pdf.pdf_id} className={`flex items-center justify-between p-4 rounded-xl border transition-all ${isSelected ? 'bg-orange-50 border-orange-200 shadow-sm' : 'bg-white border-slate-100 hover:bg-slate-50'
-                                            }`}>
-                                            <div className="flex items-center gap-4 overflow-hidden">
+                            <ContentProtection isProtected={true}>
+                                <div className="space-y-3">
+                                    {pdfs.length > 0 ? pdfs.map((pdf) => {
+                                        const isSelected = selectedReports.includes(pdf.pdf_id);
+                                        return (
+                                            <div key={pdf.pdf_id} className={`flex items-center justify-between p-4 rounded-xl border transition-all ${isSelected ? 'bg-orange-50 border-orange-200 shadow-sm' : 'bg-white border-slate-100 hover:bg-slate-50'
+                                                }`}>
+                                                <div className="flex items-center gap-4 overflow-hidden">
+                                                    <button
+                                                        onClick={() => toggleReportSelection(pdf.pdf_id)}
+                                                        className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${isSelected ? 'bg-orange-600 border-orange-600' : 'border-slate-300 hover:border-orange-400'
+                                                            }`}
+                                                    >
+                                                        {isSelected && <CheckSquare size={12} className="text-white" />}
+                                                    </button>
+
+                                                    <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center shrink-0">
+                                                        <FileText size={20} className="text-red-500" />
+                                                    </div>
+
+                                                    <div className="min-w-0">
+                                                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                                                            <h4 className="font-bold text-slate-900 text-sm truncate pr-4">{pdf.filename || "Unnamed Report"}</h4>
+                                                            {pdf.report_type && (
+                                                                <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${pdf.report_type === 'rgb' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                                                                    }`}>
+                                                                    {pdf.report_type === 'rgb' ? 'DRONE DATA' : 'SITE PLAN'}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
+                                                            <span>{formatDate(pdf.uploaded_at)}</span>
+                                                            <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+                                                            <span>{formatFileSize(pdf.file_size)}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
                                                 <button
-                                                    onClick={() => toggleReportSelection(pdf.pdf_id)}
-                                                    className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${isSelected ? 'bg-orange-600 border-orange-600' : 'border-slate-300 hover:border-orange-400'
-                                                        }`}
+                                                    onClick={() => handleDownloadClick(pdf)}
+                                                    className="px-4 py-2 bg-slate-900 hover:bg-orange-600 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-2 shadow-lg shadow-slate-900/20"
                                                 >
-                                                    {isSelected && <CheckSquare size={12} className="text-white" />}
+                                                    <Eye size={14} />
+                                                    <span className="hidden sm:inline">Visualize</span>
                                                 </button>
-
-                                                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center shrink-0">
-                                                    <FileText size={20} className="text-red-500" />
-                                                </div>
-
-                                                <div className="min-w-0">
-                                                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                                                        <h4 className="font-bold text-slate-900 text-sm truncate pr-4">{pdf.filename || "Unnamed Report"}</h4>
-                                                        {pdf.report_type && (
-                                                            <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${pdf.report_type === 'rgb' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
-                                                                }`}>
-                                                                {pdf.report_type === 'rgb' ? 'DRONE DATA' : 'SITE PLAN'}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
-                                                        <span>{formatDate(pdf.uploaded_at)}</span>
-                                                        <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-                                                        <span>{formatFileSize(pdf.file_size)}</span>
-                                                    </div>
-                                                </div>
                                             </div>
-
+                                        );
+                                    }) : (
+                                        <div className="text-center py-20 border-2 border-dashed border-slate-100 rounded-3xl">
+                                            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                                                <Folder size={32} />
+                                            </div>
+                                            <h4 className="text-slate-900 font-bold mb-2">No Reports Available</h4>
+                                            <p className="text-slate-500 text-sm max-w-xs mx-auto mb-6">Your inspection reports will appear here once the analysis is complete.</p>
                                             <button
-                                                onClick={() => handleDownloadClick(pdf)}
-                                                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-2 shadow-lg shadow-orange-900/20"
+                                                onClick={() => router.push('/booking')}
+                                                className="text-orange-600 font-bold text-sm hover:underline"
                                             >
-                                                <Download size={14} />
-                                                <span className="hidden sm:inline">Download</span>
+                                                Schedule an Inspection
                                             </button>
                                         </div>
-                                    );
-                                }) : (
-                                    <div className="text-center py-20 border-2 border-dashed border-slate-100 rounded-3xl">
-                                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
-                                            <Folder size={32} />
-                                        </div>
-                                        <h4 className="text-slate-900 font-bold mb-2">No Reports Available</h4>
-                                        <p className="text-slate-500 text-sm max-w-xs mx-auto mb-6">Your inspection reports will appear here once the analysis is complete.</p>
-                                        <button
-                                            onClick={() => router.push('/booking')}
-                                            className="text-orange-600 font-bold text-sm hover:underline"
-                                        >
-                                            Schedule an Inspection
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
+                                    )}
+                                </div>
+                            </ContentProtection>
                         </div>
                     </div>
                 </div>
@@ -583,7 +580,7 @@ export default function ProfilePage() {
                                     <Lock size={32} />
                                 </div>
                                 <h3 className="text-2xl font-bold text-center text-slate-900 mb-2">Premium Access</h3>
-                                <p className="text-center text-slate-500 mb-8">Secure payment required to download high-resolution thermal analysis.</p>
+                                <p className="text-center text-slate-500 mb-8">Secure access required to visualize high-resolution thermal analysis.</p>
 
                                 <div className="space-y-4 mb-8">
                                     <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
@@ -601,11 +598,11 @@ export default function ProfilePage() {
                                 </div>
 
                                 <button
-                                    onClick={processDownload}
+                                    onClick={processVisualization}
                                     className="w-full py-4 bg-orange-600 text-white rounded-xl font-bold text-lg hover:bg-orange-700 transition-all shadow-xl shadow-orange-900/20 flex items-center justify-center gap-2"
                                 >
-                                    {downloadingPdf ? <Loader2 className="animate-spin" /> : <CreditCard size={20} />}
-                                    Pay & Download
+                                    {downloadingPdf ? <Loader2 className="animate-spin" /> : <ShieldCheck size={20} />}
+                                    Pay & Visualize
                                 </button>
 
                                 <button
@@ -637,82 +634,156 @@ export default function ProfilePage() {
                             exit={{ scale: 0.95, opacity: 0 }}
                             className="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col"
                         >
-                            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                                <h3 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                                    <GitCompare className="text-orange-600" />
-                                    Report Comparison
-                                </h3>
-                                <button
-                                    onClick={() => setShowComparisonModal(false)}
-                                    className="p-2 hover:bg-slate-200 rounded-full transition-colors"
-                                >
-                                    <X size={20} className="text-slate-500" />
-                                </button>
-                            </div>
+                            <ContentProtection isProtected={true}>
+                                <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                                    <h3 className="text-xl font-bold text-slate-900 flex items-center gap-3">
+                                        <GitCompare className="text-orange-600" />
+                                        Report Comparison
+                                    </h3>
+                                    <button
+                                        onClick={() => setShowComparisonModal(false)}
+                                        className="p-2 hover:bg-slate-200 rounded-full transition-colors"
+                                    >
+                                        <X size={20} className="text-slate-500" />
+                                    </button>
+                                </div>
 
-                            <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {comparisonResult.reports?.map((report, index) => (
-                                        <div key={index} className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
-                                            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-200">
-                                                <div className="w-10 h-10 bg-white rounded-lg shadow-sm flex items-center justify-center font-bold text-orange-600 border border-slate-100">
-                                                    #{index + 1}
+                                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {comparisonResult.reports?.map((report, index) => (
+                                            <div key={index} className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
+                                                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-200">
+                                                    <div className="w-10 h-10 bg-white rounded-lg shadow-sm flex items-center justify-center font-bold text-orange-600 border border-slate-100">
+                                                        #{index + 1}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="font-bold text-slate-900 truncate text-sm" title={report.filename}>
+                                                            {report.filename}
+                                                        </p>
+                                                        <p className="text-xs text-slate-500">{formatDate(report.uploaded_at)}</p>
+                                                    </div>
                                                 </div>
-                                                <div className="min-w-0">
-                                                    <p className="font-bold text-slate-900 truncate text-sm" title={report.filename}>
-                                                        {report.filename}
-                                                    </p>
-                                                    <p className="text-xs text-slate-500">{formatDate(report.uploaded_at)}</p>
+
+                                                <div className="space-y-4">
+                                                    <div>
+                                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">File Size</p>
+                                                        <p className="text-sm font-semibold text-slate-700">{formatFileSize(report.file_size)}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Upload Date</p>
+                                                        <p className="text-sm font-semibold text-slate-700">{formatDate(report.uploaded_at)}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Report ID</p>
+                                                        <p className="text-xs font-mono text-slate-500 bg-white px-2 py-1 rounded border border-slate-200 inline-block">{report.pdf_id?.substring(0, 8)}...</p>
+                                                    </div>
                                                 </div>
                                             </div>
+                                        ))}
+                                    </div>
 
-                                            <div className="space-y-4">
-                                                <div>
-                                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">File Size</p>
-                                                    <p className="text-sm font-semibold text-slate-700">{formatFileSize(report.file_size)}</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Upload Date</p>
-                                                    <p className="text-sm font-semibold text-slate-700">{formatDate(report.uploaded_at)}</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Report ID</p>
-                                                    <p className="text-xs font-mono text-slate-500 bg-white px-2 py-1 rounded border border-slate-200 inline-block">{report.pdf_id?.substring(0, 8)}...</p>
-                                                </div>
-                                            </div>
+                                    <div className="mt-8 p-6 bg-blue-50 rounded-2xl border border-blue-100">
+                                        <h4 className="font-bold text-blue-900 mb-2 flex items-center gap-2">
+                                            <Zap size={18} />
+                                            AI Analysis Insight
+                                        </h4>
+                                        <p className="text-blue-800 text-sm leading-relaxed">
+                                            Comparison completed successfully. The selected reports show a variance in inspection dates.
+                                            We recommend focusing on the trend analysis to identify recurring thermal anomalies across these timeframes.
+                                            You can download the full merged technical report below.
+                                        </p>
+                                    </div>
+
+                                    <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-4">
+                                        <button
+                                            onClick={() => setShowComparisonModal(false)}
+                                            className="px-6 py-3 font-bold text-slate-500 hover:text-slate-800 transition-colors"
+                                        >
+                                            Close
+                                        </button>
+                                        <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-500 rounded-xl text-xs font-bold uppercase tracking-wider">
+                                            <Shield size={14} />
+                                            Visualization Only
                                         </div>
-                                    ))}
+                                    </div>
                                 </div>
-
-                                <div className="mt-8 p-6 bg-blue-50 rounded-2xl border border-blue-100">
-                                    <h4 className="font-bold text-blue-900 mb-2 flex items-center gap-2">
-                                        <Zap size={18} />
-                                        AI Analysis Insight
-                                    </h4>
-                                    <p className="text-blue-800 text-sm leading-relaxed">
-                                        Comparison completed successfully. The selected reports show a variance in inspection dates.
-                                        We recommend focusing on the trend analysis to identify recurring thermal anomalies across these timeframes.
-                                        You can download the full merged technical report below.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-4">
-                                <button
-                                    onClick={() => setShowComparisonModal(false)}
-                                    className="px-6 py-3 font-bold text-slate-500 hover:text-slate-800 transition-colors"
-                                >
-                                    Close
-                                </button>
-                                <button
-                                    onClick={handleDownloadComparisonReport}
-                                    className="px-6 py-3 bg-slate-900 text-white rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all"
-                                >
-                                    <Download size={18} />
-                                    Download Merged Report
-                                </button>
-                            </div>
+                            </ContentProtection>
                         </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Report Visualization Modal */}
+            <AnimatePresence>
+                {showViewModal && viewingBlob && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-slate-950/90 backdrop-blur-xl"
+                            onClick={() => {
+                                setShowViewModal(false);
+                                window.URL.revokeObjectURL(viewingBlob);
+                                setViewingBlob(null);
+                            }}
+                        />
+                        <ContentProtection isProtected={true}>
+                            <motion.div
+                                initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                                animate={{ scale: 1, opacity: 1, y: 0 }}
+                                exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                                className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-6xl h-full flex flex-col overflow-hidden border border-slate-200"
+                            >
+                                <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center">
+                                            <FileText size={20} />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">{selectedPdf?.filename}</h3>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Protected Visualization Mode</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            setShowViewModal(false);
+                                            window.URL.revokeObjectURL(viewingBlob);
+                                            setViewingBlob(null);
+                                        }}
+                                        className="w-10 h-10 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all group"
+                                    >
+                                        <X size={20} className="group-hover:rotate-90 transition-transform duration-300" />
+                                    </button>
+                                </div>
+                                <div className="flex-1 bg-slate-100 relative overflow-hidden">
+                                    <iframe
+                                        src={`${viewingBlob}#toolbar=0&navpanes=0&scrollbar=0`}
+                                        className="w-full h-full border-none"
+                                        title="Report Preview"
+                                    />
+                                    {/* Additional overlay to prevent right click interaction on iframe if possible */}
+                                    <div className="absolute inset-0 pointer-events-none"></div>
+                                </div>
+                                <div className="px-8 py-6 bg-white border-t border-slate-100 flex items-center justify-between">
+                                    <div className="flex items-center gap-6">
+                                        <div>
+                                            <span className="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Security Hash</span>
+                                            <span className="text-xs font-mono text-slate-600 font-bold">{selectedPdf?.pdf_id?.substring(0, 16)}...</span>
+                                        </div>
+                                        <div className="h-8 w-px bg-slate-100"></div>
+                                        <div>
+                                            <span className="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Access Level</span>
+                                            <span className="text-xs text-orange-600 font-black uppercase tracking-widest">Verified Premium</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3 px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em]">
+                                        <ShieldCheck size={14} className="text-emerald-400" />
+                                        Content Protected
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </ContentProtection>
                     </div>
                 )}
             </AnimatePresence>

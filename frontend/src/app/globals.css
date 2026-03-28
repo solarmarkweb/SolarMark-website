@@ -64,4 +64,21 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  /* Content Protection Utils */
+  .no-select {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+  }
+
+  .no-print {
+    @media print {
+      display: none !important;
+    }
+  }
+
+  .protected-content {
+    @apply no-select no-print;
+    position: relative;
+  }
 }

@@ -916,53 +916,6 @@
 //                   <h3 className="text-2xl font-bold text-slate-900">Your Inspection Images</h3>
 //                   <p className="text-sm text-slate-500 mt-1">
 //                     {uploadedImages.length} image{uploadedImages.length !== 1 ? 's' : ''} uploaded
-//                   </p>
-//                 </div>
-
-//                 <div className="flex items-center gap-2">
-//                   <button
-//                     onClick={() => setViewMode('grid')}
-//                     className={`p-2 rounded-lg transition-colors ${
-//                       viewMode === 'grid' ? 'bg-orange-100 text-orange-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-//                     }`}
-//                   >
-//                     <Grid size={20} />
-//                   </button>
-//                   <button
-//                     onClick={() => setViewMode('list')}
-//                     className={`p-2 rounded-lg transition-colors ${
-//                       viewMode === 'list' ? 'bg-orange-100 text-orange-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-//                     }`}
-//                   >
-//                     <List size={20} />
-//                   </button>
-//                 </div>
-//               </div>
-
-//               {loadingImages ? (
-//                 <div className="flex justify-center py-8">
-//                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
-//                 </div>
-//               ) : (
-//                 <>
-//                   {viewMode === 'grid' ? (
-//                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-//                       {uploadedImages.map((image) => (
-//                         <div key={image.id} className="group relative border border-slate-200 rounded-xl overflow-hidden hover:shadow-xl transition-all">
-//                           <div className="aspect-square bg-slate-100 relative">
-//                             <img
-//                               src={`${API_URL}${image.url}`}
-//                               alt={image.filename}
-//                               className="w-full h-full object-cover cursor-pointer"
-//                               onClick={() => setSelectedImage(image)}
-//                             />
-
-//                             {/* Image Type Badge */}
-//                             <div className="absolute top-2 left-2">
-//                               <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-//                                 image.image_type === 'rgb' 
-//                                   ? 'bg-blue-100 text-blue-700 border border-blue-200' 
-//                                   : 'bg-orange-100 text-orange-700 border border-orange-200'
 //                               }`}>
 //                                 {image.image_type === 'rgb' ? 'RGB' : 'Thermal'}
 //                               </span>
@@ -1533,6 +1486,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { authAPI } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import ContentProtection from "@/components/ContentProtection";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://admin-backend-591983072009.asia-south1.run.app/api';
 
@@ -1554,6 +1508,7 @@ export default function HomePage() {
   const [uploadProgress, setUploadProgress] = useState({ rgb: 0, thermal: 0 });
   const [sitePhotos, setSitePhotos] = useState([]);
   const [loadingPhotos, setLoadingPhotos] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -1720,6 +1675,7 @@ export default function HomePage() {
       fetchUserImages();
     }
     fetchSitePhotos();
+    setIsMounted(true);
   }, []);
 
   const fetchSitePhotos = async () => {
@@ -2190,7 +2146,7 @@ export default function HomePage() {
           <div className="absolute top-0 left-0 w-full h-full bg-slate-50/20"></div>
 
           {/* 3D Floating Particles */}
-          {[...Array(20)].map((_, i) => (
+          {isMounted && [...Array(20)].map((_, i) => (
             <motion.div
               key={i}
               animate={{
