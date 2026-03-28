@@ -29,86 +29,32 @@ os.makedirs("uploads", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # Import and include routers
-try:
-    from app.routes.auth import router as auth_router
-    app.include_router(auth_router)  # auth router already has prefix="/api" internally
-    print("✅ Auth router loaded successfully")
-    logger.info("Auth router loaded successfully")
-except ImportError as e:
-    print(f"⚠️  Auth router not loaded: {e}")
-    logger.warning(f"Auth router not loaded: {e}")
+from app.routes.auth import router as auth_router
+app.include_router(auth_router)  # auth router already has prefix="/api" internally
 
-try:
-    from app.routes.drive_links import router as drive_links_router
-    app.include_router(drive_links_router, prefix="/api", tags=["drive-links"])
-    print("✅ Drive links router loaded successfully")
-    logger.info("Drive links router loaded successfully")
-except ImportError as e:
-    print(f"⚠️  Drive links router not loaded: {e}")
-    logger.warning(f"Drive links router not loaded: {e}")
+from app.routes.drive_links import router as drive_links_router
+app.include_router(drive_links_router, prefix="/api", tags=["drive-links"])
 
-try:
-    from app.routes.bookings import router as bookings_router
-    app.include_router(bookings_router, prefix="/api", tags=["bookings"])
-    print("✅ Bookings router loaded successfully")
-    logger.info("Bookings router loaded successfully")
-except ImportError as e:
-    print(f"⚠️  Bookings router not loaded: {e}")
-    logger.warning(f"Bookings router not loaded: {e}")
+from app.routes.bookings import router as bookings_router
+app.include_router(bookings_router, prefix="/api", tags=["bookings"])
 
-try:
-    from app.routes.contacts import router as contacts_router
-    app.include_router(contacts_router, prefix="/api", tags=["contacts"])
-    print("✅ Contacts router loaded successfully")
-    logger.info("Contacts router loaded successfully")
-except ImportError as e:
-    print(f"⚠️  Contacts router not loaded: {e}")
-    logger.warning(f"Contacts router not loaded: {e}")
+from app.routes.contacts import router as contacts_router
+app.include_router(contacts_router, prefix="/api", tags=["contacts"])
 
-try:
-    from app.routes.image_routes import router as image_router
-    app.include_router(image_router, prefix="/api", tags=["images"])
-    print("✅ Image routes router loaded successfully")
-    logger.info("Image routes router loaded successfully")
-except ImportError as e:
-    print(f"⚠️  Image routes router not loaded: {e}")
-    logger.warning(f"Image routes router not loaded: {e}")
+from app.routes.image_routes import router as image_router
+app.include_router(image_router, prefix="/api", tags=["images"])
 
-try:
-    from app.routes.legal import router as legal_router
-    app.include_router(legal_router, prefix="/api/legal", tags=["legal"])
-    print("✅ Legal router loaded successfully")
-    logger.info("Legal router loaded successfully")
-except ImportError as e:
-    print(f"⚠️  Legal router not loaded: {e}")
-    logger.warning(f"Legal router not loaded: {e}")
+from app.routes.legal import router as legal_router
+app.include_router(legal_router, prefix="/api/legal", tags=["legal"])
 
-try:
-    from app.routes.otp_routes import router as otp_router
-    app.include_router(otp_router)
-    print("✅ OTP router loaded successfully")
-    logger.info("OTP router loaded successfully")
-except ImportError as e:
-    print(f"⚠️  OTP router not loaded: {e}")
-    logger.warning(f"OTP router not loaded: {e}")
+from app.routes.otp_routes import router as otp_router
+app.include_router(otp_router)
 
-try:
-    from app.routes.site_photos import router as site_photos_router
-    app.include_router(site_photos_router, prefix="/api", tags=["site-photos"])
-    print("✅ Site photos router loaded successfully")
-    logger.info("Site photos router loaded successfully")
-except ImportError as e:
-    print(f"⚠️  Site photos router not loaded: {e}")
-    logger.warning(f"Site photos router not loaded: {e}")
+from app.routes.site_photos import router as site_photos_router
+app.include_router(site_photos_router, prefix="/api", tags=["site-photos"])
 
-try:
-    from app.routes.payments import router as payments_router
-    app.include_router(payments_router, prefix="/api", tags=["payments"])
-    print("✅ Payments router loaded successfully")
-    logger.info("Payments router loaded successfully")
-except ImportError as e:
-    print(f"⚠️  Payments router not loaded: {e}")
-    logger.warning(f"Payments router not loaded: {e}")
+from app.routes.payments import router as payments_router
+app.include_router(payments_router, prefix="/api", tags=["payments"])
 
 @app.get("/")
 def root():

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Sun, Mail, Lock, User, ArrowRight, ShieldCheck, Loader2, Eye, EyeOff } from "lucide-react";
+import { Sun, Mail, Lock, User, ArrowRight, ShieldCheck, Loader2, Eye, EyeOff, ChevronDown } from "lucide-react";
 import axios from "axios";
 import api from "@/lib/axios";
 import { useRouter } from "next/navigation";
@@ -15,6 +15,7 @@ export default function RegisterPage() {
         email: "",
         password: "",
         otp: "",
+        role: "",
     });
     const [loading, setLoading] = useState(false);
     const [otpLoading, setOtpLoading] = useState(false);
@@ -90,6 +91,7 @@ export default function RegisterPage() {
                 localStorage.setItem("refresh_token", response.data.refresh_token);
                 localStorage.setItem("user_name", response.data.user.first_name);
                 localStorage.setItem("user_email", formData.email);
+                localStorage.setItem("user_role", response.data.user.role || formData.role);
 
                 setSuccess(true);
                 setTimeout(() => router.push("/profile"), 1500);
@@ -168,6 +170,27 @@ export default function RegisterPage() {
 
                             {step === 1 ? (
                                 <>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-slate-800 ml-1">Select Your Role</label>
+                                        <div className="relative group">
+                                            <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-orange-500 transition-colors" size={18} />
+                                            <select
+                                                required
+                                                name="role"
+                                                value={formData.role}
+                                                onChange={handleChange}
+                                                className="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all shadow-sm font-medium appearance-none cursor-pointer"
+                                            >
+                                                <option value="" disabled>Choose your profile type</option>
+                                                <option value="Asset Owner">Asset Owner</option>
+                                                <option value="Drone Service Provider">Drone Service Provider</option>
+                                            </select>
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                                <ChevronDown size={18} />
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <label className="text-sm font-bold text-slate-800 ml-1">First Name</label>
@@ -236,6 +259,7 @@ export default function RegisterPage() {
                                             </button>
                                         </div>
                                     </div>
+
 
                                     <div className="flex items-start space-x-3 py-2">
                                         <input required type="checkbox" className="mt-1 w-5 h-5 text-orange-600 border-slate-300 rounded-md focus:ring-orange-500 cursor-pointer" />

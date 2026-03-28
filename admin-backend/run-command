@@ -1,0 +1,14 @@
+# Create virtual environment (one-time)
+python -m venv venv
+# Activate virtual environment
+# Windows:
+.\venv\Scripts\activate
+# Install requirements
+pip install -r requirements.txt
+
+# Run the server
+uvicorn app.main:app --port 
+
+
+#check ports
+ netstat -ano | findstr :8000

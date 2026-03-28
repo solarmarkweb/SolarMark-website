@@ -40,6 +40,7 @@ export default function Navbar() {
         router.push("/login");
     };
 
+/*
     const solutionsMenu = [
         {
             phase: "Operation Phase",
@@ -71,6 +72,7 @@ export default function Navbar() {
         { name: "Forms & Ticketing", href: "/platform/forms" },
         { name: "Integrations", href: "/platform/integrations" },
     ];
+*/
 
     const toggleDropdown = (menu) => {
         setOpenDropdown(openDropdown === menu ? null : menu);
@@ -108,7 +110,7 @@ export default function Navbar() {
                             Home
                         </Link>
 
-                        {/* Solutions */}
+                        {/*  
                         <div
                             className="relative group h-full flex items-center"
                             onMouseEnter={() => setOpenDropdown('solutions')}
@@ -149,7 +151,6 @@ export default function Navbar() {
                             </div>
                         </div>
 
-                        {/* Platform */}
                         <div
                             className="relative group h-full flex items-center"
                             onMouseEnter={() => setOpenDropdown('platform')}
@@ -180,6 +181,7 @@ export default function Navbar() {
                                 </div>
                             </div>
                         </div>
+                        */}
 
                         <Link href="/about" className={`px-3 py-2 text-xs font-bold transition-all duration-300 ${pathname === "/about" ? "text-orange-600" : `${textColor} ${hoverTextColor}`}`}>About</Link>
                         <Link href="/offers" className={`px-3 py-2 text-xs font-bold transition-all duration-300 ${pathname === "/offers" ? "text-orange-600" : `${textColor} ${hoverTextColor}`}`}>Offers</Link>
@@ -237,7 +239,7 @@ export default function Navbar() {
                     <div className="lg:hidden mt-6 pb-8 border-t border-slate-100 pt-6 space-y-2 bg-white rounded-3xl p-6 shadow-2xl absolute top-full left-4 right-4 text-slate-900 max-h-[80vh] overflow-y-auto">
                         <Link href="/" className="block px-4 py-3 text-base font-bold text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl" onClick={() => setIsMenuOpen(false)}>Home</Link>
 
-                        {/* Solutions Mobile */}
+                        {/*  
                         <button
                             onClick={() => toggleDropdown('solutions-mobile')}
                             className="flex items-center justify-between w-full px-4 py-3 text-base font-bold text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl"
@@ -260,7 +262,6 @@ export default function Navbar() {
                             </div>
                         )}
 
-                        {/* Platform Mobile */}
                         <button
                             onClick={() => toggleDropdown('platform-mobile')}
                             className="flex items-center justify-between w-full px-4 py-3 text-base font-bold text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl"
@@ -275,6 +276,7 @@ export default function Navbar() {
                                 ))}
                             </div>
                         )}
+                        */}
 
                         <Link href="/about" className="block px-4 py-3 text-base font-bold text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl" onClick={() => setIsMenuOpen(false)}>About</Link>
                         <Link href="/booking" className="block px-4 py-3 text-base font-bold text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl" onClick={() => setIsMenuOpen(false)}>Bookings</Link>

@@ -14,11 +14,13 @@ const Footer = () => {
     const currentYear = new Date().getFullYear();
 
     const footerSections = {
+        /*
         "Solutions": [
             { name: "Planning", href: "/about" },
             { name: "Construction", href: "/offers" },
             { name: "Operations", href: "/offers" },
         ],
+        */
         "Company": [
             { name: "About", href: "/about" },
             { name: "Contact", href: "/contact" },

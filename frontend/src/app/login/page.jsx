@@ -38,6 +38,7 @@ function LoginForm() {
                 localStorage.setItem("refresh_token", response.data.refresh_token);
                 localStorage.setItem("user_name", response.data.user.first_name);
                 localStorage.setItem("user_email", formData.email);
+                localStorage.setItem("user_role", response.data.user.role);
 
                 setLoggedIn(true);
                 setTimeout(() => {

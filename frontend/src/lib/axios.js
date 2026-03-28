@@ -1,7 +1,11 @@
 import axios from "axios";
 
+// Access environment variables
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://admin-backend-591983072009.asia-south1.run.app/api";
+const LOGIN_REDIRECT = process.env.NEXT_PUBLIC_LOGIN_REDIRECT || "/login";
+
 const api = axios.create({
-  baseURL: "https://admin-backend-591983072009.asia-south1.run.app/api",
+  baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
@@ -28,8 +32,9 @@ api.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem("refresh_token");
 
+        // Use the environment-based API base URL
         const res = await axios.post(
-          "https://admin-backend-591983072009.asia-south1.run.app/api/refresh",
+          `${API_BASE_URL}/refresh`,
           { refresh_token: refreshToken }
         );
 
@@ -41,7 +46,7 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (err) {
         localStorage.clear();
-        window.location.href = "/login";
+        window.location.href = LOGIN_REDIRECT;
       }
     }
 

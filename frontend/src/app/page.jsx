@@ -2281,17 +2281,7 @@ export default function HomePage() {
                 </Link>
               </div>
 
-              <div className="mt-12 flex items-center justify-center lg:justify-start gap-6 opacity-40 grayscale scale-90 origin-left">
-                <div className="flex flex-col">
-                  <span className="text-xl font-black text-slate-900">500+</span>
-                  <span className="text-[8px] font-bold uppercase tracking-[0.2em]">Plants Scanned</span>
-                </div>
-                <div className="w-[1px] h-6 bg-slate-200"></div>
-                <div className="flex flex-col">
-                  <span className="text-xl font-black text-slate-900">2.5GW</span>
-                  <span className="text-[8px] font-bold uppercase tracking-[0.2em]">Asset Capacity</span>
-                </div>
-              </div>
+
             </motion.div>
 
             {/* Right Professional Visual Column */}
@@ -2717,7 +2707,7 @@ export default function HomePage() {
                 <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 via-orange-500 to-emerald-500"></div>
 
                 <div className="aspect-[4/3] bg-slate-800 rounded-[2.5rem] overflow-hidden flex flex-col items-center justify-center relative group">
-                  <div 
+                  <div
                     className="absolute inset-0 bg-cover bg-center opacity-20 transition-opacity duration-700 group-hover:opacity-40"
                     style={{ backgroundImage: `url(${getDynamicPhoto('Precision Intelligence', '/premium-solar-farm.png')})` }}
                   ></div>
@@ -2750,34 +2740,6 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
-
-              {/* Floating ROI element */}
-              <motion.div
-                animate={{ y: [0, -15, 0] }}
-                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute -bottom-10 -left-6 md:-bottom-12 md:-left-12 p-8 bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 hidden sm:block z-20"
-              >
-                <div className="flex items-center gap-5">
-                  <div className="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 shadow-inner">
-                    <TrendingUp size={28} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Recovered Revenue</p>
-                    <p className="text-3xl font-black text-slate-900 tracking-tighter">$14,580</p>
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Mobile ROI element - simpler for mobile */}
-              <div className="sm:hidden mt-6 p-6 bg-white rounded-3xl shadow-xl border border-slate-100 flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Recovered Revenue</p>
-                  <p className="text-2xl font-black text-slate-900">$14,580</p>
-                </div>
-                <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600">
-                  <TrendingUp size={20} />
-                </div>
-              </div>
             </motion.div>
           </div>
         </div>
@@ -2803,17 +2765,6 @@ export default function HomePage() {
               <p className="text-slate-600 text-lg mb-10 leading-relaxed">
                 Whether it's a 100MW utility site in the desert or a distributed portfolio across Europe, our standardized inspection protocol ensures consistent, high-fidelity data everywhere.
               </p>
-
-              <div className="grid grid-cols-2 gap-8">
-                <div>
-                  <p className="text-4xl font-black text-slate-900">15GW+</p>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Assets Managed</p>
-                </div>
-                <div>
-                  <p className="text-4xl font-black text-slate-900">450k+</p>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Anomalies Detected</p>
-                </div>
-              </div>
             </motion.div>
 
             <motion.div
@@ -2871,8 +2822,8 @@ export default function HomePage() {
       </section>
 
       {/* Solutions & Platforms Grid Section */}
+      {/* 
       <section className="py-16 md:py-24 bg-slate-50 relative overflow-hidden">
-        {/* Background Decorative Elements */}
         <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
           <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-orange-100/30 rounded-full blur-[120px]"></div>
           <div className="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] bg-blue-100/30 rounded-full blur-[120px]"></div>
@@ -2896,9 +2847,8 @@ export default function HomePage() {
               Explore our full suite of digital twins, automated diagnostics, and infrastructure management tools designed for peak asset performance.
             </p>
           </div>
-
+          
           <div className="relative group">
-            {/* Scroll Buttons */}
             <div className="absolute top-1/2 -left-4 md:-left-8 -translate-y-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
                 onClick={() => {
@@ -2950,7 +2900,6 @@ export default function HomePage() {
                   }}
                   className="group relative h-[400px] w-[300px] md:w-[380px] flex-shrink-0 rounded-[2.5rem] overflow-hidden cursor-pointer shadow-xl shadow-slate-200 hover:shadow-orange-200/50 transition-all duration-700 snap-center"
                 >
-                  {/* Image Layer */}
                   {(() => {
                     const dynamicPhoto = sitePhotos.find(p => p.category === service.name);
                     const bgImageUrl = dynamicPhoto ? `${API_URL.replace('/api', '')}${dynamicPhoto.url}` : service.image;
@@ -2962,10 +2911,8 @@ export default function HomePage() {
                     );
                   })()}
 
-                  {/* Glassmorphism Overlays */}
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent group-hover:via-slate-900/60 transition-all duration-500"></div>
 
-                  {/* Content Overlay */}
                   <div className="absolute inset-0 p-8 flex flex-col justify-end text-white">
                     <div className="mb-auto">
                       <div className={`w-12 h-12 rounded-2xl flex items-center justify-center backdrop-blur-xl border border-white/20 shadow-2xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 ${service.color === 'orange' ? 'bg-orange-600/60' :
@@ -2997,307 +2944,307 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  {/* Perspective Glow Effect */}
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-700 bg-[radial-gradient(circle_at_var(--mouse-x)_var(--mouse-y),#ffffff_0%,transparent_100%)]"></div>
                 </motion.div>
               ))}
             </div>
           </div>
-
-
         </div>
       </section>
+      */}
 
       {/* Dynamic Services Grid */}
       {/* Inspection Form Section */}
-      <section id="inspection-form" className="py-12 md:py-16 bg-slate-50 relative overflow-hidden">
-        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-orange-200/20 rounded-full blur-[100px]" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
-            <motion.div
-              initial={{ opacity: 0, x: -40 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-            >
-              <span className="text-orange-600 font-bold tracking-widest uppercase text-sm mb-4 block">Request Service</span>
-              <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-8 leading-tight">
-                Get Your Solar Panels <br />
-                <span className="text-orange-600 italic">Inspected Today.</span>
-              </h2>
-              <p className="text-slate-600 text-lg mb-8 leading-relaxed">
-                Fill out the form to schedule a professional thermographic inspection. Our team will get back to you within 24 hours with a customized quote and deployment plan.
-              </p>
+      {user && (
+        <section id="inspection-form" className="py-12 md:py-16 bg-slate-50 relative overflow-hidden">
+          <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-orange-200/20 rounded-full blur-[100px]" />
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
+              <motion.div
+                initial={{ opacity: 0, x: -40 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+              >
+                <span className="text-orange-600 font-bold tracking-widest uppercase text-sm mb-4 block">Request Service</span>
+                <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-8 leading-tight">
+                  Get Your Solar Panels <br />
+                  <span className="text-orange-600 italic">Inspected Today.</span>
+                </h2>
+                <p className="text-slate-600 text-lg mb-8 leading-relaxed">
+                  Fill out the form to schedule a professional thermographic inspection. Our team will get back to you within 24 hours with a customized quote and deployment plan.
+                </p>
 
-              <div className="space-y-6">
-                {[
-                  { icon: CheckCircle, text: "High-Resolution Thermal Imaging" },
-                  { icon: CheckCircle, text: "AI-Powered Fault Analysis" },
-                  { icon: CheckCircle, text: "Detailed ROI Impact Reports" }
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center space-x-3 text-slate-700 font-medium">
-                    <item.icon className="text-orange-500 w-5 h-5" />
-                    <span>{item.text}</span>
+                <div className="space-y-6">
+                  {[
+                    { icon: CheckCircle, text: "High-Resolution Thermal Imaging" },
+                    { icon: CheckCircle, text: "AI-Powered Fault Analysis" },
+                    { icon: CheckCircle, text: "Detailed ROI Impact Reports" }
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center space-x-3 text-slate-700 font-medium">
+                      <item.icon className="text-orange-500 w-5 h-5" />
+                      <span>{item.text}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="w-full"
+              >
+                {status.message && (
+                  <div className={`mb-6 p-4 rounded-xl text-center shadow-sm ${status.type === 'success'
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                    : 'bg-red-50 text-red-700 border border-red-100'
+                    }`}>
+                    <p className="font-bold text-sm tracking-tight flex items-center justify-center gap-2">
+                      {status.type === 'success' && <CheckCircle size={18} />}
+                      {status.message}
+                    </p>
                   </div>
-                ))}
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="w-full"
-            >
-              {status.message && (
-                <div className={`mb-6 p-4 rounded-xl text-center shadow-sm ${status.type === 'success'
-                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-                  : 'bg-red-50 text-red-700 border border-red-100'
-                  }`}>
-                  <p className="font-bold text-sm tracking-tight flex items-center justify-center gap-2">
-                    {status.type === 'success' && <CheckCircle size={18} />}
-                    {status.message}
-                  </p>
-                </div>
-              )}
-              <form onSubmit={handleFormSubmit} className="space-y-4">
-              {/* First Name & Last Name */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2 group">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                    First Name*
-                  </label>
-                  <input
-                    type="text"
-                    name="firstName"
-                    required
-                    placeholder="Jane"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
-                  />
-                </div>
-                <div className="space-y-2 group">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                    Last Name*
-                  </label>
-                  <input
-                    type="text"
-                    name="lastName"
-                    required
-                    placeholder="Doe"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
-                  />
-                </div>
-              </div>
-
-              {/* Work Email & Job Title */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2 group">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                    Work Email*
-                  </label>
-                  <input
-                    type="email"
-                    name="workEmail"
-                    required
-                    placeholder="jane@company.com"
-                    value={formData.workEmail}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
-                  />
-                </div>
-                <div className="space-y-2 group">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                    Job Title*
-                  </label>
-                  <input
-                    type="text"
-                    name="jobTitle"
-                    required
-                    placeholder="Operations Manager"
-                    value={formData.jobTitle}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
-                  />
-                </div>
-              </div>
-
-              {/* Phone Number & Country */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2 group">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                    Phone Number*
-                  </label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    required
-                    placeholder="+1 (555) 000-0000"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
-                  />
-                </div>
-                <div className="space-y-2 group">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                    Country*
-                  </label>
-                  <div className="relative">
-                    <select
-                      name="country"
-                      required
-                      value={formData.country}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
-                    >
-                      <option value="">Please Select</option>
-                      {countries.map((country) => (
-                        <option key={country} value={country}>{country}</option>
-                      ))}
-                    </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                )}
+                <form onSubmit={handleFormSubmit} className="space-y-4">
+                  {/* First Name & Last Name */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2 group">
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
+                        First Name*
+                      </label>
+                      <input
+                        type="text"
+                        name="firstName"
+                        required
+                        placeholder="Jane"
+                        value={formData.firstName}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
+                      />
+                    </div>
+                    <div className="space-y-2 group">
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
+                        Last Name*
+                      </label>
+                      <input
+                        type="text"
+                        name="lastName"
+                        required
+                        placeholder="Doe"
+                        value={formData.lastName}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
+                      />
                     </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Company Name & Company Type */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2 group">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                    Company Name*
-                  </label>
-                  <input
-                    type="text"
-                    name="companyName"
-                    required
-                    placeholder="SolarMark"
-                    value={formData.companyName}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
-                  />
-                </div>
-
-                <div className="space-y-2 group">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                    Company Type*
-                  </label>
-                  <div className="relative">
-                    <select
-                      name="companyType"
-                      required
-                      value={formData.companyType}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
-                    >
-                      <option value="">Please Select</option>
-                      {companyTypes.map((type) => (
-                        <option key={type} value={type}>{type}</option>
-                      ))}
-                    </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                  {/* Work Email & Job Title */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2 group">
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
+                        Work Email*
+                      </label>
+                      <input
+                        type="email"
+                        name="workEmail"
+                        required
+                        placeholder="jane@company.com"
+                        value={formData.workEmail}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
+                      />
+                    </div>
+                    <div className="space-y-2 group">
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
+                        Job Title*
+                      </label>
+                      <input
+                        type="text"
+                        name="jobTitle"
+                        required
+                        placeholder="Operations Manager"
+                        value={formData.jobTitle}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
+                      />
                     </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Solar Capacity & Referral Source */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2 group">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                    Solar Capacity*
-                  </label>
-                  <div className="relative">
-                    <select
-                      name="solarCapacity"
-                      required
-                      value={formData.solarCapacity}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
-                    >
-                      <option value="">Please Select</option>
-                      {solarCapacities.map((capacity) => (
-                        <option key={capacity} value={capacity}>{capacity}</option>
-                      ))}
-                    </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                  {/* Phone Number & Country */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2 group">
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
+                        Phone Number*
+                      </label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        required
+                        placeholder="+1 (555) 000-0000"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
+                      />
+                    </div>
+                    <div className="space-y-2 group">
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
+                        Country*
+                      </label>
+                      <div className="relative">
+                        <select
+                          name="country"
+                          required
+                          value={formData.country}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
+                        >
+                          <option value="">Please Select</option>
+                          {countries.map((country) => (
+                            <option key={country} value={country}>{country}</option>
+                          ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="space-y-2 group">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                    Referral Source*
-                  </label>
-                  <div className="relative">
-                    <select
-                      name="referralSource"
-                      required
-                      value={formData.referralSource}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
-                    >
-                      <option value="">Please Select</option>
-                      {referralSources.map((source) => (
-                        <option key={source} value={source}>{source}</option>
-                      ))}
-                    </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                  {/* Company Name & Company Type */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2 group">
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
+                        Company Name*
+                      </label>
+                      <input
+                        type="text"
+                        name="companyName"
+                        required
+                        placeholder="SolarMark"
+                        value={formData.companyName}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
+                      />
+                    </div>
+
+                    <div className="space-y-2 group">
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
+                        Company Type*
+                      </label>
+                      <div className="relative">
+                        <select
+                          name="companyType"
+                          required
+                          value={formData.companyType}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
+                        >
+                          <option value="">Please Select</option>
+                          {companyTypes.map((type) => (
+                            <option key={type} value={type}>{type}</option>
+                          ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Additional Information */}
-              <div className="space-y-2 group">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                  Additional Information you want to share with us
-                </label>
-                <textarea
-                  name="additionalInfo"
-                  rows="4"
-                  placeholder=""
-                  value={formData.additionalInfo}
-                  onChange={handleChange}
-                  className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none resize-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
-                ></textarea>
-              </div>
+                  {/* Solar Capacity & Referral Source */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2 group">
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
+                        Solar Capacity*
+                      </label>
+                      <div className="relative">
+                        <select
+                          name="solarCapacity"
+                          required
+                          value={formData.solarCapacity}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
+                        >
+                          <option value="">Please Select</option>
+                          {solarCapacities.map((capacity) => (
+                            <option key={capacity} value={capacity}>{capacity}</option>
+                          ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                        </div>
+                      </div>
+                    </div>
 
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full py-3.5 md:py-5 bg-orange-600 text-white rounded-2xl font-bold text-sm md:text-lg shadow-xl shadow-orange-200 hover:bg-orange-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest"
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="animate-spin w-6 h-6" />
-                      Processing Request...
-                    </>
-                  ) : (
-                    <>
-                      Submit Inspection Request
-                      <Send size={24} />
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        </div>
-    </div>
-      </section >
+                    <div className="space-y-2 group">
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
+                        Referral Source*
+                      </label>
+                      <div className="relative">
+                        <select
+                          name="referralSource"
+                          required
+                          value={formData.referralSource}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
+                        >
+                          <option value="">Please Select</option>
+                          {referralSources.map((source) => (
+                            <option key={source} value={source}>{source}</option>
+                          ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-    {/* The Inspection Algorithm Section */ }
-    < section className = "py-20 md:py-24 bg-[#06080c] relative overflow-hidden text-white border-y border-white/5" >
-      {/* Deep Field Glows */ }
-      < div className = "absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px] -translate-y-1/2 opacity-50" ></div >
+                  {/* Additional Information */}
+                  <div className="space-y-2 group">
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
+                      Additional Information you want to share with us
+                    </label>
+                    <textarea
+                      name="additionalInfo"
+                      rows="4"
+                      placeholder=""
+                      value={formData.additionalInfo}
+                      onChange={handleChange}
+                      className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none resize-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
+                    ></textarea>
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="w-full py-3.5 md:py-5 bg-orange-600 text-white rounded-2xl font-bold text-sm md:text-lg shadow-xl shadow-orange-200 hover:bg-orange-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest"
+                    >
+                      {submitting ? (
+                        <>
+                          <Loader2 className="animate-spin w-6 h-6" />
+                          Processing Request...
+                        </>
+                      ) : (
+                        <>
+                          Submit Inspection Request
+                          <Send size={24} />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            </div>
+          </div>
+        </section >
+      )}
+
+      {/* The Inspection Algorithm Section */}
+      < section className="py-20 md:py-24 bg-[#06080c] relative overflow-hidden text-white border-y border-white/5" >
+        {/* Deep Field Glows */}
+        < div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px] -translate-y-1/2 opacity-50" ></div >
         <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-orange-600/10 rounded-full blur-[120px] translate-y-1/2 opacity-50"></div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -3380,28 +3327,28 @@ export default function HomePage() {
         </div>
       </section >
 
-    {/* CTA Section */ }
-  {
-    !user && (
-      <section className="py-16 md:py-20 bg-orange-600 relative overflow-hidden">
-        <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
-          <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-8 uppercase tracking-tight">
-            Ready to switch to cleaner, cheaper energy?
-          </h2>
-          <p className="text-orange-100 text-xl mb-10 font-medium italic">
-            Join thousands of satisfied homeowners who have already made the switch.
-          </p>
-          <Link
-            href="/register"
-            className="inline-flex items-center px-6 py-3.5 md:px-10 md:py-5 bg-white text-orange-600 rounded-2xl font-bold text-sm md:text-lg shadow-xl hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
-          >
-            Start Your Journey <ArrowRight className="ml-2" />
-          </Link>
-        </div>
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full -translate-x-1/2 translate-y-1/3"></div>
-      </section>
-    )
-  }
+      {/* CTA Section */}
+      {
+        !user && (
+          <section className="py-16 md:py-20 bg-orange-600 relative overflow-hidden">
+            <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
+              <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-8 uppercase tracking-tight">
+                Ready to switch to cleaner, cheaper energy?
+              </h2>
+              <p className="text-orange-100 text-xl mb-10 font-medium italic">
+                Join thousands of satisfied homeowners who have already made the switch.
+              </p>
+              <Link
+                href="/register"
+                className="inline-flex items-center px-6 py-3.5 md:px-10 md:py-5 bg-white text-orange-600 rounded-2xl font-bold text-sm md:text-lg shadow-xl hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
+              >
+                Start Your Journey <ArrowRight className="ml-2" />
+              </Link>
+            </div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full -translate-x-1/2 translate-y-1/3"></div>
+          </section>
+        )
+      }
     </div >
   );
 }

@@ -96,7 +96,7 @@ export default function ContactPage() {
                             {
                                 icon: <Mail className="text-orange-600" />,
                                 title: "Email Us",
-                                detail: "info@solarmark.com",
+                                detail: "support@aviatricks.com",
                                 sub: "Response within 24 hours"
                             },
                             {
@@ -108,8 +108,8 @@ export default function ContactPage() {
                             {
                                 icon: <MapPin className="text-orange-600" />,
                                 title: "Our Office",
-                                detail: "123 Solar Way, Energy District",
-                                sub: "Clean City, CA 90210"
+                                detail: "Manivkampalayam, Tiruchengode, Tamil Nadu, 637202",
+                                sub: "India"
                             }
                         ].map((item, i) => (
                             <div key={i} className="flex items-start space-x-5 p-8 rounded-2xl bg-slate-50 border border-slate-100 transition-all duration-300">
