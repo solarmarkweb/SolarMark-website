@@ -589,11 +589,11 @@ export default function DriveLinksPage() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-orange-50 rounded-lg">
-                <Folder className="w-5 h-5 text-orange-600" />
+                <FileText className="w-5 h-5 text-orange-600" />
               </div>
               <div>
-                <h1 className="text-sm font-semibold text-gray-900">User Uploads</h1>
-                <p className="text-[11px] text-gray-400 font-medium">Manage user images & PDFs</p>
+                <h1 className="text-sm font-semibold text-gray-900">Reports</h1>
+                <p className="text-[11px] text-gray-400 font-medium">Manage user images & reports</p>
               </div>
             </div>
 
