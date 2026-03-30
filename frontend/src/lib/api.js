@@ -350,6 +350,10 @@ export const authAPI = {
     verifySubscription: (subData) => api.post('/payments/verify-subscription', subData),
     getPaymentHistory: () => api.get('/payments/history'),
 
+    // About Page Content
+    getAboutContent: () => api.get('/about/'),
+    updateAboutContent: (content) => api.post('/about/', content),
+
     // Clear all auth data
     clearAuthData: () => {
         if (typeof window === 'undefined') return;
