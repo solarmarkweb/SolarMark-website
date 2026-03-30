@@ -13,7 +13,7 @@ import {
     ChevronRight,
     Shield,
     Sun,
-    Link as LinkIcon,
+    FileText,
     Camera
 } from 'lucide-react';
 
@@ -27,8 +27,8 @@ const Sidebar = () => {
             path: '/dashboard',
         },
         {
-            title: 'Drive Links',
-            icon: <LinkIcon size={20} />,
+            title: 'Reports',
+            icon: <FileText size={20} />,
             path: '/drivelinks',
         },
         {

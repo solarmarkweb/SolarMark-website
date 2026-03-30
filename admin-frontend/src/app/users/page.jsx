@@ -330,8 +330,8 @@ export default function UserManagementPage() {
                                         </td>
                                         <td className="px-8 py-5">
                                             <div className="flex gap-2">
-                                                <label className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all border cursor-pointer flex items-center justify-center ${uploadingUserId === (user._id || user.id) ? 'bg-orange-100 text-orange-600 border-orange-200 cursor-not-allowed' : 'text-blue-600 hover:text-white hover:bg-blue-500 border-blue-100 bg-blue-50'}`} title="Upload File to User Profile">
-                                                    {uploadingUserId === (user._id || user.id) ? '...' : 'UPLOAD'}
+                                                <label className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all border cursor-pointer flex items-center justify-center ${uploadingUserId === (user._id || user.id) ? 'bg-orange-100 text-orange-600 border-orange-200 cursor-not-allowed' : 'text-blue-600 hover:text-white hover:bg-blue-500 border-blue-100 bg-blue-50'}`} title="Upload Report to User Profile">
+                                                    {uploadingUserId === (user._id || user.id) ? '...' : 'REPORT'}
                                                     <input
                                                         type="file"
                                                         accept="application/pdf"

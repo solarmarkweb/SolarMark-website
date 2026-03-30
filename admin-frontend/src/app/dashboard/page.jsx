@@ -85,7 +85,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [adminName, setAdminName] = useState('');
-  const [driveLinks, setDriveLinks] = useState([]);
+  const [reports, setReports] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [contacts, setContacts] = useState([]);
   const [users, setUsers] = useState([]);
@@ -136,7 +136,7 @@ export default function Dashboard() {
 
       const sortByDate = arr => [...arr].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-      setDriveLinks(sortByDate(linksData));
+      setReports(sortByDate(linksData));
       setBookings(sortByDate(bookingsData));
       setContacts(sortByDate(contactsData));
       setUsers(usersData);
@@ -153,11 +153,11 @@ export default function Dashboard() {
           sortDate: new Date(b.created_at)
         })),
         ...sortByDate(linksData).slice(0, 3).map(l => ({
-          id: `l-${l.id}`, icon: '🔗',
-          label: 'Drive Link Added',
+          id: `l-${l.id}`, icon: '📄',
+          label: 'Report Uploaded',
           user: l.user_name || l.user_email || 'User',
           time: formatRelativeTime(l.created_at),
-          badge: 'Drive',
+          badge: 'Report',
           badgeColor: 'bg-orange-100 text-orange-700',
           sortDate: new Date(l.created_at)
         })),
@@ -198,7 +198,7 @@ export default function Dashboard() {
   const stats = [
     { title: 'Registered Users', value: users.length, icon: Users, color: 'text-orange-600', bg: 'bg-orange-50', sub: 'All platform accounts' },
     { title: 'Active Bookings', value: activeBookings, icon: Calendar, color: 'text-green-600', bg: 'bg-green-50', sub: 'Confirmed & Pending' },
-    { title: 'Drive Links', value: driveLinks.length, icon: LinkIcon, color: 'text-blue-600', bg: 'bg-blue-50', sub: 'All shared links' },
+    { title: 'Reports', value: reports.length, icon: FileText, color: 'text-blue-600', bg: 'bg-blue-50', sub: 'All user reports' },
     { title: 'Contact Inquiries', value: contacts.length, icon: BookOpen, color: 'text-purple-600', bg: 'bg-purple-50', sub: 'Total form submissions' },
   ];
 
@@ -506,8 +506,8 @@ export default function Dashboard() {
             </div>
             <div className="mt-4 pt-4 border-t border-white/10">
               <div className="flex justify-between items-center">
-                <span className="text-xs text-slate-400">Drive Links Shared</span>
-                <span className="font-bold text-orange-400">{driveLinks.length}</span>
+                <span className="text-xs text-slate-400">Reports Generated</span>
+                <span className="font-bold text-orange-400">{reports.length}</span>
               </div>
               <div className="flex justify-between items-center mt-2">
                 <span className="text-xs text-slate-400">User Inquiries</span>
@@ -518,12 +518,12 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Drive Links Table */}
+      {/* Reports Table */}
       <div className="mt-6 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold text-slate-900">Drive Links</h2>
-            <p className="text-xs text-slate-400 mt-0.5">{driveLinks.length} linked portfolios</p>
+            <h2 className="text-base font-bold text-slate-900">User Reports</h2>
+            <p className="text-xs text-slate-400 mt-0.5">{reports.length} linked reports</p>
           </div>
           <button onClick={() => router.push('/drivelinks')} className="text-xs font-semibold text-orange-600 hover:text-orange-700 flex items-center gap-1">
             Manage <ChevronRight className="w-3 h-3" />
@@ -533,10 +533,10 @@ export default function Dashboard() {
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-3">
             {[...Array(4)].map((_, i) => <div key={i} className="h-20 bg-slate-50 rounded-xl animate-pulse" />)}
           </div>
-        ) : driveLinks.length === 0 ? (
+        ) : reports.length === 0 ? (
           <div className="p-12 text-center">
-            <LinkIcon className="w-10 h-10 text-slate-200 mx-auto mb-3" />
-            <p className="text-slate-400 text-sm font-medium">No drive links yet</p>
+            <FileText className="w-10 h-10 text-slate-200 mx-auto mb-3" />
+            <p className="text-slate-400 text-sm font-medium">No reports yet</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -545,12 +545,12 @@ export default function Dashboard() {
                 <tr className="bg-slate-50">
                   <th className="text-left text-xs font-bold text-slate-400 uppercase tracking-wider px-6 py-3">User</th>
                   <th className="text-left text-xs font-bold text-slate-400 uppercase tracking-wider px-4 py-3">Email</th>
-                  <th className="text-left text-xs font-bold text-slate-400 uppercase tracking-wider px-4 py-3">Added</th>
+                  <th className="text-left text-xs font-bold text-slate-400 uppercase tracking-wider px-4 py-3">Uploaded</th>
                   <th className="text-left text-xs font-bold text-slate-400 uppercase tracking-wider px-4 py-3">Manage</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {driveLinks.slice(0, 6).map(link => (
+                {reports.slice(0, 6).map(link => (
                   <tr key={link.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="px-6 py-3.5">
                       <p className="font-semibold text-slate-800 truncate max-w-[160px]">{link.user_name || 'Anonymous'}</p>
