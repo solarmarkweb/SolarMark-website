@@ -1,37 +1,41 @@
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel, EmailStr
-from app.utils.otp_service import otp_service, logger
-from app.db import db
+from pydantic import BaseModel
+from app.utils.otp_service import otp_service
 
-router = APIRouter(prefix="/api/otp", tags=["OTP Verification"])
+router = APIRouter()
+
 
 class OTPRequest(BaseModel):
-    email: EmailStr
+    email: str
 
 class OTPVerify(BaseModel):
-    email: EmailStr
+    email: str
     otp: str
 
-@router.post("/request")
-async def request_otp(data: OTPRequest):
-    logger.info(f"DEBUG: Received OTP request for {data.email}")
-    email = data.email
+@router.post("/send")
+async def send_otp(payload: OTPRequest):
+    """Generate and send an OTP to the user's email."""
     otp = otp_service.generate_otp()
-    await otp_service.save_otp(email, otp)
-    sent, error_msg = await otp_service.send_otp_email(email, otp)
+    success, message = await otp_service.send_otp_email(payload.email, otp)
     
-    if not sent:
+    if not success:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Verification email failed: {error_msg}"
+            detail=message
         )
-        
-    return {"message": "Verification code sent to your email"}
+    
+    await otp_service.save_otp(payload.email, otp)
+    return {"message": "Verification code sent to your email."}
 
 @router.post("/verify")
-async def verify_otp(data: OTPVerify):
-    is_valid, msg = await otp_service.verify_otp(data.email, data.otp)
-    if not is_valid:
-        raise HTTPException(status_code=400, detail=msg)
+async def verify_otp(payload: OTPVerify):
+    """Verify the OTP provided by the user."""
+    success, message = await otp_service.verify_otp(payload.email, payload.otp)
     
-    return {"message": "Email verified successfully"}
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=message
+        )
+    
+    return {"message": "Email verified successfully."}

@@ -210,7 +210,7 @@ Additional Info: ${formData.additionalInfo}`
     const airspaceTypes = ["Green (Open)", "Yellow (Controlled)", "Red (Restricted)"];
     const payloadTypes = ["Standard RGB", "Thermal (IR)", "Multispectral", "Lidar", "Combined RGB + Thermal"];
     const outputTypes = ["High-Res Orthomosaic", "Level 1 Thermal Report", "AI Defect Identification (PDF)", "3D Digital Twin", "CAD / DXF Layout"];
-    const companyTypes = ["Asset Owner", "EPC Contractor", "O&M Team", "Operation & Management", "Drone Service Provider", "Developer", "Other"];
+    const companyTypes = ["Asset Owner", "EPC Contractor", "O&M Team", "Operation & Management", "Drone Service Provider", "Other"];
     const solarCapacities = ["Less than 1 MW", "1-10 MW", "10-50 MW", "50-100 MW", "100-500 MW", "500+ MW"];
     const referralSources = ["Google Search", "LinkedIn", "Industry Event", "Referral", "Social Media", "Other"];
     const countries = ["United States", "Canada", "United Kingdom", "Germany", "France", "Spain", "Italy", "Australia", "India", "Other"];

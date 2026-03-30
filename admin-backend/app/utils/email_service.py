@@ -11,105 +11,81 @@ load_dotenv(override=True)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class EmailService:
-    def __init__(self):
-        self.email_user = os.getenv("EMAIL_USER")
-        self.email_password = os.getenv("EMAIL_PASSWORD")
-        self.email_host = os.getenv("EMAIL_HOST", "smtp.gmail.com")
-        self.email_port = int(os.getenv("EMAIL_PORT", 587))
-        self.admin_email = os.getenv("ADMIN_EMAIL", self.email_user)
 
-    def send_notification(self, subject: str, body: str, recipient: str = None, title: str = "New Notification"):
-        """Send a notification email to the admin or a specific recipient"""
-        # App Passwords might have spaces (Gmail UI shows them that way)
-        # We ensure they are stripped just in case
-        password = str(self.email_password).replace(" ", "").strip()
-        
-        target_email = recipient if recipient else self.admin_email
+def _get_smtp_config():
+    """Load SMTP credentials from environment.
+    
+    Gmail App Passwords are displayed with spaces (e.g. 'pvfb rgrw gmrj soit')
+    but must be used WITHOUT spaces when authenticating via SMTP.
+    We strip all whitespace from the password automatically.
+    """
+    return {
+        "user":     os.getenv("EMAIL_USER", "").strip(),
+        # Strip spaces — Gmail App Passwords are shown with spaces for readability only
+        "password": os.getenv("EMAIL_PASSWORD", "").replace(" ", "").strip(),
+        "host":     os.getenv("EMAIL_HOST", "smtp.gmail.com"),
+        "port":     int(os.getenv("EMAIL_PORT", 587)),
+    }
 
-        print(f"EMAIL_DEBUG: Sending notification to {target_email}")
-        print(f"EMAIL_DEBUG: Using sender {self.email_user}")
-
-        if not self.email_user or not password:
-            logger.error("Email credentials missing")
-            return False
-
-        msg = MIMEMultipart()
-        msg['From'] = f"SolarMark System <{self.email_user}>"
-        msg['To'] = target_email
-        msg['Subject'] = subject
-
-        html_body = f"""
-        <html>
-            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-                    <div style="text-align: center; margin-bottom: 20px;">
-                        <h1 style="color: #ea580c; margin: 0;">SolarMark</h1>
-                        <p style="color: #666; font-size: 14px; margin: 5px 0;">{title}</p>
-                    </div>
-                    <div style="background-color: #f9fafb; padding: 30px; border-radius: 8px;">
-                        <h3 style="margin-top: 0; color: #111827;">{subject}</h3>
-                        <div style="font-size: 14px; color: #4b5563; white-space: pre-wrap;">
-                            {body}
-                        </div>
-                    </div>
-                    <footer style="margin-top: 20px; text-align: center; color: #999; font-size: 12px;">
-                        This is an automated message from the SolarMark Administrative System.
-                    </footer>
-                </div>
-            </body>
-        </html>
-        """
-        msg.attach(MIMEText(html_body, 'html'))
-
-        try:
-            server = smtplib.SMTP(self.email_host, self.email_port, timeout=10)
-            server.starttls()
-            server.login(str(self.email_user), password)
-            server.send_message(msg)
-            server.quit()
-            logger.info(f"Notification email sent to {target_email}")
-            print(f"EMAIL_DEBUG: Email successfully sent to {target_email}")
-            return True
-        except Exception as e:
-            logger.error(f"Error sending notification email: {str(e)}")
-            print(f"EMAIL_DEBUG: CRITICAL ERROR SENDING EMAIL: {str(e)}")
-            return False
-
-email_service = EmailService()
 
 def _send_email(to_email: str, subject: str, html_body: str) -> tuple[bool, str]:
     """
     Low-level helper to send an HTML email via SMTP.
     Returns (success: bool, message: str).
     """
-    email_user = os.getenv("EMAIL_USER", "").strip()
-    email_password = os.getenv("EMAIL_PASSWORD", "").replace(" ", "").strip()
-    email_host = os.getenv("EMAIL_HOST", "smtp.gmail.com")
-    email_port = int(os.getenv("EMAIL_PORT", 587))
-
-    if not email_user or not email_password:
-        logger.error("Email credentials not configured.")
+    cfg = _get_smtp_config()
+    if not cfg["user"] or not cfg["password"]:
+        logger.error("Email credentials not configured (EMAIL_USER / EMAIL_PASSWORD missing).")
         return False, "Email credentials not configured."
 
     msg = MIMEMultipart("alternative")
-    msg["From"] = f"SolarMark <{email_user}>"
+    msg["From"] = f"SolarMark <{cfg['user']}>"
     msg["To"] = to_email
     msg["Subject"] = subject
     msg.attach(MIMEText(html_body, "html"))
 
     try:
-        server = smtplib.SMTP(email_host, email_port, timeout=10)
+        server = smtplib.SMTP(cfg["host"], cfg["port"], timeout=10)
         server.starttls()
-        server.login(str(email_user), email_password)
+        server.login(str(cfg["user"]), str(cfg["password"]))
         server.send_message(msg)
         server.quit()
         logger.info(f"Email sent successfully to {to_email} — Subject: {subject}")
         return True, "Success"
+    except smtplib.SMTPAuthenticationError:
+        msg_err = "SMTP Authentication failed. Check EMAIL_USER and EMAIL_PASSWORD."
+        logger.error(msg_err)
+        return False, msg_err
     except Exception as e:
         msg_err = f"Unexpected error sending email: {str(e)}"
         logger.error(msg_err)
         return False, msg_err
+def send_notification(subject: str, body: str) -> tuple[bool, str]:
+    """
+    Send a general notification email (usually to the admin).
+    Uses EMAIL_USER as the recipient for admin notifications.
+    """
+    admin_email = os.getenv("EMAIL_USER", "").strip()
+    if not admin_email:
+        logger.error("Admin notification failed: EMAIL_USER not set.")
+        return False, "Admin email not configured."
+    
+    # Simple HTML conversion for the plain text body
+    html_body = f"""
+    <html>
+    <body style="font-family: sans-serif; padding: 20px;">
+        <h2 style="color: #0f172a; border-bottom: 2px solid #f97316; padding-bottom: 10px;">{subject}</h2>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; white-space: pre-wrap;">
+{body}
+        </div>
+        <p style="font-size: 12px; color: #64748b; margin-top: 20px;">
+            This is an automated notification from SolarMark Backend.
+        </p>
+    </body>
+    </html>
+    """
+    return _send_email(admin_email, subject, html_body)
+
 
 def send_file_upload_notification(
     user_email: str,
@@ -120,7 +96,18 @@ def send_file_upload_notification(
 ) -> tuple[bool, str]:
     """
     Send a notification email to a user when an admin uploads a file to their profile.
+
+    Args:
+        user_email:         Recipient's email address.
+        user_name:          Recipient's display name.
+        filename:           Name of the uploaded file.
+        file_size_bytes:    File size in bytes (displayed in the email).
+        uploaded_by_admin:  Admin name or label to show in the email.
+
+    Returns:
+        (success, message) tuple.
     """
+    # Format file size nicely
     if file_size_bytes >= 1024 * 1024:
         size_str = f"{file_size_bytes / (1024 * 1024):.2f} MB"
     elif file_size_bytes >= 1024:
@@ -142,6 +129,8 @@ def send_file_upload_notification(
             <tr>
                 <td align="center">
                     <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
+
+                        <!-- Header -->
                         <tr>
                             <td style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 40px 40px 32px; text-align: center;">
                                 <h1 style="margin: 0; font-size: 28px; font-weight: 900; color: #ffffff; letter-spacing: -0.5px;">
@@ -152,11 +141,17 @@ def send_file_upload_notification(
                                 </p>
                             </td>
                         </tr>
+
+                        <!-- Orange accent bar -->
                         <tr>
                             <td style="background: linear-gradient(90deg, #f97316, #ea580c); height: 4px; padding: 0;"></td>
                         </tr>
+
+                        <!-- Body -->
                         <tr>
                             <td style="padding: 48px 40px 32px;">
+
+                                <!-- Icon + title -->
                                 <div style="text-align: center; margin-bottom: 32px;">
                                     <div style="display: inline-block; width: 72px; height: 72px; background-color: #fff7ed; border-radius: 20px; line-height: 72px; font-size: 36px; margin-bottom: 20px;">
                                         📄
@@ -168,6 +163,8 @@ def send_file_upload_notification(
                                         Hello <strong style="color: #0f172a;">{user_name}</strong>, a new document is now available for you.
                                     </p>
                                 </div>
+
+                                <!-- File card -->
                                 <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; overflow: hidden; margin-bottom: 32px;">
                                     <tr>
                                         <td style="padding: 20px 24px; border-bottom: 1px solid #e2e8f0;">
@@ -192,6 +189,8 @@ def send_file_upload_notification(
                                         </td>
                                     </tr>
                                 </table>
+
+                                <!-- CTA -->
                                 <div style="text-align: center; margin-bottom: 32px;">
                                     <p style="margin: 0 0 20px; font-size: 14px; color: #64748b; line-height: 1.6;">
                                         You can view and download this document directly from your profile dashboard.
@@ -201,15 +200,34 @@ def send_file_upload_notification(
                                         View My Profile →
                                     </a>
                                 </div>
+
+                                <!-- Info box -->
+                                <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px;">
+                                    <tr>
+                                        <td style="padding: 16px 20px;">
+                                            <p style="margin: 0; font-size: 13px; color: #1e40af; line-height: 1.6;">
+                                                <strong>ℹ️ Note:</strong> If you have any questions about this document or did not expect this update, please contact our support team.
+                                            </p>
+                                        </td>
+                                    </tr>
+                                </table>
+
                             </td>
                         </tr>
+
+                        <!-- Footer -->
                         <tr>
                             <td style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 28px 40px; text-align: center;">
                                 <p style="margin: 0; font-size: 12px; color: #94a3b8; line-height: 1.6;">
+                                    This is an automated notification from <strong style="color: #64748b;">SolarMark</strong>.<br>
+                                    Please do not reply to this email.
+                                </p>
+                                <p style="margin: 12px 0 0; font-size: 11px; color: #cbd5e1;">
                                     © 2026 SolarMark. All rights reserved.
                                 </p>
                             </td>
                         </tr>
+
                     </table>
                 </td>
             </tr>
@@ -217,4 +235,17 @@ def send_file_upload_notification(
     </body>
     </html>
     """
+
     return _send_email(user_email, subject, html_body)
+
+
+class EmailService:
+    """Wrapper class to provide both functional and object-oriented access."""
+    def send_notification(self, subject: str, body: str):
+        return send_notification(subject, body)
+    
+    def send_file_upload_notification(self, *args, **kwargs):
+        return send_file_upload_notification(*args, **kwargs)
+
+# Singleton instance for easy import
+email_service = EmailService()
