@@ -10,12 +10,24 @@ import {
     AlertTriangle, Clock, ClipboardList,
     CheckCircle2, XCircle, MapPin, Phone,
     ShieldCheck, Trash2, Lock, CreditCard,
-    X, GitCompare, ArrowUpDown, BarChart3, CheckSquare, Square, Zap, LogOut
+    Shield, X, GitCompare, ArrowUpDown, BarChart3, CheckSquare, Square, Zap, LogOut,
+    MessageSquarePlus, History, Send, MessageSquare, ListTodo, Share2, Users
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { authAPI } from "@/lib/api";
 import ContentProtection from "@/components/ContentProtection";
+import dynamic from 'next/dynamic';
+
+// Dynamic import for react-pdf to prevent SSR errors (DOMMatrix is not defined)
+const Document = dynamic(() => import('react-pdf').then(mod => mod.Document), { ssr: false });
+const Page = dynamic(() => import('react-pdf').then(mod => mod.Page), { ssr: false });
+
+// Only import and configure pdfjs on the client
+if (typeof window !== 'undefined') {
+    const { pdfjs } = require('react-pdf');
+    pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+}
 
 export default function ProfilePage() {
     const router = useRouter();
@@ -44,92 +56,107 @@ export default function ProfilePage() {
     const [sortOrder, setSortOrder] = useState('desc');
     const [showViewModal, setShowViewModal] = useState(false);
     const [viewingBlob, setViewingBlob] = useState(null);
+    const [numPages, setNumPages] = useState(null);
+    const [pdfReady, setPdfReady] = useState(false);
 
-    const fetchProfileData = async () => {
+    // Review States
+    const [showReviewModal, setShowReviewModal] = useState(false);
+    const [selectedPdfForReview, setSelectedPdfForReview] = useState(null);
+    const [reviewText, setReviewText] = useState("");
+    const [submittingReview, setSubmittingReview] = useState(false);
+    const [reportReviews, setReportReviews] = useState({}); // {pdf_id: review_data}
+
+    // Sharing States
+    const [showShareModal, setShowShareModal] = useState(false);
+    const [sharedWithMe, setSharedWithMe] = useState([]);
+    const [shareRecipientEmail, setShareRecipientEmail] = useState("");
+    const [isSharing, setIsSharing] = useState(false);
+    const [shareSuccess, setShareSuccess] = useState(false);
+
+    const fetchProfileData = async (retryCount = 0) => {
         try {
             setLoading(true);
             setError("");
 
-            // Check authentication locally first
-            if (!authAPI.isAuthenticated()) {
+            // Check authentication - give it a moment if we just arrived
+            const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
+            if (!token && !authAPI.isAuthenticated()) {
+                if (retryCount < 2) {
+                    setTimeout(() => fetchProfileData(retryCount + 1), 500);
+                    return;
+                }
                 handleLogout();
                 return;
             }
 
-            // 1. First set user from local storage for immediate UI feedback
             const userInfo = authAPI.getCurrentUser();
             if (userInfo) setUser(userInfo);
 
-            // 2. Then fetch fresh profile data from backend to verify session
             try {
-                const profileRes = await authAPI.getProfile();
-                if (profileRes.data) {
+                const [profileRes, bookingsResponse, pdfsData, reviewsResponse, sharedData] = await Promise.all([
+                    authAPI.getProfile(),
+                    authAPI.getMyBookings(),
+                    authAPI.getAllMyPDFs(),
+                    authAPI.getMyAllReviews().catch(err => ({ data: {} })),
+                    authAPI.getSharedWithMe().catch(err => ({ data: [] }))
+                ]);
+
+                if (profileRes && profileRes.data) {
                     const freshUser = {
                         id: profileRes.data.id,
                         name: `${profileRes.data.first_name || ''} ${profileRes.data.last_name || ''}`.trim() || profileRes.data.email,
                         email: profileRes.data.email
                     };
                     setUser(freshUser);
-
-                    // Update local storage names in case they changed
                     localStorage.setItem('user_name', freshUser.name);
                 }
 
-                // Fetch data in parallel
-                const [bookingsResponse, pdfsData] = await Promise.all([
-                    authAPI.getMyBookings(),
-                    authAPI.getAllMyPDFs()
-                ]);
+                const bData = bookingsResponse?.data || [];
+                setBookings(bData);
+                setPdfs(pdfsData || []);
+                setReportReviews(reviewsResponse?.data || {});
+                
+                console.log("DEBUG: Raw Shared Data response:", sharedData);
+                const sData = sharedData?.data || (Array.isArray(sharedData) ? sharedData : []);
+                console.log("DEBUG: Processed Shared Data for state:", sData);
+                setSharedWithMe(sData);
 
-                const bookingsData = bookingsResponse.data || [];
-                setBookings(bookingsData);
-                setPdfs(pdfsData);
-
-                // Calculate statistics
-                const totalSize = pdfsData.reduce((sum, pdf) => sum + (pdf.file_size || 0), 0);
+                const totalSize = (pdfsData || []).reduce((sum, pdf) => sum + (pdf.file_size || 0), 0);
                 setStats({
-                    total_pdfs: pdfsData.length,
-                    total_bookings: bookingsData.length,
+                    total_pdfs: (pdfsData || []).length,
+                    total_bookings: bData.length,
                     total_size: Math.round(totalSize / (1024 * 1024) * 100) / 100
                 });
 
             } catch (err) {
-                console.error("Session verification or data fetch failed:", err);
+                console.error("Data fetch failed:", err);
                 if (err.response?.status === 401) {
                     handleLogout();
                     return;
                 }
-                setError(err.message || "Failed to load profile data");
+                setError("Unable to sync reports. Please check your connection.");
             }
-
         } catch (err) {
-            console.error("Critical error in profile page:", err);
-            setError("An unexpected error occurred. Please try logging in again.");
+            console.error("Critical error:", err);
         } finally {
             setLoading(false);
         }
     };
 
-    // Trigger payment flow for download
     const handleDownloadClick = (pdf) => {
         setSelectedPdf(pdf);
-        setShowPaymentModal(true);
+        startDirectVisualization(pdf);
     };
 
-    // Actual visualization after "payment" (or directly)
-    const processVisualization = async () => {
-        if (!selectedPdf) return;
-
-        const pdf = selectedPdf;
-        setShowPaymentModal(false);
-
+    const startDirectVisualization = async (pdf) => {
+        if (!pdf) return;
+        
         try {
             setDownloadingPdf(pdf.pdf_id);
             setError("");
 
             const response = await authAPI.downloadPDF(pdf.pdf_id);
 
-            // Create blob from response
             const blob = new Blob([response.data], { type: 'application/pdf' });
             const url = window.URL.createObjectURL(blob);
             
@@ -161,12 +188,38 @@ export default function ProfilePage() {
         try {
             setLoading(true);
             await authAPI.deleteBooking(bookingId);
-            // Re-fetch data to update UI
             await fetchProfileData();
         } catch (err) {
             console.error("Error deleting booking:", err);
             setError(err.response?.data?.detail || err.message || "Failed to delete booking");
             setLoading(false);
+        }
+    };
+
+    const handleShareClick = (pdf) => {
+        setSelectedPdf(pdf);
+        setShareRecipientEmail("");
+        setShareSuccess(false);
+        setShowShareModal(true);
+    };
+
+    const handleConfirmShare = async () => {
+        if (!shareRecipientEmail.trim()) return;
+        
+        try {
+            setIsSharing(true);
+            setError("");
+            await authAPI.shareReport(selectedPdf.pdf_id, shareRecipientEmail);
+            setShareSuccess(true);
+            setTimeout(() => {
+                setShowShareModal(false);
+                setShareSuccess(false);
+            }, 2000);
+        } catch (err) {
+            const detail = err.response?.data?.detail || "Failed to share report.";
+            setError(detail);
+        } finally {
+            setIsSharing(false);
         }
     };
 
@@ -220,7 +273,6 @@ export default function ProfilePage() {
 
             const blob = await authAPI.downloadComparisonReport(selectedReports, sortBy, sortOrder);
 
-            // Create download link
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -229,7 +281,6 @@ export default function ProfilePage() {
             document.body.appendChild(a);
             a.click();
 
-            // Cleanup
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
 
@@ -241,9 +292,86 @@ export default function ProfilePage() {
         }
     };
 
-    useEffect(() => {
-        fetchProfileData();
-    }, [router]);
+    const handleVisualizeComparison = async () => {
+        if (selectedReports.length < 2) {
+            setError("Please select at least 2 reports to visualize comparison");
+            return;
+        }
+
+        try {
+            setComparingReports(true);
+            setError("");
+
+            const blob = await authAPI.downloadComparisonReport(selectedReports, sortBy, sortOrder);
+            
+            setSelectedPdf({
+                filename: `COMPARISON ANALYSIS_REPORT`,
+                pdf_id: 'CMP-' + Math.random().toString(36).substring(7).toUpperCase()
+            });
+
+            const url = window.URL.createObjectURL(blob);
+            setViewingBlob(url);
+            setShowViewModal(true);
+            setShowComparisonModal(false); 
+        } catch (err) {
+            console.error("Error visualizing comparison report:", err);
+            setError(err.response?.data?.detail || "Failed to visualize comparison report");
+        } finally {
+            setComparingReports(false);
+        }
+    };
+
+    // Report Review Handlers
+    const handleReviewClick = async (pdf) => {
+        setSelectedPdfForReview(pdf);
+        setReviewText("");
+        setShowReviewModal(true);
+        
+        try {
+            const existingReview = await authAPI.getMyReportReview(pdf.pdf_id);
+            if (existingReview.data) {
+                setReviewText(existingReview.data.user_feedback);
+                setReportReviews(prev => ({
+                    ...prev,
+                    [pdf.pdf_id]: existingReview.data
+                }));
+            }
+        } catch (err) {
+            console.error("Error fetching review:", err);
+        }
+    };
+
+    const submitReview = async () => {
+        if (!reviewText.trim()) {
+            setError("Please enter your feedback before submitting.");
+            return;
+        }
+
+        try {
+            setSubmittingReview(true);
+            await authAPI.submitReportReview({
+                pdf_id: selectedPdfForReview.pdf_id,
+                filename: selectedPdfForReview.filename,
+                user_feedback: reviewText
+            });
+
+            setReportReviews(prev => ({
+                ...prev,
+                [selectedPdfForReview.pdf_id]: { 
+                    status: 'pending', 
+                    user_feedback: reviewText,
+                    submitted_at: new Date().toISOString()
+                }
+            }));
+
+            setShowReviewModal(false);
+        } catch (err) {
+            console.error("Error submitting review:", err);
+            setError("Failed to submit your change request. Please try again.");
+        } finally {
+            setSubmittingReview(false);
+        }
+    };
 
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
@@ -254,6 +382,10 @@ export default function ProfilePage() {
             day: 'numeric'
         });
     };
+
+    useEffect(() => {
+        fetchProfileData();
+    }, [router]);
 
     const formatFileSize = (bytes) => {
         if (!bytes) return '0 B';
@@ -491,74 +623,153 @@ export default function ProfilePage() {
 
                             <ContentProtection isProtected={true}>
                                 <div className="space-y-3">
-                                    {pdfs.length > 0 ? pdfs.map((pdf) => {
-                                        const isSelected = selectedReports.includes(pdf.pdf_id);
-                                        return (
-                                            <div key={pdf.pdf_id} className={`flex items-center justify-between p-4 rounded-xl border transition-all ${isSelected ? 'bg-orange-50 border-orange-200 shadow-sm' : 'bg-white border-slate-100 hover:bg-slate-50'
-                                                }`}>
-                                                <div className="flex items-center gap-4 overflow-hidden">
-                                                    <button
-                                                        onClick={() => toggleReportSelection(pdf.pdf_id)}
-                                                        className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${isSelected ? 'bg-orange-600 border-orange-600' : 'border-slate-300 hover:border-orange-400'
-                                                            }`}
-                                                    >
-                                                        {isSelected && <CheckSquare size={12} className="text-white" />}
-                                                    </button>
-
-                                                    <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center shrink-0">
-                                                        <FileText size={20} className="text-red-500" />
-                                                    </div>
-
-                                                    <div className="min-w-0">
-                                                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                                                            <h4 className="font-bold text-slate-900 text-sm truncate pr-4">{pdf.filename || "Unnamed Report"}</h4>
-                                                            {pdf.report_type && (
-                                                                <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${pdf.report_type === 'rgb' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
-                                                                    }`}>
-                                                                    {pdf.report_type === 'rgb' ? 'DRONE DATA' : 'SITE PLAN'}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
-                                                            <span>{formatDate(pdf.uploaded_at)}</span>
-                                                            <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-                                                            <span>{formatFileSize(pdf.file_size)}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <button
-                                                    onClick={() => handleDownloadClick(pdf)}
-                                                    className="px-4 py-2 bg-slate-900 hover:bg-orange-600 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-2 shadow-lg shadow-slate-900/20"
-                                                >
-                                                    <Eye size={14} />
-                                                    <span className="hidden sm:inline">Visualize</span>
-                                                </button>
+                                    {loading ? (
+                                        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                                            <div className="relative mb-4">
+                                                <div className="absolute inset-0 bg-orange-200 rounded-full blur-xl animate-pulse"></div>
+                                                <Loader2 className="w-12 h-12 text-orange-600 animate-spin relative z-10" />
                                             </div>
-                                        );
-                                    }) : (
+                                            <p className="text-slate-500 font-bold text-sm animate-pulse">Syncing Secure Reports...</p>
+                                        </div>
+                                    ) : pdfs.length > 0 ? (
+                                        pdfs.map((pdf) => {
+                                            const isSelected = selectedReports.includes(pdf.pdf_id);
+                                            return (
+                                                 <div key={pdf.pdf_id} className={`flex items-center justify-between p-5 rounded-2xl border transition-all ${isSelected ? 'bg-orange-50/50 border-orange-200 shadow-sm' : 'bg-white border-slate-100 hover:border-slate-200 hover:shadow-md hover:shadow-slate-200/20'
+                                                     }`}>
+                                                     <div className="flex items-center gap-4 overflow-hidden">
+                                                         <button
+                                                             onClick={() => toggleReportSelection(pdf.pdf_id)}
+                                                             className={`w-5 h-5 rounded-lg flex items-center justify-center border-2 transition-all ${isSelected ? 'bg-orange-600 border-orange-600 scale-110 shadow-lg shadow-orange-600/20' : 'border-slate-200 hover:border-orange-400'
+                                                                 }`}
+                                                         >
+                                                             {isSelected && <CheckSquare size={10} strokeWidth={4} className="text-white" />}
+                                                         </button>
+  
+                                                         <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center shadow-sm border border-red-100 shrink-0">
+                                                             <FileText size={24} className="text-red-500" />
+                                                         </div>
+  
+                                                         <div className="min-w-0">
+                                                             <div className="flex flex-wrap items-center gap-2 mb-1">
+                                                                 <h4 className="font-bold text-slate-900 text-sm truncate pr-4">{pdf.filename || "Unnamed Report"}</h4>
+                                                                 {pdf.report_type && (
+                                                                     <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${pdf.report_type === 'rgb' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                                                                         }`}>
+                                                                         {pdf.report_type === 'rgb' ? 'DRONE DATA' : 'SITE PLAN'}
+                                                                     </span>
+                                                                 )}
+                                                             </div>
+                                                             <div className="flex items-center gap-3 text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
+                                                                 <span>{formatDate(pdf.uploaded_at)}</span>
+                                                                 <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+                                                                 <span>{formatFileSize(pdf.file_size)}</span>
+                                                             </div>
+                                                         </div>
+                                                     </div>
+  
+                                                     <div className="flex items-center gap-3">
+                                                         {reportReviews[pdf.pdf_id] && (
+                                                             <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border shadow-sm ${
+                                                                 reportReviews[pdf.pdf_id]?.status === 'completed' 
+                                                                 ? 'bg-green-100 text-green-700 border-green-200 animate-pulse' 
+                                                                 : 'bg-blue-100 text-blue-700 border-blue-200'
+                                                             }`}>
+                                                                 {reportReviews[pdf.pdf_id]?.status === 'completed' ? (
+                                                                     <><CheckCircle2 size={10} strokeWidth={3} /> CHANGES MADE</>
+                                                                 ) : (
+                                                                     <><Clock size={10} strokeWidth={3} /> REVIEW PENDING</>
+                                                                 )}
+                                                             </div>
+                                                         )}
+                                                         
+                                                         <button
+                                                             onClick={() => handleReviewClick(pdf)}
+                                                             className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm active:scale-95"
+                                                         >
+                                                             <MessageSquarePlus size={14} className="text-orange-500" />
+                                                             <span>Review</span>
+                                                         </button>
+
+                                                         <button
+                                                             onClick={() => handleShareClick(pdf)}
+                                                             className="px-4 py-2 bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm active:scale-95 group"
+                                                         >
+                                                             <Share2 size={14} className="group-hover:text-white transition-colors" />
+                                                             <span>Share</span>
+                                                         </button>
+
+                                                         <button
+                                                             onClick={() => handleDownloadClick(pdf)}
+                                                             className="px-4 py-2 bg-slate-900 hover:bg-orange-600 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-xl shadow-slate-900/20 active:scale-95"
+                                                         >
+                                                             <Eye size={14} />
+                                                             <span>Visualize</span>
+                                                         </button>
+                                                     </div>
+                                                 </div>
+                                             );
+                                        })
+                                    ) : (
                                         <div className="text-center py-20 border-2 border-dashed border-slate-100 rounded-3xl">
                                             <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
                                                 <Folder size={32} />
                                             </div>
                                             <h4 className="text-slate-900 font-bold mb-2">No Reports Available</h4>
                                             <p className="text-slate-500 text-sm max-w-xs mx-auto mb-6">Your inspection reports will appear here once the analysis is complete.</p>
-                                            <button
-                                                onClick={() => router.push('/booking')}
-                                                className="text-orange-600 font-bold text-sm hover:underline"
-                                            >
-                                                Schedule an Inspection
-                                            </button>
                                         </div>
                                     )}
                                 </div>
+
+                                {/* SHARED WITH ME SECTION */}
+                                {sharedWithMe.length > 0 && (
+                                    <div className="mt-12 pt-12 border-t border-slate-100">
+                                        <div className="flex items-center gap-3 mb-8">
+                                            <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center border border-blue-100">
+                                                <Users size={16} />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-lg font-bold text-slate-900">Shared with Me</h3>
+                                                <p className="text-xs text-slate-400 font-medium">Reports shared by other users</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            {sharedWithMe.map((shared) => (
+                                                <div key={shared.share_id} className="flex items-center justify-between p-5 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:shadow-lg hover:shadow-slate-200/20 transition-all">
+                                                    <div className="flex items-center gap-4 overflow-hidden">
+                                                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-slate-100 shrink-0">
+                                                            <FileText size={20} className="text-blue-500" />
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <h4 className="font-bold text-slate-900 text-sm truncate">{shared.filename}</h4>
+                                                            <div className="flex items-center gap-3 text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">
+                                                                <span className="text-blue-600">From: {shared.sender_name || shared.sender_email}</span>
+                                                                <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+                                                                <span>Shared {formatDate(shared.shared_at)}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => handleDownloadClick({ pdf_id: shared.pdf_id, filename: shared.filename })}
+                                                        className="px-4 py-2 bg-slate-900 hover:bg-blue-600 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm"
+                                                    >
+                                                        <Eye size={14} />
+                                                        <span>Visualize</span>
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </ContentProtection>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Payment Modal */}
+            {/* Payment Modal - Commented out for now */}
+            {/* 
             <AnimatePresence>
                 {showPaymentModal && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -616,6 +827,7 @@ export default function ProfilePage() {
                     </div>
                 )}
             </AnimatePresence>
+            */}
 
             {/* Comparison Modal */}
             <AnimatePresence>
@@ -701,10 +913,18 @@ export default function ProfilePage() {
                                         >
                                             Close
                                         </button>
-                                        <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-500 rounded-xl text-xs font-bold uppercase tracking-wider">
-                                            <Shield size={14} />
+                                        <button
+                                            onClick={handleVisualizeComparison}
+                                            disabled={comparingReports}
+                                            className="flex items-center gap-2 px-6 py-3 bg-slate-900 hover:bg-orange-600 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-lg shadow-slate-900/20 disabled:opacity-50 disabled:cursor-not-allowed group"
+                                        >
+                                            {comparingReports ? (
+                                                <Loader2 size={14} className="animate-spin" />
+                                            ) : (
+                                                <Shield size={14} className="group-hover:text-white" />
+                                            )}
                                             Visualization Only
-                                        </div>
+                                        </button>
                                     </div>
                                 </div>
                             </ContentProtection>
@@ -713,77 +933,383 @@ export default function ProfilePage() {
                 )}
             </AnimatePresence>
 
-            {/* Report Visualization Modal */}
+            {/* Report Visualization Modal - Full Screen */}
             <AnimatePresence>
                 {showViewModal && viewingBlob && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10">
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center">
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-slate-950/90 backdrop-blur-xl"
-                            onClick={() => {
-                                setShowViewModal(false);
-                                window.URL.revokeObjectURL(viewingBlob);
-                                setViewingBlob(null);
-                            }}
+                            className="absolute inset-0 bg-slate-950"
                         />
                         <ContentProtection isProtected={true}>
                             <motion.div
-                                initial={{ scale: 0.95, opacity: 0, y: 20 }}
-                                animate={{ scale: 1, opacity: 1, y: 0 }}
-                                exit={{ scale: 0.95, opacity: 0, y: 20 }}
-                                className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-6xl h-full flex flex-col overflow-hidden border border-slate-200"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="relative bg-white w-screen h-screen flex flex-col overflow-hidden"
                             >
-                                <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                                <div className="px-8 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80 backdrop-blur-md">
                                     <div className="flex items-center gap-4">
                                         <div className="w-10 h-10 bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center">
                                             <FileText size={20} />
                                         </div>
                                         <div>
                                             <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">{selectedPdf?.filename}</h3>
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Protected Visualization Mode</p>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest bg-emerald-50 px-2 py-0.5 rounded">Verified Security Mode</span>
+                                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Read-Only Visualization</span>
+                                            </div>
                                         </div>
                                     </div>
-                                    <button
-                                        onClick={() => {
-                                            setShowViewModal(false);
-                                            window.URL.revokeObjectURL(viewingBlob);
-                                            setViewingBlob(null);
-                                        }}
-                                        className="w-10 h-10 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all group"
+                                    <div className="flex items-center gap-4">
+                                        <div className="hidden sm:flex items-center gap-3 px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em]">
+                                            <ShieldCheck size={14} className="text-emerald-400" />
+                                            SECURE STREAM
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                setShowViewModal(false);
+                                                window.URL.revokeObjectURL(viewingBlob);
+                                                setViewingBlob(null);
+                                            }}
+                                            className="w-10 h-10 rounded-xl bg-slate-200 text-slate-600 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all group shadow-sm"
+                                        >
+                                            <X size={20} className="group-hover:rotate-90 transition-transform duration-300" />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="flex-1 bg-slate-200 relative overflow-hidden flex flex-col">
+                                    {/* THE SHIELD CHECK BARRIER - Verification Phase */}
+                                    {!pdfReady && (
+                                        <div className="absolute inset-0 z-[70] bg-slate-900 flex flex-col items-center justify-center gap-6">
+                                            <div className="relative">
+                                                <div className="absolute -inset-4 bg-orange-500/20 rounded-full blur-2xl animate-pulse"></div>
+                                                <motion.div
+                                                    animate={{ 
+                                                        scale: [1, 1.1, 1],
+                                                        rotate: [0, 5, -5, 0]
+                                                    }}
+                                                    transition={{ repeat: Infinity, duration: 4 }}
+                                                    className="relative w-24 h-24 bg-gradient-to-br from-orange-500 to-orange-600 rounded-3xl flex items-center justify-center shadow-2xl shadow-orange-500/40"
+                                                >
+                                                    <Shield size={48} className="text-white drop-shadow-lg" />
+                                                </motion.div>
+                                            </div>
+                                            <div className="text-center space-y-2">
+                                                <h4 className="text-white text-xl font-black uppercase tracking-widest text-[#f5f5f5]">Shield-Check Activated</h4>
+                                                <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.3em] flex items-center justify-center gap-2">
+                                                    <Loader2 size={14} className="animate-spin text-orange-500" />
+                                                    Verifying Data Integrity
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* The Shielded Report Viewer (Canvas-based to block 'Save As') */}
+                                    <div 
+                                        className="flex-1 overflow-auto bg-slate-800 p-8 flex justify-center scrollbar-thin scrollbar-thumb-slate-600"
+                                        onContextMenu={(e) => e.preventDefault()}
                                     >
-                                        <X size={20} className="group-hover:rotate-90 transition-transform duration-300" />
-                                    </button>
-                                </div>
-                                <div className="flex-1 bg-slate-100 relative overflow-hidden">
-                                    <iframe
-                                        src={`${viewingBlob}#toolbar=0&navpanes=0&scrollbar=0`}
-                                        className="w-full h-full border-none"
-                                        title="Report Preview"
-                                    />
-                                    {/* Additional overlay to prevent right click interaction on iframe if possible */}
-                                    <div className="absolute inset-0 pointer-events-none"></div>
-                                </div>
-                                <div className="px-8 py-6 bg-white border-t border-slate-100 flex items-center justify-between">
-                                    <div className="flex items-center gap-6">
-                                        <div>
-                                            <span className="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Security Hash</span>
-                                            <span className="text-xs font-mono text-slate-600 font-bold">{selectedPdf?.pdf_id?.substring(0, 16)}...</span>
-                                        </div>
-                                        <div className="h-8 w-px bg-slate-100"></div>
-                                        <div>
-                                            <span className="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Access Level</span>
-                                            <span className="text-xs text-orange-600 font-black uppercase tracking-widest">Verified Premium</span>
+                                        <div 
+                                            className="relative shadow-2xl shadow-black/40 ring-1 ring-slate-700 rounded"
+                                        >
+                                            <Document
+                                                file={viewingBlob}
+                                                onLoadSuccess={({ numPages }) => {
+                                                    setNumPages(numPages);
+                                                    setPdfReady(true);
+                                                }}
+                                                loading={<div className="h-[800px] w-[600px] bg-slate-800 animate-pulse"></div>}
+                                            >
+                                                {Array.from(new Array(numPages), (el, index) => (
+                                                    <Page 
+                                                        key={`page_${index + 1}`} 
+                                                        pageNumber={index + 1} 
+                                                        scale={1.5}
+                                                        className="mb-8 last:mb-0"
+                                                        loading={<div className="h-[800px] w-[600px] bg-slate-800"></div>}
+                                                        renderTextLayer={false}
+                                                        renderAnnotationLayer={false}
+                                                    />
+                                                ))}
+                                            </Document>
+                                            
+                                            {/* SECURE OVERLAY: Prevent any interaction with canvas data */}
+                                            <div className="absolute inset-0 z-50 select-none pointer-events-none">
+                                                {/* Watermark Overlay for the Report itself */}
+                                                <div className="absolute inset-0 flex flex-wrap gap-12 items-center justify-center rotate-[-20deg] opacity-[0.05] overflow-hidden py-24">
+                                                    {Array(100).fill(`AUTHORITY ACCESS ONLY`).map((text, i) => (
+                                                        <span key={`wm_${i}`} className="text-2xl font-black whitespace-nowrap tracking-tighter uppercase select-none">{text}</span>
+                                                    ))}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3 px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em]">
-                                        <ShieldCheck size={14} className="text-emerald-400" />
-                                        Content Protected
+                                </div>
+                                <div className="px-8 py-4 bg-white border-t border-slate-100 flex items-center justify-between shrink-0">
+                                    <div className="flex items-center gap-8">
+                                        <div>
+                                            <span className="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Fingerprint</span>
+                                            <span className="text-xs font-mono text-slate-600 font-bold">{selectedPdf?.pdf_id?.substring(0, 24)}</span>
+                                        </div>
+                                        <div className="hidden md:block h-8 w-px bg-slate-100"></div>
+                                        <div className="hidden md:block">
+                                            <span className="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Visual Analysis</span>
+                                            <span className="text-xs text-orange-600 font-black uppercase tracking-widest">Active High-Res</span>
+                                        </div>
+                                    </div>
+                                    <div className="text-xs text-slate-400 font-bold uppercase tracking-widest">
+                                        SolarMark Privacy Shield Enabled
                                     </div>
                                 </div>
                             </motion.div>
                         </ContentProtection>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* REPORT REVIEW MODAL */}
+            <AnimatePresence mode="wait">
+                {showReviewModal && (
+                    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
+                            onClick={() => setShowReviewModal(false)}
+                        />
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden"
+                        >
+                            <div className="flex h-full max-h-[90vh] flex-col">
+                                {/* Header */}
+                                <div className="p-8 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-orange-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-orange-600/20">
+                                            <MessageSquarePlus size={24} />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Request Report Changes</h3>
+                                            <p className="text-sm text-slate-500 font-bold uppercase tracking-widest text-[10px]">Reference: {selectedPdfForReview?.pdf_id?.substring(0, 8)}</p>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => setShowReviewModal(false)}
+                                        className="w-10 h-10 rounded-xl hover:bg-slate-200 flex items-center justify-center text-slate-400 transition-colors"
+                                    >
+                                        <X size={20} />
+                                    </button>
+                                </div>
+
+                                {/* Body */}
+                                <div className="p-8 overflow-y-auto custom-scrollbar flex-1 bg-white">
+                                    {/* Existing Status if any */}
+                                    {reportReviews[selectedPdfForReview?.pdf_id] && (
+                                        <div className="mb-10">
+                                            {/* Status Header */}
+                                            <div className="flex items-center justify-between mb-6 pb-6 border-b border-slate-100">
+                                                <div>
+                                                    <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-1">Request Tracking</h4>
+                                                    <p className="text-xs text-slate-400 font-medium tracking-wide">Ref: {reportReviews[selectedPdfForReview?.pdf_id].id?.substring(18)}</p>
+                                                </div>
+                                                <div className={`px-5 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center gap-2.5 shadow-sm border ${
+                                                    reportReviews[selectedPdfForReview?.pdf_id].status === 'completed' 
+                                                    ? 'bg-green-50 text-green-700 border-green-200/50' 
+                                                    : 'bg-orange-50 text-orange-700 border-orange-200/50'
+                                                }`}>
+                                                    {reportReviews[selectedPdfForReview?.pdf_id].status === 'completed' ? <CheckCircle2 size={16} /> : <Clock size={16} />}
+                                                    {reportReviews[selectedPdfForReview?.pdf_id].status}
+                                                </div>
+                                            </div>
+
+                                            {/* Discussion Thread */}
+                                            <div className="space-y-6 flex flex-col">
+                                                {/* User Request Base Card */}
+                                                <div className="flex w-full">
+                                                    <div className="bg-white border border-slate-200 rounded-[2rem] rounded-tl-sm p-5 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] w-fit max-w-[90%] transition-shadow hover:shadow-md">
+                                                        <div className="flex items-center gap-3 mb-3 border-b border-slate-50 pb-3">
+                                                            <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+                                                                <User size={12} className="text-slate-500" />
+                                                            </div>
+                                                            <p className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Your Request</p>
+                                                        </div>
+                                                        <p className="text-sm text-slate-700 font-medium leading-relaxed pr-2">
+                                                            {reportReviews[selectedPdfForReview?.pdf_id].user_feedback}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Admin Remark Base Card (if exists) */}
+                                                {reportReviews[selectedPdfForReview?.pdf_id].admin_remarks && (
+                                                    <div className="flex w-full justify-end">
+                                                        <div className="bg-gradient-to-l from-orange-50 to-amber-50/10 border border-orange-100/80 rounded-[2rem] rounded-tr-sm p-5 shadow-[0_4px_20px_-10px_rgba(249,115,22,0.1)] w-fit max-w-[90%]">
+                                                            <div className="flex items-center justify-end gap-3 mb-3 border-b border-orange-100/40 pb-3 text-right">
+                                                                <p className="text-[10px] font-black text-orange-800 uppercase tracking-widest">Analysis Team Resolution</p>
+                                                                <div className="w-7 h-7 rounded-lg bg-orange-100 flex items-center justify-center shrink-0 border border-orange-200/50">
+                                                                    <Shield size={12} className="text-orange-600" />
+                                                                </div>
+                                                            </div>
+                                                            <p className="text-sm text-orange-950 font-medium leading-relaxed pl-2 text-right">
+                                                                {reportReviews[selectedPdfForReview?.pdf_id].admin_remarks}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-5">
+                                        <div className="flex items-center gap-3 mb-2 px-1">
+                                            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                            <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest">
+                                                {reportReviews[selectedPdfForReview?.pdf_id] ? "Request Further Changes" : "Submit Issue Profile"}
+                                            </h4>
+                                        </div>
+                                        <div className="relative group">
+                                            <textarea
+                                                value={reviewText}
+                                                onChange={(e) => setReviewText(e.target.value)}
+                                                placeholder="Please specify the exact technical changes required for this report... (e.g., 'Re-evaluate thermal signature on Zone B' or 'Include updated site plan coordinates')"
+                                                className="w-full h-40 bg-slate-50 border-2 border-slate-100 rounded-3xl p-6 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-500/10 transition-all resize-none text-[15px] font-medium leading-relaxed shadow-sm"
+                                            />
+                                        </div>
+                                        
+                                        {!reportReviews[selectedPdfForReview?.pdf_id] && (
+                                            <div className="bg-slate-50 border border-slate-200 p-5 rounded-2xl flex items-start gap-4">
+                                                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shrink-0 border border-slate-200 shadow-sm">
+                                                    <AlertCircle size={18} className="text-slate-500" />
+                                                </div>
+                                                <div className="pt-0.5">
+                                                    <p className="text-xs font-black text-slate-700 uppercase tracking-widest mb-1">Direct Technical Link</p>
+                                                    <p className="text-[13px] text-slate-500 font-medium leading-relaxed">
+                                                        Submitting this profile will directly alert the analysis team. Track the resolution status via the badge on your dashboard.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Actions */}
+                                <div className="p-8 bg-slate-50 border-t border-slate-100 flex items-center justify-between shrink-0">
+                                    <button
+                                        onClick={() => setShowReviewModal(false)}
+                                        className="px-6 py-4 text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors uppercase tracking-widest"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={submitReview}
+                                        disabled={submittingReview || !reviewText.trim()}
+                                        className="px-10 py-4 bg-slate-900 hover:bg-orange-600 disabled:bg-slate-300 text-white rounded-2xl text-sm font-black transition-all flex items-center gap-3 shadow-xl shadow-slate-900/20 active:scale-95 uppercase tracking-[0.2em]"
+                                    >
+                                        {submittingReview ? (
+                                            <Loader2 size={18} className="animate-spin" />
+                                        ) : (
+                                            <Send size={18} />
+                                        )}
+                                        {reportReviews[selectedPdfForReview?.pdf_id] ? 'Update Request' : 'Submit Review'}
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* SECURE SHARE MODAL */}
+            <AnimatePresence>
+                {showShareModal && (
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
+                            onClick={() => !isSharing && setShowShareModal(false)}
+                        />
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden"
+                        >
+                            <div className="p-8">
+                                <div className="flex items-center justify-between mb-8">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center">
+                                            <Share2 size={24} />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-bold text-slate-900">Secure Share</h3>
+                                            <p className="text-xs text-slate-400 font-medium tracking-wide uppercase">Report access transfer</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => setShowShareModal(false)} className="text-slate-400 hover:text-slate-600">
+                                        <X size={20} />
+                                    </button>
+                                </div>
+
+                                {shareSuccess ? (
+                                    <div className="py-10 text-center animate-in zoom-in-95 duration-300">
+                                        <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                                            <CheckCircle2 size={40} />
+                                        </div>
+                                        <h4 className="text-xl font-bold text-slate-900 mb-2">Successfully Shared</h4>
+                                        <p className="text-sm text-slate-500">Access has been granted to {shareRecipientEmail}.</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="mb-8 p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center gap-4">
+                                            <div className="w-10 h-10 bg-white rounded-xl border border-slate-200 flex items-center justify-center shrink-0">
+                                                <FileText size={18} className="text-slate-400" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-bold text-slate-900 truncate">{selectedPdf?.filename}</p>
+                                                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Selected Report</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4 mb-8">
+                                            <div>
+                                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Recipient Email Address</label>
+                                                <input 
+                                                    type="email"
+                                                    value={shareRecipientEmail}
+                                                    onChange={(e) => setShareRecipientEmail(e.target.value)}
+                                                    placeholder="e.g. partner@example.com"
+                                                    className="w-full h-14 px-5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium text-sm"
+                                                />
+                                            </div>
+
+                                            <div className="bg-amber-50 border border-amber-100 p-5 rounded-2xl flex items-start gap-3">
+                                                <AlertCircle size={16} className="text-amber-600 mt-0.5 shrink-0" />
+                                                <p className="text-[11px] text-amber-800 font-medium leading-relaxed">
+                                                    <strong>Important:</strong> Recipients must be registered on SolarMark to access shared reports.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            onClick={handleConfirmShare}
+                                            disabled={isSharing || !shareRecipientEmail.trim()}
+                                            className="w-full h-14 bg-slate-900 hover:bg-blue-600 text-white rounded-2xl font-bold transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-3 disabled:bg-slate-300 active:scale-[0.98]"
+                                        >
+                                            {isSharing ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                                            <span className="uppercase tracking-widest text-xs">Authorize Share Access</span>
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </motion.div>
                     </div>
                 )}
             </AnimatePresence>

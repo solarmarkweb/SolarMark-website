@@ -186,6 +186,9 @@ export default function SitePhotosPage() {
                           <option value="Site Survey">Site Survey Widget</option>
                           <option value="Precision Intelligence">Precision Intelligence Section</option>
                           <option value="Global Deployment">Global Deployment Section</option>
+                          <option value="About - Hero Banner">About - Hero Banner</option>
+                          <option value="About - Our Mission">About - Our Mission Section</option>
+                          <option value="About - Tech Showcase">About - Technology Showcase</option>
                           <option value="Main Gallery">Main Gallery</option>
                           <option value="homepage">Other Homepage Asset</option>
                         </optgroup>

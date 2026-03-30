@@ -5,6 +5,7 @@ class UserRegister(BaseModel):
     last_name: str
     email: str
     password: str
+    role: str = "user"
 
     @validator('first_name')
     def validate_first_name(cls, v):

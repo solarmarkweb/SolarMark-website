@@ -24,12 +24,6 @@ const Footer = () => {
         "Company": [
             { name: "About", href: "/about" },
             { name: "Contact", href: "/contact" },
-            { name: "Careers", href: "#" },
-        ],
-        "Resources": [
-            { name: "Blog", href: "#" },
-            { name: "Help Center", href: "#" },
-            { name: "Case Studies", href: "#" },
         ],
         "Legal": [
             { name: "Privacy Policy", href: "/privacy" },

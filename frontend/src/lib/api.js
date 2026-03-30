@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://admin-backend-591983072009.asia-south1.run.app/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api';
 
 const api = axios.create({
     baseURL: API_URL,
@@ -87,6 +87,11 @@ export const authAPI = {
     saveLinks: (data) => api.post('/drive-links', data),
     getMyLinks: () => api.get('/drive-links/my-links'),
     getMyLinksWithPDFs: () => api.get('/drive-links/my-links-with-pdfs'),
+    submitReportReview: (data) => api.post('/drive-links/report/review', data),
+    getMyReportReview: (pdfId) => api.get(`/drive-links/report/review/${pdfId}/my-review`),
+    getMyAllReviews: () => api.get('/drive-links/report/my-all-reviews'),
+    getAllReportReviews: () => api.get('/drive-links/report/reviews/all'),
+    updateReportReview: (reviewId, data) => api.patch(`/drive-links/report/review/${reviewId}`, data),
     getAllLinks: () => api.get('/drive-links/'),
     getUserLinks: (userId) => api.get(`/drive-links/user/${userId}`),
 
@@ -358,7 +363,11 @@ export const authAPI = {
             localStorage.removeItem(key);
             sessionStorage.removeItem(key);
         });
-    }
+    },
+
+    // Report Sharing Methods
+    shareReport: (pdfId, recipientEmail) => api.post(`/drive-links/report/${pdfId}/share`, { recipient_email: recipientEmail }),
+    getSharedWithMe: () => api.get('/drive-links/report/shared-with-me')
 };
 
 export default api;

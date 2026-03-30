@@ -1,0 +1,40 @@
+﻿app\routes\bookings.py:        subscription = db.subscriptions.find_one({"email": item.get("user_email")})
+app\routes\bookings.py:        payment_status = subscription.get("status", "unpaid") if subscription else "unpaid"
+app\routes\bookings.py:    # Pre-fetch user's subscription status once for my-bookings
+app\routes\bookings.py:    subscription = db.subscriptions.find_one({"email": user_email})
+app\routes\bookings.py:    common_payment_status = subscription.get("status", "unpaid") if subscription else "unpaid"
+app\routes\payments.py:@router.post("/create-subscription")
+app\routes\payments.py:async def create_subscription(plan_id: str, current_user: dict = Depends(get_current_user)):
+app\routes\payments.py:    Step 1: Create a Razorpay Subscription
+app\routes\payments.py:        subscription_data = {
+app\routes\payments.py:        subscription = client.subscription.create(data=subscription_data)
+app\routes\payments.py:        # Save subscription to DB
+app\routes\payments.py:        db.subscriptions.insert_one({
+app\routes\payments.py:            "subscription_id": subscription["id"],
+app\routes\payments.py:        return subscription
+app\routes\payments.py:        print(f"Error creating subscription: {e}")
+app\routes\payments.py:@router.post("/verify-subscription")
+app\routes\payments.py:async def verify_subscription(data: dict, current_user: dict = Depends(get_current_user)):
+app\routes\payments.py:    Step 2: Verify Razorpay Subscription Signature
+app\routes\payments.py:    razorpay_subscription_id = data.get("razorpay_subscription_id")
+app\routes\payments.py:    if not all([razorpay_subscription_id, razorpay_payment_id, razorpay_signature]):
+app\routes\payments.py:        raise HTTPException(status_code=400, detail="Missing subscription identification details")
+app\routes\payments.py:            'razorpay_subscription_id': razorpay_subscription_id,
+app\routes\payments.py:        client.utility.verify_subscription_payment_signature(params_dict)
+app\routes\payments.py:        # Update subscription status in DB
+app\routes\payments.py:        db.subscriptions.update_one(
+app\routes\payments.py:            {"subscription_id": razorpay_subscription_id},
+app\routes\payments.py:        return {"status": "success", "message": "Subscription verified successfully"}
+app\routes\payments.py:        print(f"Subscription verification failed: {e}")
+app\routes\payments.py:        raise HTTPException(status_code=400, detail="Invalid subscription signature")
+app\routes\payments.py:    Handles Razorpay Webhooks for Subscriptions
+app\routes\payments.py:        if event == "subscription.activated":
+app\routes\payments.py:            sub_id = payload_data.get("subscription", {}).get("entity", {}).get("id")
+app\routes\payments.py:            db.subscriptions.update_one({"subscription_id": sub_id}, {"$set": {"status": "active"}})
+app\routes\payments.py:        elif event == "subscription.charged":
+app\routes\payments.py:            sub_id = payload_data.get("subscription", {}).get("entity", {}).get("id")
+app\routes\payments.py:            db.subscriptions.update_one({"subscription_id": sub_id}, {"$set": {"status": "active", "last_payment_on": datetime.utcnow()}})
+app\routes\payments.py:                "subscription_id": sub_id,
+app\routes\payments.py:        elif event == "subscription.cancelled":
+app\routes\payments.py:            sub_id = payload_data.get("subscription", {}).get("entity", {}).get("id")
+app\routes\payments.py:            db.subscriptions.update_one({"subscription_id": sub_id}, {"$set": {"status": "cancelled"}})

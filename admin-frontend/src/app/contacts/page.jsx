@@ -204,8 +204,8 @@ export default function ContactsAdminPage() {
                         <table className="w-full text-left border-collapse table-fixed">
                             <thead>
                                 <tr className="bg-gray-50/50 border-b border-gray-100">
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-widest w-[200px]">Sender</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-widest w-[400px]">Message Content</th>
+                                    <th className="px-6 py-5 text-xs font-bold text-gray-500 uppercase tracking-widest w-[220px]">Sender</th>
+                                    <th className="px-6 py-5 text-xs font-bold text-gray-500 uppercase tracking-widest w-[500px]">Message Content</th>
                                     <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-widest w-[140px]">Status</th>
                                     <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-widest w-[180px]">Received At</th>
                                     <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-widest w-[100px]">Action</th>
@@ -231,19 +231,19 @@ export default function ContactsAdminPage() {
                                 ) : (
                                     paginatedContacts.map((contact) => (
                                         <tr key={contact.id} className="hover:bg-gray-50/80 transition-colors group">
-                                            <td className="px-6 py-4 overflow-hidden">
-                                                <div className="flex flex-col">
-                                                    <span className="text-sm font-bold text-gray-900 truncate">
+                                            <td className="px-6 py-6 overflow-hidden">
+                                                <div className="flex flex-col space-y-1">
+                                                    <span className="text-sm font-bold text-gray-900 tracking-tight">
                                                         {contact.first_name} {contact.last_name}
                                                     </span>
-                                                    <div className="flex items-center text-[10px] text-gray-400 mt-1 truncate">
-                                                        <Mail className="w-3 h-3 mr-1" />
+                                                    <div className="flex items-center text-[11px] text-gray-400 font-medium truncate">
+                                                        <Mail className="w-3.5 h-3.5 mr-1.5 opacity-60" />
                                                         {contact.email}
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4">
-                                                <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed" title={contact.message}>
+                                            <td className="px-6 py-6 border-l border-gray-50/50">
+                                                <p className="text-[11px] text-gray-600 leading-relaxed font-medium whitespace-pre-line" title={contact.message}>
                                                     {contact.message}
                                                 </p>
                                             </td>

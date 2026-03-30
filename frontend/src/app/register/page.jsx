@@ -184,6 +184,8 @@ export default function RegisterPage() {
                                                 <option value="" disabled>Choose your profile type</option>
                                                 <option value="Asset Owner">Asset Owner</option>
                                                 <option value="Drone Service Provider">Drone Service Provider</option>
+                                                <option value="Operation & Management">Operation & Management</option>
+
                                             </select>
                                             <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                                                 <ChevronDown size={18} />

@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
@@ -10,10 +11,7 @@ import {
 } from "lucide-react";
 
 const stats = [
-    { label: "Panels Inspected", value: "2.5M+", icon: Zap },
-    { label: "Efficiency Gain", value: "18%", icon: BarChart3 },
-    { label: "Global Clients", value: "500+", icon: Globe },
-    { label: "Accuracy Rate", value: "99.9%", icon: ShieldCheck },
+
 ];
 
 const inspectionProcess = [
@@ -106,14 +104,45 @@ const staggerContainer = {
     }
 };
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://admin-backend-591983072009.asia-south1.run.app/api';
+
 export default function AboutPage() {
+    const [sitePhotos, setSitePhotos] = useState([]);
+    const [loadingPhotos, setLoadingPhotos] = useState(false);
+
+    useEffect(() => {
+        fetchSitePhotos();
+    }, []);
+
+    const fetchSitePhotos = async () => {
+        try {
+            setLoadingPhotos(true);
+            const response = await fetch(`${API_URL}/site-photos`);
+            if (response.ok) {
+                const data = await response.json();
+                setSitePhotos(data);
+            }
+        } catch (err) {
+            console.error('Error fetching site photos:', err);
+        } finally {
+            setLoadingPhotos(false);
+        }
+    };
+
+    const getDynamicPhoto = (category, defaultImage) => {
+        if (!sitePhotos || sitePhotos.length === 0) return defaultImage;
+        const photo = sitePhotos.find(p => p.category === category);
+        const API_BASE = API_URL.endsWith('/api') ? API_URL.replace('/api', '') : API_URL.replace('/api/', '');
+        return photo ? `${API_BASE}${photo.url}` : defaultImage;
+    };
+
     return (
         <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-orange-500/20">
             {/* Hero Section */}
             <section className="relative pt-32 pb-24 border-b border-slate-100 overflow-hidden bg-slate-50">
                 <div className="absolute inset-0 z-0">
                     <img
-                        src="/premium-solar-farm.png"
+                        src={getDynamicPhoto('About - Hero Banner', '/premium-solar-farm.png')}
                         alt="Solar panels at sunset"
                         className="w-full h-full object-cover opacity-[0.05]"
                     />
@@ -150,7 +179,7 @@ export default function AboutPage() {
                             </motion.p>
                             
                             <motion.div variants={fadeUp} className="flex gap-4">
-                                <Link href="/contact" className="px-8 py-3.5 bg-orange-600 text-white rounded-xl font-bold transition-colors hover:bg-orange-700 shadow-lg shadow-orange-600/20">
+                                <Link href="/booking" className="px-8 py-3.5 bg-orange-600 text-white rounded-xl font-bold transition-colors hover:bg-orange-700 shadow-lg shadow-orange-600/20">
                                     Schedule Inspection
                                 </Link>
                                 <Link href="#process" className="px-8 py-3.5 bg-white border border-slate-300 text-slate-900 rounded-xl font-bold transition-colors hover:bg-slate-50">
@@ -168,7 +197,7 @@ export default function AboutPage() {
                         >
                             <div className="relative rounded-2xl overflow-hidden shadow-2xl h-[500px]">
                                 <img
-                                    src="/solar_panel_inspection.png"
+                                    src={getDynamicPhoto('About - Hero Banner', '/solar_panel_inspection.png')}
                                     alt="Drone inspecting solar panels"
                                     className="w-full h-full object-cover"
                                 />
@@ -258,13 +287,13 @@ export default function AboutPage() {
                             className="grid grid-cols-2 gap-4"
                         >
                             <img
-                                src="/premium-solar-farm.png"
+                                src={getDynamicPhoto('About - Our Mission', '/premium-solar-farm.png')}
                                 alt="Utility Scale Solar Farm"
                                 className="rounded-2xl w-full h-full object-cover min-h-[250px] shadow-sm"
                             />
                             <div className="grid grid-rows-2 gap-4">
                                 <img
-                                    src="/solar_thermal_scan.png"
+                                    src={getDynamicPhoto('About - Our Mission', '/solar_thermal_scan.png')}
                                     alt="Close up of solar panels"
                                     className="rounded-2xl w-full h-full object-cover shadow-sm"
                                 />
@@ -353,7 +382,7 @@ export default function AboutPage() {
                         className="relative rounded-[2.5rem] overflow-hidden shadow-2xl group border border-slate-200 bg-slate-900"
                     >
                         <img 
-                            src="/agri-drone-survey.png" 
+                            src={getDynamicPhoto('About - Tech Showcase', '/agri-drone-survey.png')} 
                             alt="Professional inspection drone in flight over panels" 
                             className="w-full h-[500px] md:h-[600px] object-cover transition-transform duration-1000 group-hover:scale-105 opacity-90 mix-blend-lighten" 
                         />
@@ -494,7 +523,7 @@ export default function AboutPage() {
                         Experience the pinnacle of solar inspection. Connect with our expert teams today to elevate your operational efficiency and maximize ROI.
                     </p>
                     <div className="flex flex-col sm:flex-row justify-center gap-4">
-                        <Link href="/contact" className="px-10 py-4 bg-orange-600 text-white rounded-xl font-bold transition-all hover:bg-orange-700 hover:scale-105 shadow-xl shadow-orange-600/30 flex items-center justify-center gap-3 text-lg">
+                        <Link href="/booking" className="px-10 py-4 bg-orange-600 text-white rounded-xl font-bold transition-all hover:bg-orange-700 hover:scale-105 shadow-xl shadow-orange-600/30 flex items-center justify-center gap-3 text-lg">
                             <Camera size={22} className="opacity-90" />
                             Book Consultation
                         </Link>

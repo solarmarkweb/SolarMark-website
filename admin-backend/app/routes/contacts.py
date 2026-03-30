@@ -5,18 +5,30 @@ from app.models.contact import ContactCreate, ContactUpdate, ContactResponse
 from app.routes.auth import get_current_user
 from typing import List
 from bson import ObjectId
+from app.utils.email_service import email_service
+import asyncio
 
 router = APIRouter(prefix="/contacts", tags=["Contacts"])
 collection = db["contacts"]
 
 @router.post("/", response_model=ContactResponse)
-def create_contact(payload: ContactCreate):
+async def create_contact(payload: ContactCreate):
     """Public endpoint to submit contact form"""
     document = payload.dict()
     document["status"] = "new"  # Default status
     document["created_at"] = datetime.utcnow()
     
     result = collection.insert_one(document)
+    
+    # Send email notification to admin asynchronously (don't wait for it)
+    try:
+        subject = f"New Lead: {document['first_name']} {document['last_name']}"
+        body = f"Sender: {document['first_name']} {document['last_name']}\nEmail: {document['email']}\n\nMessage:\n{document['message']}"
+        # We can run it in a background task to keep the response fast
+        loop = asyncio.get_event_loop()
+        loop.run_in_executor(None, email_service.send_notification, subject, body)
+    except Exception as e:
+        print(f"Error initiating email: {e}")
     
     return ContactResponse(
         id=str(result.inserted_id),

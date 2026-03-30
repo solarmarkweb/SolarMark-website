@@ -14,7 +14,8 @@ import {
     Shield,
     Sun,
     Link as LinkIcon,
-    Camera
+    Camera,
+    MessageSquarePlus
 } from 'lucide-react';
 
 const Sidebar = () => {
@@ -30,6 +31,11 @@ const Sidebar = () => {
             title: 'Drive Links',
             icon: <LinkIcon size={20} />,
             path: '/drivelinks',
+        },
+        {
+            title: 'Report Reviews',
+            icon: <MessageSquarePlus size={20} />,
+            path: '/reviews',
         },
         {
             title: 'Bookings',

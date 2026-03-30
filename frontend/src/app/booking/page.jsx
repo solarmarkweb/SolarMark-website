@@ -220,6 +220,7 @@ export default function BookingPage() {
         "Asset Owner",
         "EPC Contractor",
         "O&M Team",
+        "Operation & Management",
         "Drone Service Provider",
         "Developer",
         "Other"

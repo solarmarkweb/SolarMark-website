@@ -96,19 +96,19 @@ export default function ContactPage() {
                             {
                                 icon: <Mail className="text-orange-600" />,
                                 title: "Email Us",
-                                detail: "support@aviatricks.com",
+                                detail: "support@solarmark.in",
                                 sub: "Response within 24 hours"
                             },
                             {
                                 icon: <Phone className="text-orange-600" />,
                                 title: "Call Us",
-                                detail: "9978564578",
+                                detail: "+91 9150739434",
                                 sub: "Mon-Fri, 9am - 6pm EST"
                             },
                             {
                                 icon: <MapPin className="text-orange-600" />,
                                 title: "Our Office",
-                                detail: "Manivkampalayam, Tiruchengode, Tamil Nadu, 637202",
+                                detail: "Manickampalayam, Tiruchengode, Tamil Nadu, 637202",
                                 sub: "India"
                             }
                         ].map((item, i) => (

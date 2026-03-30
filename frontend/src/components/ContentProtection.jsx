@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Shield, EyeOff, AlertTriangle, MonitorOff } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const ContentProtection = ({ children, isProtected = true }) => {
     const [isBlurred, setIsBlurred] = useState(false);
@@ -9,117 +10,84 @@ const ContentProtection = ({ children, isProtected = true }) => {
     useEffect(() => {
         if (!isProtected) return;
 
-        // 1. Prevent Right-Click to prevent saving images or viewing source
+        const blackout = () => setIsBlurred(true);
+        const restore = () => setIsBlurred(false);
+
+        // 1. Human Interaction Blocks (Right-click, Copy, Selection, etc.)
         const handleContextMenu = (e) => {
             e.preventDefault();
             return false;
         };
         document.addEventListener('contextmenu', handleContextMenu);
 
-        // 2. Prevent Keyboard Shortcuts
-        const handleKeyDown = (e) => {
-            // Disable Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C (DevTools)
+        const preventDefault = (e) => e.preventDefault();
+        document.addEventListener('copy', preventDefault);
+        document.addEventListener('cut', preventDefault);
+        document.addEventListener('selectstart', preventDefault);
+        document.addEventListener('dragstart', preventDefault);
+
+        // 2. Keyboard Control (Inspect, Source, Print, Save shortcuts)
+        const handleKeyDownSecurity = (e) => {
+            // Disable Ctrl+Shift+I, J, C (DevTools)
             if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) {
                 e.preventDefault();
+                blackout();
             }
-            // Disable Ctrl+U (View Source)
-            if (e.ctrlKey && e.key === 'u') {
+            // Disable Ctrl+U (View Source), Ctrl+S (Save), Ctrl+P (Print)
+            if (e.ctrlKey && (e.key === 'u' || e.key === 's' || e.key === 'p')) {
                 e.preventDefault();
+                blackout();
             }
-            // Disable Ctrl+P (Print)
-            if (e.ctrlKey && e.key === 'p') {
+            // F12 (DevTools)
+            if (e.key === 'F12') {
                 e.preventDefault();
+                blackout();
             }
-            // Disable Ctrl+S (Save)
-            if (e.ctrlKey && e.key === 's') {
-                e.preventDefault();
-            }
-            // Disable PrintScreen
-            if (e.key === 'PrintScreen') {
-                // Try to clear clipboard, though limited success in browsers
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText("");
-                }
-                alert('Screenshots/Print are disabled for this confidential report.');
+            
+            // 3. Snapshot Triggers (PrintScreen / Win / Meta / OS Keys)
+            if (e.key === 'PrintScreen' || e.keyCode === 44 || e.key === 'Snapshot' || 
+                e.key === 'Meta' || e.key === 'OS' || e.keyCode === 91 || e.keyCode === 92) {
+                blackout();
             }
         };
-        document.addEventListener('keydown', handleKeyDown);
 
-        // 3. Blur on Focus Loss (Highly effective against most screenshot & screen recording tools)
-        const handleBlur = () => {
-            setIsBlurred(true);
-        };
-        const handleFocus = () => {
-            setIsBlurred(false);
-        };
-        window.addEventListener('blur', handleBlur);
-        window.addEventListener('focus', handleFocus);
-
-        // 4. Also listen for visibility change
-        const handleVisibilityChange = () => {
-            if (document.hidden) {
-                setIsBlurred(true);
-            }
-        };
-        document.addEventListener('visibilitychange', handleVisibilityChange);
+        // 4. Specific Snapshot Intent Detection
+        document.addEventListener('keydown', handleKeyDownSecurity);
+        window.addEventListener('focus', restore);
 
         return () => {
             document.removeEventListener('contextmenu', handleContextMenu);
-            document.removeEventListener('keydown', handleKeyDown);
-            window.removeEventListener('blur', handleBlur);
-            window.removeEventListener('focus', handleFocus);
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            document.removeEventListener('copy', preventDefault);
+            document.removeEventListener('cut', preventDefault);
+            document.removeEventListener('selectstart', preventDefault);
+            document.removeEventListener('dragstart', preventDefault);
+            document.removeEventListener('keydown', handleKeyDownSecurity);
+            window.removeEventListener('focus', restore);
         };
     }, [isProtected]);
 
     if (!isProtected) return <>{children}</>;
 
     return (
-        <div className="relative group/protection overflow-hidden">
-            <div 
-                className={`transition-all duration-300 ${isBlurred ? 'blur-2xl grayscale brightness-50 pointer-events-none scale-105' : ''}`}
-                style={{
-                    userSelect: 'none',
-                    WebkitUserSelect: 'none',
-                    msUserSelect: 'none',
-                    KhtmlUserSelect: 'none',
-                    MozUserSelect: 'none'
-                }}
-            >
-                {/* CSS for print protection */}
-                <style dangerouslySetInnerHTML={{ __html: `
-                    @media print {
-                        body {
-                            display: none !important;
-                        }
-                    }
-                ` }} />
-                
-                {/* Confidential Watermark Overlay (Subtle) */}
-                <div className="absolute inset-0 pointer-events-none z-10 opacity-[0.03] select-none flex flex-wrap gap-20 items-center justify-center rotate-[-30deg]">
-                    {Array(40).fill('CONFIDENTIAL REPORT - SOLARMARK').map((text, i) => (
-                        <span key={i} className="text-4xl font-black whitespace-nowrap">{text}</span>
+        <div className="relative overflow-hidden w-full h-full">
+            {/* Main Data Layer */}
+            <div className={`transition-none ${isBlurred ? 'opacity-0 invisible h-0 overflow-hidden' : 'opacity-100 visible'}`}>
+                {/* Dynamic Security Watermarks */}
+                <div className="absolute inset-0 pointer-events-none z-[60] opacity-[0.03] select-none flex flex-wrap gap-24 items-center justify-center rotate-[-25deg] overflow-hidden">
+                    {Array(40).fill(`AUTHORITY ACCESS ONLY`).map((text, i) => (
+                        <span key={i} className="text-3xl font-black whitespace-nowrap tracking-tighter uppercase">{text}</span>
                     ))}
                 </div>
-                
                 {children}
             </div>
 
-            {/* Warning Overlay when blurred */}
+            {/* Pure Black Security Barrier */}
             {isBlurred && (
-                <div className="absolute inset-0 z-[99] flex items-center justify-center bg-slate-900/40 backdrop-blur-md">
-                    <div className="bg-white/90 p-8 rounded-[2rem] shadow-2xl text-center max-w-sm border border-white/20 animate-in fade-in zoom-in duration-300">
-                        <div className="mb-6 mx-auto w-24 h-24 bg-orange-600/20 rounded-full flex items-center justify-center border-2 border-orange-500/50 animate-pulse">
-                            <AlertTriangle size={48} className="text-orange-500" />
-                        </div>
-                        <h3 className="text-2xl font-bold text-slate-900 mb-3 tracking-tight tracking-tight">PROTECTED CONTENT</h3>
-                        <p className="text-slate-500 font-medium leading-relaxed">
-                            For security purposes, this report is hidden when you switch applications or open screenshot tools.
-                        </p>
-                        <div className="mt-8 px-4 py-2 bg-orange-50 text-orange-600 text-xs font-bold rounded-full inline-block uppercase tracking-widest">
-                            Solarmark Security
-                        </div>
-                    </div>
+                <div 
+                    className="absolute inset-0 z-[9999] bg-black flex items-center justify-center cursor-none"
+                    onClick={() => setIsBlurred(false)}
+                >
+                    {/* No text/UI, just pure black as requested */}
                 </div>
             )}
         </div>
