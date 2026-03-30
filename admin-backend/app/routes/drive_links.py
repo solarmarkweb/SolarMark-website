@@ -13,8 +13,10 @@ import gridfs
 from fastapi.responses import StreamingResponse
 from app.utils.merge_sort import merge_sort, merge_sort_multiple_keys, compare_reports
 from app.utils.solar_inspection_pdf import generate_solar_inspection_pdf
-from app.utils.email_service import email_service
+from app.utils.email_service import email_service, send_file_upload_notification
 from pydantic import BaseModel
+from fastapi import BackgroundTasks
+import asyncio
 
 fs = gridfs.GridFS(db)
 
@@ -28,6 +30,7 @@ pdfs_collection = db["drive_pdfs"]
 
 @router.post("/upload-pdf")
 async def upload_pdf(
+    background_tasks: BackgroundTasks,
     pdf: UploadFile = File(...),
     link_id: str = Form(...),
     drive_link_1: Optional[str] = Form(None),
@@ -162,6 +165,18 @@ async def upload_pdf(
                     "pdf_filename": pdf.filename,
                     "pdf_uploaded_at": datetime.utcnow()
                 }}
+            )
+        
+        # ── Send email notification to the user if we have their email ──
+        if user_email:
+            display_name = user_name.strip() if user_name else user_email
+            background_tasks.add_task(
+                send_file_upload_notification,
+                user_email,
+                display_name,
+                pdf.filename,
+                file_size,
+                "SolarMark Admin",
             )
         
         return {

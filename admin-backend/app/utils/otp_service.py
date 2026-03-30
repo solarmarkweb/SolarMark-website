@@ -14,8 +14,13 @@ logger = logging.getLogger(__name__)
 
 class OTPService:
     def __init__(self):
-        self.email_user = os.getenv("EMAIL_USER")
-        self.email_password = os.getenv("EMAIL_PASSWORD")
+        # Load .env at initialization
+        load_dotenv(override=True)
+        self.email_user = os.getenv("EMAIL_USER", "").strip()
+        # Gmail App Passwords are shown with spaces (e.g. 'xxxx xxxx xxxx xxxx')
+        # but must be used WITHOUT spaces when authenticating via SMTP.
+        raw_password = os.getenv("EMAIL_PASSWORD", "")
+        self.email_password = raw_password.replace(" ", "").strip()
         self.email_host = os.getenv("EMAIL_HOST", "smtp.gmail.com")
         self.email_port = int(os.getenv("EMAIL_PORT", 587))
 
@@ -23,20 +28,16 @@ class OTPService:
         return str(random.randint(100000, 999999))
 
     async def send_otp_email(self, recipient_email: str, otp: str):
-        # Only load .env if it exists, to avoid potential issues in production
-        if os.path.exists(".env"):
-            load_dotenv(override=True)
-            logger.info("DEBUG: Loaded environment variables from .env")
-        else:
-            logger.info("DEBUG: Using system environment variables (no .env found)")
-
-        self.email_user = os.getenv("EMAIL_USER")
-        self.email_password = os.getenv("EMAIL_PASSWORD")
+        # Ensure latest env vars are loaded
+        load_dotenv(override=True)
+        self.email_user = os.getenv("EMAIL_USER", "").strip()
+        raw_password = os.getenv("EMAIL_PASSWORD", "")
+        self.email_password = raw_password.replace(" ", "").strip()
         
         logger.info(f"DEBUG: Attempting to send OTP via {self.email_user}")
 
         if not self.email_user or not self.email_password:
-            msg = "ERROR: Email credentials (EMAIL_USER/EMAIL_PASSWORD) NOT found in environment/env"
+            msg = "ERROR: Email credentials (EMAIL_USER/EMAIL_PASSWORD) NOT found or empty"
             logger.error(msg)
             return False, msg
 

@@ -55,7 +55,7 @@ def create_guest_booking(payload: GuestBookingCreate):
 @router.get("/", response_model=List[BookingResponse])
 def get_all_bookings(current_user = Depends(get_current_user)):
     """Admin route to see all bookings"""
-    data = list(collection.find().sort("created_at", -1))
+    data = list(collection.find().sort("created_at", 1))
     
     formatted_bookings = []
     for item in data:
@@ -112,7 +112,7 @@ async def get_my_bookings(current_user = Depends(get_current_user)):
             {"user_id": user_id},
             {"user_email": {"$regex": f"^{user_email}$", "$options": "i"}}
         ]
-    }).sort("created_at", -1))
+    }).sort("created_at", 1))
     
     formatted_bookings = []
     

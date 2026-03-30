@@ -20,6 +20,16 @@ class GuestBookingCreate(BaseModel):
     notes: Optional[str] = Field(None, description="Message/Requirements")
     date: str = Field(..., description="Date of booking (YYYY-MM-DD)")
     time: str = Field(..., description="Time of booking (HH:MM)")
+    
+    # Enhanced Fields
+    project_name: Optional[str] = None
+    inspection_purpose: Optional[str] = None
+    coordinates: Optional[dict] = None
+    drone: Optional[dict] = None
+    pilot: Optional[dict] = None
+    flight: Optional[dict] = None
+    compliance: Optional[dict] = None
+    output: Optional[dict] = None
 
 class BookingUpdate(BaseModel):
     service_type: Optional[str] = None
@@ -30,6 +40,16 @@ class BookingUpdate(BaseModel):
     status: Optional[str] = None
     location: Optional[str] = None
     system_size: Optional[str] = None
+    
+    # Enhanced Fields
+    project_name: Optional[str] = None
+    inspection_purpose: Optional[str] = None
+    coordinates: Optional[dict] = None
+    drone: Optional[dict] = None
+    pilot: Optional[dict] = None
+    flight: Optional[dict] = None
+    compliance: Optional[dict] = None
+    output: Optional[dict] = None
 
 class BookingResponse(BaseModel):
     id: str
@@ -46,3 +66,13 @@ class BookingResponse(BaseModel):
     location: Optional[str] = None
     system_size: Optional[str] = None
     created_at: datetime
+    
+    # Enhanced Fields
+    project_name: Optional[str] = None
+    inspection_purpose: Optional[str] = None
+    coordinates: Optional[dict] = None
+    drone: Optional[dict] = None
+    pilot: Optional[dict] = None
+    flight: Optional[dict] = None
+    compliance: Optional[dict] = None
+    output: Optional[dict] = None

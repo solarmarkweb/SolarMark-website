@@ -56,6 +56,9 @@ app.include_router(site_photos_router, prefix="/api", tags=["site-photos"])
 from app.routes.payments import router as payments_router
 app.include_router(payments_router, prefix="/api", tags=["payments"])
 
+from app.routes.about import router as about_router
+app.include_router(about_router, prefix="/api", tags=["about"])
+
 @app.get("/")
 def root():
     return {
