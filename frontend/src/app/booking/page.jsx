@@ -1,16 +1,72 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Send, Loader2, Star, CheckCircle, ShieldCheck, Zap, Lock } from "lucide-react";
+import { Send, Loader2, CheckCircle, ShieldCheck, Zap, Lock, MapPin, Plane, User, Calendar, FileText, Activity } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authAPI } from "@/lib/api";
 
-
 export default function BookingPage() {
     const router = useRouter();
     const [user, setUser] = useState(null);
+
+    const [formData, setFormData] = useState({
+        // Contact Information
+        firstName: "",
+        lastName: "",
+        workEmail: "",
+        jobTitle: "",
+        phone: "",
+        country: "",
+        companyName: "",
+        companyType: "",
+        solarCapacity: "",
+        referralSource: "",
+
+        // Project Details
+        projectName: "",
+        inspectionPurpose: "",
+
+        // Location Info
+        siteAddress: "",
+        latitude: "",
+        longitude: "",
+        areaSize: "",
+        airspaceType: "",
+
+        // Drone & Equipment
+        droneModel: "",
+        droneUIN: "",
+        payloadType: "",
+
+        // Pilot Information
+        pilotName: "",
+        rpcNumber: "",
+        pilotOrg: "",
+
+        // Flight Schedule
+        flightDate: "",
+        flightTime: "",
+        altitude: "",
+
+        // Compliance & Safety
+        npntRequired: "No",
+        weatherConditions: "",
+        emergencyPlan: "",
+
+        // Deliverables
+        outputType: "",
+        resolution: "",
+
+        // Additional
+        additionalInfo: ""
+    });
+
+    const [submitting, setSubmitting] = useState(false);
+    const [status, setStatus] = useState({ type: "", message: "" });
+
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8002/api'; // Dev URL Fix
 
     useEffect(() => {
         // Check for logged in user
@@ -28,82 +84,95 @@ export default function BookingPage() {
         if (pendingData) {
             try {
                 const parsedData = JSON.parse(pendingData);
-                setFormData(parsedData);
-                localStorage.removeItem("pending_booking"); // Clear it so it doesn't persist forever
-
-                // Show a helpful tip
+                setFormData(prev => ({ ...prev, ...parsedData }));
+                localStorage.removeItem("pending_booking");
                 setStatus({
                     type: 'info',
-                    message: 'Welcome back! Your booking details have been restored. You can now submit your request.'
+                    message: 'Welcome back! Your booking details have been restored.'
                 });
             } catch (e) {
                 console.error("Error parsing pending booking data", e);
             }
         }
 
-        // Load Razorpay script
-        const script = document.createElement("script");
-        script.src = "https://checkout.razorpay.com/v1/checkout.js";
-        script.async = true;
-        document.body.appendChild(script);
-
-        return () => {
-            if (document.body.contains(script)) {
-                document.body.removeChild(script);
-            }
-        };
+        return () => {};
     }, []);
 
-    const [formData, setFormData] = useState({
-        firstName: "",
-        lastName: "",
-        workEmail: "",
-        jobTitle: "",
-        phone: "",
-        country: "",
-        companyName: "",
-        companyType: "",
-        solarCapacity: "",
-        referralSource: "",
-        additionalInfo: ""
-    });
-
-    const [submitting, setSubmitting] = useState(false);
-    const [status, setStatus] = useState({ type: '', message: '' });
-
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://admin-backend-591983072009.asia-south1.run.app/api';
-
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (submitting) return; // Prevent double submission
+
         setSubmitting(true);
-        setStatus({ type: '', message: '' });
+        setStatus({ type: 'info', message: 'Initializing your deployment request...' });
 
         const token = localStorage.getItem("auth_token");
 
         if (!token) {
-            // Save form data to local storage
             localStorage.setItem("pending_booking", JSON.stringify(formData));
-            // Redirect to login with return parameter
             router.push("/login?returnTo=/booking");
             return;
         }
 
         try {
-            // Combine first and last name for the API
             const payload = {
                 name: `${formData.firstName} ${formData.lastName}`,
                 email: formData.workEmail,
                 contact_phone: formData.phone,
-                location: formData.country,
+                location: formData.siteAddress || formData.country,
+
                 service_type: formData.companyType,
                 system_size: formData.solarCapacity,
-                notes: `Job Title: ${formData.jobTitle}\nCompany: ${formData.companyName}\nReferral Source: ${formData.referralSource}\n\nAdditional Info: ${formData.additionalInfo}`,
-                date: new Date().toISOString().split('T')[0],
-                time: new Date().toLocaleTimeString('en-US', { hour12: false })
+
+                project_name: formData.projectName,
+                inspection_purpose: formData.inspectionPurpose,
+                date: formData.flightDate, // Root level date
+                time: formData.flightTime, // Root level time
+
+                coordinates: {
+                    lat: formData.latitude,
+                    lng: formData.longitude
+                },
+
+                drone: {
+                    model: formData.droneModel,
+                    uin: formData.droneUIN,
+                    payload: formData.payloadType
+                },
+
+                pilot: {
+                    name: formData.pilotName,
+                    rpc: formData.rpcNumber,
+                    org: formData.pilotOrg
+                },
+
+                flight: {
+                    date: formData.flightDate,
+                    time: formData.flightTime,
+                    altitude: formData.altitude
+                },
+
+                compliance: {
+                    npnt: formData.npntRequired,
+                    airspace: formData.airspaceType
+                },
+
+                output: {
+                    type: formData.outputType,
+                    resolution: formData.resolution
+                },
+
+                notes: `Job Title: ${formData.jobTitle}
+Company: ${formData.companyName}
+Referral Source: ${formData.referralSource}
+Weather Conditions: ${formData.weatherConditions}
+Emergency Plan: ${formData.emergencyPlan}
+
+Additional Info: ${formData.additionalInfo}`
             };
 
             const response = await fetch(`${API_URL}/bookings/guest`, {
@@ -117,491 +186,207 @@ export default function BookingPage() {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.detail || 'Failed to submit booking');
+                throw new Error(errorData.detail || 'Booking failed. Please check your data.');
             }
 
-            const data = await response.json();
-            console.log("Booking successful:", data);
-
+            // Booking succeeded
             setStatus({
                 type: 'success',
-                message: 'Thank you! Your request has been received. Someone from our team will be in touch with you shortly.'
+                message: 'Success! Your booking request has been received. Our team will contact you to finalize the deployment.'
             });
-            // Reset form
-            setFormData({
-                firstName: "",
-                lastName: "",
-                workEmail: "",
-                jobTitle: "",
-                phone: "",
-                country: "",
-                companyName: "",
-                companyType: "",
-                solarCapacity: "",
-                referralSource: "",
-                additionalInfo: ""
-            });
-
-            // Trigger Subscription after successful booking
-            // Your actual Plan ID from Razorpay Dashboard
-            const PLAN_ID = "plan_SW8QqyydKfxjra";
-            await handleSubscription(PLAN_ID);
+            setSubmitting(false);
 
         } catch (error) {
-            console.error("Error submitting booking:", error);
             setStatus({
                 type: 'error',
-                message: error.message || 'Something went wrong. Please try again later.'
+                message: error.message || 'Something went wrong. Please check your connection and try again.'
             });
-        } finally {
             setSubmitting(false);
         }
     };
 
-    const handleSubscription = async (planId) => {
-        try {
-            setStatus({ type: 'info', message: 'Initiating secure subscription...' });
+    // Dropdown Options
+    const inspectionPurposes = ["Thermal Imaging", "Visual Inspection", "Maintenance Audit", "System Performance Analysis", "Fault Detection", "Construction Progress"];
+    const airspaceTypes = ["Green (Open)", "Yellow (Controlled)", "Red (Restricted)"];
+    const payloadTypes = ["Standard RGB", "Thermal (IR)", "Multispectral", "Lidar", "Combined RGB + Thermal"];
+    const outputTypes = ["High-Res Orthomosaic", "Level 1 Thermal Report", "AI Defect Identification (PDF)", "3D Digital Twin", "CAD / DXF Layout"];
+    const companyTypes = ["Asset Owner", "EPC Contractor", "O&M Team", "Operation & Management", "Drone Service Provider", "Other"];
+    const solarCapacities = ["Less than 1 MW", "1-10 MW", "10-50 MW", "50-100 MW", "100-500 MW", "500+ MW"];
+    const referralSources = ["Google Search", "LinkedIn", "Industry Event", "Referral", "Social Media", "Other"];
+    const countries = ["United States", "Canada", "United Kingdom", "Germany", "France", "Spain", "Italy", "Australia", "India", "Other"];
 
-            // 1. Create Subscription on Backend
-            const subRes = await authAPI.createSubscription(planId);
-            const subscription = subRes.data;
-
-            // 2. Open Razorpay Checkout for Subscription
-            const options = {
-                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_SMd37A0ZIau7vE",
-                subscription_id: subscription.id,
-                name: "SolarMark Subscription",
-                description: "Monthly Inspection Plan",
-                image: "https://images.pexels.com/photos/9875415/pexels-photo-9875415.jpeg?auto=compress&cs=tinysrgb&w=200",
-                handler: async (response) => {
-                    // 3. Verify Subscription on Backend
-                    try {
-                        setSubmitting(true);
-                        const verifyRes = await authAPI.verifySubscription({
-                            razorpay_subscription_id: response.razorpay_subscription_id,
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_signature: response.razorpay_signature,
-                        });
-
-                        if (verifyRes.data.status === "success") {
-                            setStatus({
-                                type: 'success',
-                                message: 'Subscription successful! Your account is now active.'
-                            });
-                        }
-                    } catch (err) {
-                        setStatus({ type: 'error', message: 'Subscription verification failed. Please contact support.' });
-                    } finally {
-                        setSubmitting(false);
-                    }
-                },
-                prefill: {
-                    name: `${formData.firstName} ${formData.lastName}`,
-                    email: formData.workEmail,
-                    contact: formData.phone,
-                },
-                theme: { color: "#f97316" },
-                modal: {
-                    ondismiss: function () {
-                        setStatus({ type: 'info', message: 'Subscription step skipped. Some features may be locked.' });
-                    }
-                }
-            };
-
-            const rzp = new window.Razorpay(options);
-            rzp.open();
-        } catch (error) {
-            console.error("Subscription initiation failed:", error);
-            setStatus({ type: 'error', message: 'Could not initiate subscription. Request received, but payment failed.' });
-        }
-    };
-
-    const companyTypes = [
-        "Asset Owner",
-        "EPC Contractor",
-        "O&M Team",
-        "Operation & Management",
-        "Drone Service Provider",
-        "Developer",
-        "Other"
-    ];
-
-    const solarCapacities = [
-        "Less than 1 MW",
-        "1-10 MW",
-        "10-50 MW",
-        "50-100 MW",
-        "100-500 MW",
-        "500+ MW"
-    ];
-
-    const referralSources = [
-        "Google Search",
-        "LinkedIn",
-        "Industry Event",
-        "Referral",
-        "Social Media",
-        "Other"
-    ];
-
-    const countries = [
-        "United States",
-        "Canada",
-        "United Kingdom",
-        "Germany",
-        "France",
-        "Spain",
-        "Italy",
-        "Australia",
-        "India",
-        "Other"
-    ];
+    const inputClass = "w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white";
+    const labelClass = "block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 mb-2 group-focus-within:text-orange-600 transition-colors";
 
     return (
         <div className="min-h-screen bg-white">
-            {/* Header Section */}
+            {/* Premium Header */}
             <section className="pt-24 md:pt-32 pb-20 md:pb-24 bg-slate-950 text-white relative overflow-hidden">
                 <div className="absolute inset-0 bg-[url('https://images.pexels.com/photos/9875415/pexels-photo-9875415.jpeg?auto=compress&cs=tinysrgb&w=1200')] bg-cover bg-center opacity-20 mix-blend-overlay"></div>
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent"></div>
 
                 <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="inline-flex items-center gap-2 px-3 py-1 bg-orange-500/10 border border-orange-500/20 rounded-full text-xs font-bold text-orange-400 mb-6 uppercase tracking-widest backdrop-blur-md"
-                    >
-                        <Zap size={12} className="fill-orange-400" />
-                        Priority Access
+                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="inline-flex items-center gap-2 px-3 py-1 bg-orange-500/10 border border-orange-500/20 rounded-full text-xs font-bold text-orange-400 mb-6 uppercase tracking-widest backdrop-blur-md">
+                        <Plane size={14} className="animate-pulse" />
+                        Aviation Grade Inspections
                     </motion.div>
-
-                    <motion.h1
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                        className="text-4xl sm:text-5xl md:text-7xl font-bold mb-6 md:mb-8 tracking-tight leading-[1.1]"
-                    >
-                        Schedule Your <br /><span className="text-orange-500">Inspection Today</span>
+                    <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-4xl md:text-7xl font-bold mb-6 tracking-tight leading-tight">
+                        Professional <br /><span className="text-orange-500">Service Booking</span>
                     </motion.h1>
-
-                    <motion.p
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="text-lg md:text-xl text-slate-400 leading-relaxed font-medium max-w-2xl mx-auto px-4 md:px-0"
-                    >
-                        Join the hundreds of asset owners maximizing their yield with our AI-powered inspection platform.
+                    <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-lg text-slate-400 max-w-2xl mx-auto font-medium">
+                        Complete our detailed deployment request to schedule your professional solar inspection. We handle aviation compliance and technical execution.
                     </motion.p>
                 </div>
             </section>
 
             {/* Form Section */}
-            <section className="py-12 md:py-20 bg-slate-50 relative -mt-16 md:-mt-20 z-20 rounded-t-[2.5rem] md:rounded-t-[3rem]">
+            <section className="py-12 md:py-20 bg-slate-50 relative -mt-16 md:-mt-20 z-20 rounded-t-[3rem]">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <motion.div
-                        initial={{ opacity: 0, y: 40 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4 }}
-                        className="max-w-4xl mx-auto"
-                    >
-                        <div className="bg-white rounded-[1.5rem] md:rounded-[2rem] p-6 sm:p-8 md:p-16 border border-slate-200 shadow-2xl shadow-slate-200/50">
+                    {!user ? (
+                        <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto bg-white rounded-[2.5rem] p-12 md:p-20 border border-slate-200 shadow-2xl flex flex-col items-center text-center text-slate-950">
+                            <div className="w-20 h-20 bg-orange-100 rounded-3xl flex items-center justify-center text-orange-600 mb-8">
+                                <Lock size={40} />
+                            </div>
+                            <h3 className="text-3xl font-bold text-slate-900 mb-4">Registration Required</h3>
+                            <p className="text-lg text-slate-500 mb-10 leading-relaxed">Please log in to your SolarMark account to access the professional booking system and aviation compliance forms.</p>
+                            <div className="flex flex-col sm:flex-row gap-4 w-full">
+                                <Link href="/login?returnTo=/booking" className="flex-1 px-8 py-5 bg-slate-900 text-white rounded-2xl font-bold text-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-2">Login Now <Send size={20} /></Link>
+                                <Link href="/register" className="flex-1 px-8 py-5 bg-orange-600 text-white rounded-2xl font-bold text-lg hover:bg-orange-700 transition-all flex items-center justify-center">Create Account</Link>
+                            </div>
+                        </motion.div>
+                    ) : (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-5xl mx-auto bg-white rounded-[2.5rem] p-8 md:p-16 border border-slate-200 shadow-2xl relative text-slate-950">
 
-                            <div className="flex items-center justify-between mb-12 pb-8 border-b border-slate-100">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 pb-8 border-b border-slate-100 gap-4">
                                 <div>
-                                    <h3 className="text-xl md:text-2xl font-bold text-slate-900">Project Details</h3>
-                                    <p className="text-slate-500 text-xs md:text-sm mt-1">Tell us about your needs</p>
+                                    <h2 className="text-3xl font-bold text-slate-900">Inspection Deployment Form</h2>
+                                    <p className="text-slate-500 font-medium">All fields marked with * are required for aviation safety compliance.</p>
                                 </div>
-                                <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-full text-xs font-bold uppercase tracking-wide">
-                                    <ShieldCheck size={14} />
-                                    Secure SSL Form
+                                <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-full text-xs font-black uppercase tracking-widest border border-emerald-100">
+                                    <ShieldCheck size={16} /> Secure Transmission
                                 </div>
                             </div>
 
                             {status.message && (
-                                <div className={`mb-10 p-6 rounded-xl text-center shadow-sm ${status.type === 'success'
-                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-                                    : status.type === 'info'
-                                        ? 'bg-blue-50 text-blue-700 border border-blue-100'
-                                        : 'bg-red-50 text-red-700 border border-red-100'
-                                    }`}>
-                                    <p className="font-bold text-sm tracking-tight flex items-center justify-center gap-2">
-                                        {status.type === 'success' && <CheckCircle size={18} />}
-                                        {status.message}
-                                    </p>
+                                <div className={`mb-10 p-5 rounded-2xl text-center font-bold flex items-center justify-center gap-3 ${status.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : status.type === 'info' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                                    {status.type === 'info' && <Loader2 className="animate-spin" size={18} />}
+                                    {status.message}
                                 </div>
                             )}
 
-                            {!user ? (
-                                <motion.div
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    className="text-center py-12 md:py-20 px-4 md:px-8 bg-white rounded-[1.5rem] md:rounded-[2rem] border border-slate-200 shadow-2xl shadow-slate-100 flex flex-col items-center max-w-2xl mx-auto"
-                                >
-                                    <div className="w-16 h-16 md:w-24 md:h-24 bg-orange-100/50 rounded-2xl md:rounded-3xl flex items-center justify-center text-orange-600 mb-6 md:mb-8 relative">
-                                        <div className="absolute inset-0 bg-orange-500/20 blur-xl md:blur-2xl rounded-full"></div>
-                                        <Lock size={32} className="md:w-12 md:h-12 relative z-10" />
-                                    </div>
-                                    <h3 className="text-2xl md:text-3xl font-bold text-slate-900 mb-3 md:mb-4 tracking-tight">Login Required</h3>
-                                    <p className="text-base md:text-lg text-slate-500 font-medium mb-8 md:mb-12 leading-relaxed">
-                                        To ensure high-quality service and proper tracking of your reports, <br className="hidden md:block" />
-                                        please <span className="text-orange-600 font-bold underline">sign in</span> or <span className="text-orange-600 font-bold underline">create an account</span> to book an inspection.
-                                    </p>
-                                    <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
-                                        <Link
-                                            href="/login?returnTo=/booking"
-                                            className="w-full sm:w-auto px-10 py-4 bg-slate-900 text-white rounded-2xl font-bold text-lg hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2"
-                                        >
-                                            Sign In Now
-                                            <Send size={18} />
-                                        </Link>
-                                        <Link
-                                            href="/register"
-                                            className="w-full sm:w-auto px-10 py-4 bg-orange-50 text-orange-600 border border-orange-100 rounded-2xl font-bold text-lg hover:bg-orange-100 transition-all flex items-center justify-center"
-                                        >
-                                            Create Account
-                                        </Link>
-                                    </div>
-                                </motion.div>
-                            ) : (
-                                <form onSubmit={handleSubmit} className="space-y-10">
-                                    {/* First Name & Last Name */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <div className="space-y-2 group">
-                                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                                                First Name*
-                                            </label>
-                                            <input
-                                                type="text"
-                                                name="firstName"
-                                                required
-                                                placeholder="Jane"
-                                                value={formData.firstName}
-                                                onChange={handleChange}
-                                                className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
-                                            />
-                                        </div>
-                                        <div className="space-y-2 group">
-                                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                                                Last Name*
-                                            </label>
-                                            <input
-                                                type="text"
-                                                name="lastName"
-                                                required
-                                                placeholder="Doe"
-                                                value={formData.lastName}
-                                                onChange={handleChange}
-                                                className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
-                                            />
-                                        </div>
-                                    </div>
+                            <form onSubmit={handleSubmit} className="space-y-12">
 
-                                    {/* Work Email & Job Title */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <div className="space-y-2 group">
-                                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                                                Work Email*
-                                            </label>
-                                            <input
-                                                type="email"
-                                                name="workEmail"
-                                                required
-                                                placeholder="jane@company.com"
-                                                value={formData.workEmail}
-                                                onChange={handleChange}
-                                                className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
-                                            />
-                                        </div>
-                                        <div className="space-y-2 group">
-                                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                                                Job Title*
-                                            </label>
-                                            <input
-                                                type="text"
-                                                name="jobTitle"
-                                                required
-                                                placeholder="Operations Manager"
-                                                value={formData.jobTitle}
-                                                onChange={handleChange}
-                                                className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
-                                            />
-                                        </div>
+                                {/* Section 1: Contact Info */}
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-3 text-orange-600 mb-6 font-bold">
+                                        <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center"><User size={20} /></div>
+                                        <h3 className="text-xl text-slate-900 uppercase tracking-wider">Contact Information</h3>
                                     </div>
-
-                                    {/* Phone Number & Country */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <div className="space-y-2 group">
-                                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                                                Phone Number*
-                                            </label>
-                                            <input
-                                                type="tel"
-                                                name="phone"
-                                                required
-                                                placeholder="+1 (555) 000-0000"
-                                                value={formData.phone}
-                                                onChange={handleChange}
-                                                className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
-                                            />
-                                        </div>
-                                        <div className="space-y-2 group">
-                                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                                                Country*
-                                            </label>
-                                            <div className="relative">
-                                                <select
-                                                    name="country"
-                                                    required
-                                                    value={formData.country}
-                                                    onChange={handleChange}
-                                                    className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
-                                                >
-                                                    <option value="">Please Select</option>
-                                                    {countries.map((country) => (
-                                                        <option key={country} value={country}>{country}</option>
-                                                    ))}
-                                                </select>
-                                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Company Name */}
-                                    <div className="space-y-2 group">
-                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                                            Company Name*
-                                        </label>
-                                        <input
-                                            type="text"
-                                            name="companyName"
-                                            required
-                                            placeholder="SolarMark Industries"
-                                            value={formData.companyName}
-                                            onChange={handleChange}
-                                            className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
-                                        />
-                                    </div>
-
-                                    {/* Company Type */}
-                                    <div className="space-y-2 group">
-                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                                            Which of the following best describes your company?*
-                                        </label>
-                                        <div className="relative">
-                                            <select
-                                                name="companyType"
-                                                required
-                                                value={formData.companyType}
-                                                onChange={handleChange}
-                                                className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
-                                            >
-                                                <option value="">Please Select</option>
-                                                {companyTypes.map((type) => (
-                                                    <option key={type} value={type}>{type}</option>
-                                                ))}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="group"><label className={labelClass}>First Name*</label><input name="firstName" required value={formData.firstName} onChange={handleChange} className={inputClass} placeholder="Jane" /></div>
+                                        <div className="group"><label className={labelClass}>Last Name*</label><input name="lastName" required value={formData.lastName} onChange={handleChange} className={inputClass} placeholder="Doe" /></div>
+                                        <div className="group"><label className={labelClass}>Work Email*</label><input name="workEmail" type="email" required value={formData.workEmail} onChange={handleChange} className={inputClass} placeholder="jane@company.com" /></div>
+                                        <div className="group"><label className={labelClass}>Phone Number*</label><input name="phone" type="tel" required value={formData.phone} onChange={handleChange} className={inputClass} placeholder="+91 1234567890" /></div>
+                                        <div className="group"><label className={labelClass}>Company Name*</label><input name="companyName" required value={formData.companyName} onChange={handleChange} className={inputClass} placeholder="SolarMark Industries" /></div>
+                                        <div className="group">
+                                            <label className={labelClass}>Company Role*</label>
+                                            <select name="companyType" required value={formData.companyType} onChange={handleChange} className={inputClass}>
+                                                <option value="">Select Role</option>
+                                                {companyTypes.map(t => <option key={t} value={t}>{t}</option>)}
                                             </select>
-                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                                            </div>
                                         </div>
                                     </div>
+                                </div>
 
-                                    {/* Solar Capacity */}
-                                    <div className="space-y-2 group">
-                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                                            How much solar do you have today and/or in your pipeline?*
-                                        </label>
-                                        <div className="relative">
-                                            <select
-                                                name="solarCapacity"
-                                                required
-                                                value={formData.solarCapacity}
-                                                onChange={handleChange}
-                                                className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
-                                            >
-                                                <option value="">Please Select</option>
-                                                {solarCapacities.map((capacity) => (
-                                                    <option key={capacity} value={capacity}>{capacity}</option>
-                                                ))}
+                                {/* Section 2: Project Details */}
+                                <div className="space-y-6 pt-6 border-t border-slate-50">
+                                    <div className="flex items-center gap-3 text-orange-600 mb-6 font-bold">
+                                        <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center"><FileText size={20} /></div>
+                                        <h3 className="text-xl text-slate-900 uppercase tracking-wider">Project Specifications</h3>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="group"><label className={labelClass}>Project Name*</label><input name="projectName" required value={formData.projectName} onChange={handleChange} className={inputClass} placeholder="Sahara Site Alpha" /></div>
+                                        <div className="group">
+                                            <label className={labelClass}>Inspection Purpose*</label>
+                                            <select name="inspectionPurpose" required value={formData.inspectionPurpose} onChange={handleChange} className={inputClass}>
+                                                <option value="">Select Purpose</option>
+                                                {inspectionPurposes.map(p => <option key={p} value={p}>{p}</option>)}
                                             </select>
-                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                                            </div>
                                         </div>
-                                    </div>
-
-                                    {/* Referral Source */}
-                                    <div className="space-y-2 group">
-                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                                            Where did you last hear about us?*
-                                        </label>
-                                        <div className="relative">
-                                            <select
-                                                name="referralSource"
-                                                required
-                                                value={formData.referralSource}
-                                                onChange={handleChange}
-                                                className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
-                                            >
-                                                <option value="">Please Select</option>
-                                                {referralSources.map((source) => (
-                                                    <option key={source} value={source}>{source}</option>
-                                                ))}
+                                        <div className="group">
+                                            <label className={labelClass}>Solar Capacity*</label>
+                                            <select name="solarCapacity" required value={formData.solarCapacity} onChange={handleChange} className={inputClass}>
+                                                <option value="">Select Capacity</option>
+                                                {solarCapacities.map(c => <option key={c} value={c}>{c}</option>)}
                                             </select>
-                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                                            </div>
+                                        </div>
+                                        <div className="group"><label className={labelClass}>Area Size (Acres/MW)*</label><input name="areaSize" required value={formData.areaSize} onChange={handleChange} className={inputClass} placeholder="e.g. 50 Acres" /></div>
+                                    </div>
+                                </div>
+
+                                {/* Section 3: Site Location */}
+                                <div className="space-y-6 pt-6 border-t border-slate-50">
+                                    <div className="flex items-center gap-3 text-orange-600 mb-6 font-bold">
+                                        <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center"><MapPin size={20} /></div>
+                                        <h3 className="text-xl text-slate-900 uppercase tracking-wider">Site Location & Geodata</h3>
+                                    </div>
+                                    <div className="group"><label className={labelClass}>Street Address / Access Points*</label><input name="siteAddress" required value={formData.siteAddress} onChange={handleChange} className={inputClass} placeholder="Entry point coordinates or physical address" /></div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="group"><label className={labelClass}>Latitude*</label><input name="latitude" required value={formData.latitude} onChange={handleChange} className={inputClass} placeholder="28.7041" /></div>
+                                        <div className="group"><label className={labelClass}>Longitude*</label><input name="longitude" required value={formData.longitude} onChange={handleChange} className={inputClass} placeholder="77.1025" /></div>
+                                        <div className="group">
+                                            <label className={labelClass}>Airspace Classification*</label>
+                                            <select name="airspaceType" required value={formData.airspaceType} onChange={handleChange} className={inputClass}>
+                                                <option value="">Select Class</option>
+                                                {airspaceTypes.map(a => <option key={a} value={a}>{a}</option>)}
+                                            </select>
                                         </div>
                                     </div>
+                                </div>
 
-                                    {/* Additional Information */}
-                                    <div className="space-y-2 group">
-                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                                            Additional Information you want to share with us
-                                        </label>
-                                        <textarea
-                                            name="additionalInfo"
-                                            rows="5"
-                                            placeholder=""
-                                            value={formData.additionalInfo}
-                                            onChange={handleChange}
-                                            className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none resize-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
-                                        ></textarea>
+                                {/* Section 5: Schedule */}
+                                <div className="space-y-6 pt-6 border-t border-slate-50">
+                                    <div className="flex items-center gap-3 text-orange-600 mb-6 font-bold">
+                                        <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center"><Calendar size={20} /></div>
+                                        <h3 className="text-xl text-slate-900 uppercase tracking-wider">Flight Window</h3>
                                     </div>
-
-                                    <div className="pt-6">
-                                        {/* Submit Button */}
-                                        <button
-                                            type="submit"
-                                            disabled={submitting}
-                                            className="w-full py-5 bg-orange-600 text-white rounded-xl font-bold text-xl shadow-2xl shadow-orange-900/20 hover:bg-orange-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest hover:scale-[1.01] active:scale-[0.99]"
-                                        >
-                                            {submitting ? (
-                                                <>
-                                                    <Loader2 className="animate-spin w-6 h-6" />
-                                                    Processing Request...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    Submit Request
-                                                    <Send size={24} />
-                                                </>
-                                            )}
-                                        </button>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="group"><label className={labelClass}>Preferred Date*</label><input name="flightDate" type="date" required value={formData.flightDate} onChange={handleChange} className={inputClass} /></div>
+                                        <div className="group"><label className={labelClass}>Takeoff Time*</label><input name="flightTime" type="time" required value={formData.flightTime} onChange={handleChange} className={inputClass} /></div>
+                                        <div className="group"><label className={labelClass}>Max Altitude (AGL)*</label><input name="altitude" required value={formData.altitude} onChange={handleChange} className={inputClass} placeholder="e.g. 120m" /></div>
                                     </div>
-                                </form>
-                            )}
+                                </div>
 
-                            {/* Privacy Note */}
-                            <p className="text-xs text-slate-400 text-center mt-8 font-medium">
-                                By submitting this form, you agree to our{" "}
-                                <Link href="/privacy" className="text-orange-600 hover:underline font-bold">Privacy Policy</Link>
-                                {" "}and{" "}
-                                <Link href="/terms" className="text-orange-600 hover:underline font-bold">Terms of Service</Link>
-                            </p>
-                        </div>
-                    </motion.div>
+                                {/* Section 6: Outputs */}
+                                <div className="space-y-6 pt-6 border-t border-slate-50">
+                                    <div className="flex items-center gap-3 text-orange-600 mb-6 font-bold">
+                                        <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center"><Activity size={20} /></div>
+                                        <h3 className="text-xl text-slate-900 uppercase tracking-wider">Deliverables & Analytics</h3>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="group">
+                                            <label className={labelClass}>Primary Output Type*</label>
+                                            <select name="outputType" required value={formData.outputType} onChange={handleChange} className={inputClass}>
+                                                <option value="">Select Output</option>
+                                                {outputTypes.map(o => <option key={o} value={o}>{o}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="group"><label className={labelClass}>GSD / Resolution Requirements</label><input name="resolution" value={formData.resolution} onChange={handleChange} className={inputClass} placeholder="e.g. 1cm/px" /></div>
+                                    </div>
+                                    <div className="group px-1 pt-4"><label className={labelClass}>Special Instructions / Site Hazards</label><textarea name="additionalInfo" rows="4" value={formData.additionalInfo} onChange={handleChange} className={inputClass + " resize-none"} placeholder="Add details about site obstacles, birds, or specific anomalies you are tracking..."></textarea></div>
+                                </div>
+
+                                {/* Final Submit */}
+                                <div className="pt-8 border-t border-slate-100">
+                                    <button type="submit" disabled={submitting} className="w-full py-6 bg-orange-600 text-white rounded-[2rem] font-black text-xl shadow-2xl shadow-orange-950/20 hover:bg-orange-700 hover:scale-[1.01] transition-all flex items-center justify-center gap-4 disabled:opacity-50 uppercase tracking-[0.2em]">
+                                        {submitting ? <><Loader2 className="animate-spin" /> Processing...</> : <><Send size={24} /> Submit Deployment Request</>}
+                                    </button>
+                                    <p className="text-center text-slate-400 text-sm mt-6 font-medium italic">By submitting, you confirm that all aviation registration data provided is accurate according to local CAA/FAA regulations.</p>
+                                </div>
+
+                            </form>
+                        </motion.div>
+                    )}
                 </div>
             </section>
         </div>

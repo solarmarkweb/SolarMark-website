@@ -14,13 +14,6 @@ const Footer = () => {
     const currentYear = new Date().getFullYear();
 
     const footerSections = {
-        /*
-        "Solutions": [
-            { name: "Planning", href: "/about" },
-            { name: "Construction", href: "/offers" },
-            { name: "Operations", href: "/offers" },
-        ],
-        */
         "Company": [
             { name: "About", href: "/about" },
             { name: "Contact", href: "/contact" },
@@ -32,10 +25,6 @@ const Footer = () => {
     };
 
     const socialLinks = [
-        { icon: <Facebook size={18} />, href: "#", label: "Facebook" },
-        { icon: <Twitter size={18} />, href: "#", label: "Twitter" },
-        { icon: <Linkedin size={18} />, href: "#", label: "LinkedIn" },
-        { icon: <Instagram size={18} />, href: "#", label: "Instagram" },
     ];
 
     return (
@@ -91,18 +80,10 @@ const Footer = () => {
 
                 {/* Bottom Bar */}
                 <div className="pt-8 border-t border-slate-200">
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div className="text-center">
                         <p className="text-sm text-slate-600">
                             © {currentYear} SolarMark. All rights reserved.
                         </p>
-                        <div className="flex items-center gap-6">
-                            <Link href="/privacy" className="text-sm text-slate-600 hover:text-orange-600 transition-colors">
-                                Privacy Policy
-                            </Link>
-                            <Link href="/terms" className="text-sm text-slate-600 hover:text-orange-600 transition-colors">
-                                Terms
-                            </Link>
-                        </div>
                     </div>
                 </div>
             </div>

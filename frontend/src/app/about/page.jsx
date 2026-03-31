@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -9,131 +9,134 @@ import {
     Camera, Thermometer, Battery, CloudRain, Activity,
     Target, Users, MapPin, CheckCircle2, ArrowRight
 } from "lucide-react";
+import { authAPI } from "@/lib/api";
 
-const stats = [
-
-];
-
-const inspectionProcess = [
-    {
-        step: "01",
-        title: "Pre-Flight Intelligence",
-        description: "Certified pilots analyze site layout, weather conditions, and optimal flight paths using advanced 3D mapping and terrain analysis software.",
-        icon: MapPin,
-        details: ["Risk assessment", "Weather analysis"]
-    },
-    {
-        step: "02",
-        title: "Thermal Data Capture",
-        description: "High-resolution thermal cameras mounted on drones capture premium infrared imagery of every panel at optimal angles to detect microscopic defects.",
-        icon: Camera,
-        details: ["FLIR resolution", "Multi-angle capture"]
-    },
-    {
-        step: "03",
-        title: "AI-Powered Analysis",
-        description: "Proprietary machine learning algorithms process thermal data to accurately identify hotspots, cold spots, and anomalies with unmatched precision.",
-        icon: Activity,
-        details: ["Machine learning", "Anomaly classification"]
-    },
-    {
-        step: "04",
-        title: "Actionable Reporting",
-        description: "Comprehensive reports delivered with high-fidelity thermal maps, exact fault locations, and actionable recommendations for maintenance teams.",
-        icon: BarChart3,
-        details: ["Visual thermal maps", "ROI calculations"]
-    },
-];
-
-const capabilities = [
-    {
-        name: "Hotspot Detection",
-        description: "Identifies overheating cells that reduce efficiency and pose fire risks",
-        icon: Thermometer,
-    },
-    {
-        name: "Cell Degradation",
-        description: "Detects aging or damaged cells showing reduced power output",
-        icon: Battery,
-    },
-    {
-        name: "Diode Failure",
-        description: "Locates faulty diodes causing string performance issues",
-        icon: Zap,
-    },
-    {
-        name: "Soiling & Shading",
-        description: "Maps dirt accumulation and shadow patterns affecting output",
-        icon: CloudRain,
-    },
-];
-
-const values = [
-    {
-        title: "Precision Engineering",
-        description: "Leveraging military-grade thermal sensors and custom AI algorithms to identify microscopic faults before they become critical failures.",
-        icon: Target,
-    },
-    {
-        title: "Sustainable Future",
-        description: "Every kilowatt-hour saved is a step toward a greener planet. We are deeply committed to maximizing renewable energy potential globally.",
-        icon: Rocket,
-    },
-    {
-        title: "Industry Excellence",
-        description: "Setting the absolute gold standard for thermographic inspections with certified drone pilots and world-class data analysis.",
-        icon: Award,
-    },
-    {
-        title: "Global Reach",
-        description: "Our distributed network of pilots ensures we can deploy teams to any solar farm across the globe within 48 hours of your request.",
-        icon: Globe,
-    },
-];
-
-const fadeUp = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+const ICON_MAP = {
+    ShieldCheck, Zap, BarChart3, Globe, Award, Rocket,
+    Camera, Thermometer, Battery, CloudRain, Activity,
+    Target, Users, MapPin, CheckCircle2, ArrowRight
 };
 
-const staggerContainer = {
-    hidden: { opacity: 0 },
-    show: {
-        opacity: 1,
-        transition: { staggerChildren: 0.1 }
-    }
-};
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://admin-backend-591983072009.asia-south1.run.app/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8002/api';
 
 export default function AboutPage() {
+    const [content, setContent] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [sitePhotos, setSitePhotos] = useState([]);
-    const [loadingPhotos, setLoadingPhotos] = useState(false);
 
     useEffect(() => {
-        fetchSitePhotos();
-    }, []);
+        const initPage = async () => {
+            setLoading(true);
+            try {
+                // Fetch photos and content in parallel
+                const [contentRes, photosRes] = await Promise.all([
+                    authAPI.getAboutContent().catch(() => ({ data: null })),
+                    fetch(`${API_URL}/site-photos`).then(r => r.ok ? r.json() : []).catch(() => [])
+                ]);
 
-    const fetchSitePhotos = async () => {
-        try {
-            setLoadingPhotos(true);
-            const response = await fetch(`${API_URL}/site-photos`);
-            if (response.ok) {
-                const data = await response.json();
-                setSitePhotos(data);
+                if (contentRes.data) setContent(contentRes.data);
+                setSitePhotos(photosRes);
+            } catch (err) {
+                console.error("Failed to initialize about page:", err);
+            } finally {
+                setLoading(false);
             }
-        } catch (err) {
-            console.error('Error fetching site photos:', err);
-        } finally {
-            setLoadingPhotos(false);
-        }
-    };
+        };
+        initPage();
+    }, []);
 
     const getDynamicPhoto = (category, defaultImage) => {
         if (!sitePhotos || sitePhotos.length === 0) return defaultImage;
         const photo = sitePhotos.find(p => p.category === category);
         const API_BASE = API_URL.endsWith('/api') ? API_URL.replace('/api', '') : API_URL.replace('/api/', '');
         return photo ? `${API_BASE}${photo.url}` : defaultImage;
+    };
+
+    // Fallback data if API fails or is loading
+    const defaultData = {
+        hero_title: "Next-Generation",
+        hero_subtitle: "Solar Intelligence",
+        hero_description: "Elevating solar asset management with aerospace-grade drone thermal imaging and AI-driven precision. Fast, reliable, and exceptionally accurate inspections.",
+        mission_title: "Pioneering the Future of Asset Management",
+        mission_text_1: "At the intersection of aerospace technology and clean energy, our mission is to ensure that large-scale solar farms operate at absolute peak capacity. Traditional manual inspections are slow, hazardous, and prone to human error.",
+        mission_text_2: "By deploying automated drone fleets equipped with state-of-the-art radiometric thermal cameras, we scan vast solar arrays in a fraction of the time. The resulting data is processed by our proprietary AI to definitively pinpoint anomalies—down to the individual cell level.",
+        mission_highlights: [
+            "Rapid deployment across global utility-scale sites",
+            "Significant reduction in operations and maintenance (O&M) costs",
+            "Zero manual labor risks or hazard exposure",
+            "Bankable, auditor-ready digital reporting"
+        ],
+        stats: [
+            { label: "Panels Inspected", value: "2.5M+", icon: "Zap" },
+            { label: "Efficiency Gain", value: "18%", icon: "BarChart3" },
+            { label: "Global Clients", value: "500+", icon: "Globe" },
+            { label: "Accuracy Rate", value: "99.9%", icon: "ShieldCheck" },
+        ],
+        process: [
+            {
+                step: "01",
+                title: "Pre-Flight Intelligence",
+                description: "Certified pilots analyze site layout, weather conditions, and optimal flight paths using advanced 3D mapping and terrain analysis software.",
+                icon: "MapPin",
+                details: ["Risk assessment", "Weather analysis"]
+            },
+            {
+                step: "02",
+                title: "Thermal Data Capture",
+                description: "High-resolution thermal cameras mounted on drones capture premium infrared imagery of every panel at optimal angles to detect microscopic defects.",
+                icon: "Camera",
+                details: ["FLIR resolution", "Multi-angle capture"]
+            },
+            {
+                step: "03",
+                title: "AI-Powered Analysis",
+                description: "Proprietary machine learning algorithms process thermal data to accurately identify hotspots, cold spots, and anomalies with unmatched precision.",
+                icon: "Activity",
+                details: ["Machine learning", "Anomaly classification"]
+            },
+            {
+                step: "04",
+                title: "Actionable Reporting",
+                description: "Comprehensive reports delivered with high-fidelity thermal maps, exact fault locations, and actionable recommendations for maintenance teams.",
+                icon: "BarChart3",
+                details: ["Visual thermal maps", "ROI calculations"]
+            },
+        ],
+        capabilities: [
+            { name: "Hotspot Detection", description: "Identifies overheating cells that reduce efficiency and pose fire risks", icon: "Thermometer" },
+            { name: "Cell Degradation", description: "Detects aging or damaged cells showing reduced power output", icon: "Battery" },
+            { name: "Diode Failure", description: "Locates faulty diodes causing string performance issues", icon: "Zap" },
+            { name: "Soiling & Shading", description: "Maps dirt accumulation and shadow patterns affecting output", icon: "CloudRain" },
+        ],
+        values: [
+            { title: "Precision Engineering", description: "Leveraging military-grade thermal sensors and custom AI algorithms to identify microscopic faults before they become critical failures.", icon: "Target" },
+            { title: "Sustainable Future", description: "Every kilowatt-hour saved is a step toward a greener planet. We are deeply committed to maximizing renewable energy potential globally.", icon: "Rocket" },
+            { title: "Industry Excellence", description: "Setting the absolute gold standard for thermographic inspections with certified drone pilots and world-class data analysis.", icon: "Award" },
+            { title: "Global Reach", description: "Our distributed network of pilots ensures we can deploy teams to any solar farm across the globe within 48 hours of your request.", icon: "Globe" },
+        ],
+        drone_tech_title: "Purpose-Built Drone Technology",
+        drone_tech_description: "Our fleet of enterprise-grade drones are specifically modified for radiometric thermal solar inspection, ensuring every pass captures millimeter-accurate data across your entire solar array.",
+        drone_tech_specs: [
+            { label: "ALTITUDE", value: "120 FT", status: "ACTIVE", color: "green" },
+            { label: "AIRSPEED", value: "15 MPH", status: "ACTIVE", color: "green" },
+            { label: "THERMAL SENSOR", value: "ACTIVE", status: "ACTIVE", color: "orange" },
+            { label: "PANEL SCAN", value: "IN PROGRESS", status: "ACTIVE", color: "blue" }
+        ]
+    };
+
+    const data = content || defaultData;
+
+    const fadeUp = {
+        hidden: { opacity: 0, y: 20 },
+        show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+    };
+
+    const staggerContainer = {
+        hidden: { opacity: 0 },
+        show: {
+            opacity: 1,
+            transition: { staggerChildren: 0.1 }
+        }
     };
 
     return (
@@ -167,15 +170,15 @@ export default function AboutPage() {
                                 variants={fadeUp}
                                 className="text-5xl md:text-6xl lg:text-7xl font-extrabold mb-6 tracking-tight text-slate-900 leading-[1.1]"
                             >
-                                Next-Generation <br />
-                                <span className="text-orange-600">Solar Intelligence</span>
+                                {data.hero_title} <br />
+                                <span className="text-orange-600">{data.hero_subtitle}</span>
                             </motion.h1>
 
                             <motion.p
                                 variants={fadeUp}
                                 className="text-xl text-slate-600 leading-relaxed mb-8 font-medium"
                             >
-                                Elevating solar asset management with aerospace-grade drone thermal imaging and AI-driven precision. Fast, reliable, and exceptionally accurate inspections.
+                                {data.hero_description}
                             </motion.p>
                             
                             <motion.div variants={fadeUp} className="flex gap-4">
@@ -227,19 +230,22 @@ export default function AboutPage() {
                         variants={staggerContainer}
                         className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6"
                     >
-                        {stats.map((stat, i) => (
-                            <motion.div
-                                key={i}
-                                variants={fadeUp}
-                                className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-orange-300 transition-all duration-300"
-                            >
-                                <div className="mb-4 inline-flex w-12 h-12 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
-                                    <stat.icon className="w-6 h-6" />
-                                </div>
-                                <div className="text-3xl md:text-5xl font-extrabold text-slate-900 mb-2">{stat.value}</div>
-                                <div className="text-sm font-bold text-slate-500 uppercase tracking-widest">{stat.label}</div>
-                            </motion.div>
-                        ))}
+                        {data.stats.map((stat, i) => {
+                            const Icon = ICON_MAP[stat.icon] || Zap;
+                            return (
+                                <motion.div
+                                    key={i}
+                                    variants={fadeUp}
+                                    className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-orange-300 transition-all duration-300"
+                                >
+                                    <div className="mb-4 inline-flex w-12 h-12 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
+                                        <Icon className="w-6 h-6" />
+                                    </div>
+                                    <div className="text-3xl md:text-5xl font-extrabold text-slate-900 mb-2">{stat.value}</div>
+                                    <div className="text-sm font-bold text-slate-500 uppercase tracking-widest">{stat.label}</div>
+                                </motion.div>
+                            );
+                        })}
                     </motion.div>
                 </div>
             </section>
@@ -255,22 +261,17 @@ export default function AboutPage() {
                             variants={staggerContainer}
                         >
                             <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-bold text-slate-900 mb-6 tracking-tight">
-                                Pioneering the <span className="text-orange-600">Future</span> of Asset Management
+                                {data.mission_title}
                             </motion.h2>
                             <motion.p variants={fadeUp} className="text-lg text-slate-600 mb-6 leading-relaxed">
-                                At the intersection of aerospace technology and clean energy, our mission is to ensure that large-scale solar farms operate at absolute peak capacity. Traditional manual inspections are slow, hazardous, and prone to human error.
+                                {data.mission_text_1}
                             </motion.p>
                             <motion.p variants={fadeUp} className="text-lg text-slate-600 mb-8 leading-relaxed">
-                                By deploying automated drone fleets equipped with state-of-the-art radiometric thermal cameras, we scan vast solar arrays in a fraction of the time. The resulting data is processed by our proprietary AI to definitively pinpoint anomalies—down to the individual cell level.
+                                {data.mission_text_2}
                             </motion.p>
                             
                             <motion.ul variants={fadeUp} className="space-y-4">
-                                {[
-                                    "Rapid deployment across global utility-scale sites",
-                                    "Significant reduction in operations and maintenance (O&M) costs",
-                                    "Zero manual labor risks or hazard exposure",
-                                    "Bankable, auditor-ready digital reporting"
-                                ].map((item, i) => (
+                                {data.mission_highlights.map((item, i) => (
                                     <li key={i} className="flex items-start gap-3">
                                         <CheckCircle2 className="w-6 h-6 text-orange-500 shrink-0" />
                                         <span className="text-slate-700 font-medium">{item}</span>
@@ -321,37 +322,40 @@ export default function AboutPage() {
                     </div>
 
                     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {inspectionProcess.map((process, i) => (
-                            <motion.div
-                                key={i}
-                                initial="hidden"
-                                whileInView="show"
-                                viewport={{ once: true }}
-                                variants={fadeUp}
-                                className="relative p-8 rounded-3xl bg-white border border-slate-200 hover:shadow-xl hover:-translate-y-1 hover:border-orange-300 transition-all duration-300 group"
-                            >
-                                <div className="text-7xl font-black text-slate-50 absolute top-4 right-4 group-hover:text-orange-50 transition-colors pointer-events-none select-none">
-                                    {process.step}
-                                </div>
-                                <div className="relative z-10">
-                                    <div className="w-14 h-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center mb-8 shadow-sm group-hover:bg-orange-600 group-hover:scale-110 transition-all duration-300">
-                                        <process.icon className="w-7 h-7" />
+                        {data.process.map((process, i) => {
+                            const Icon = ICON_MAP[process.icon] || Target;
+                            return (
+                                <motion.div
+                                    key={i}
+                                    initial="hidden"
+                                    whileInView="show"
+                                    viewport={{ once: true }}
+                                    variants={fadeUp}
+                                    className="relative p-8 rounded-3xl bg-white border border-slate-200 hover:shadow-xl hover:-translate-y-1 hover:border-orange-300 transition-all duration-300 group"
+                                >
+                                    <div className="text-7xl font-black text-slate-50 absolute top-4 right-4 group-hover:text-orange-50 transition-colors pointer-events-none select-none">
+                                        {process.step}
                                     </div>
-                                    <h3 className="text-2xl font-bold text-slate-900 mb-4 tracking-tight">{process.title}</h3>
-                                    <p className="text-slate-600 text-base mb-8 leading-relaxed font-medium">{process.description}</p>
-                                    <div className="pt-6 border-t border-slate-100">
-                                        <ul className="space-y-3">
-                                            {process.details.map((detail, idx) => (
-                                                <li key={idx} className="flex items-center gap-3 text-slate-800 text-sm font-bold">
-                                                    <div className="w-2 h-2 rounded-full bg-orange-500" />
-                                                    <span>{detail}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
+                                    <div className="relative z-10">
+                                        <div className="w-14 h-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center mb-8 shadow-sm group-hover:bg-orange-600 group-hover:scale-110 transition-all duration-300">
+                                            <Icon className="w-7 h-7" />
+                                        </div>
+                                        <h3 className="text-2xl font-bold text-slate-900 mb-4 tracking-tight">{process.title}</h3>
+                                        <p className="text-slate-600 text-base mb-8 leading-relaxed font-medium">{process.description}</p>
+                                        <div className="pt-6 border-t border-slate-100">
+                                            <ul className="space-y-3">
+                                                {process.details.map((detail, idx) => (
+                                                    <li key={idx} className="flex items-center gap-3 text-slate-800 text-sm font-bold">
+                                                        <div className="w-2 h-2 rounded-full bg-orange-500" />
+                                                        <span>{detail}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
                                     </div>
-                                </div>
-                            </motion.div>
-                        ))}
+                                </motion.div>
+                            );
+                        })}
                     </div>
                 </div>
             </section>
@@ -367,10 +371,10 @@ export default function AboutPage() {
                         className="text-center mb-16"
                     >
                         <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mb-6 tracking-tight">
-                            Purpose-Built <span className="text-orange-600">Drone Technology</span>
+                            {data.drone_tech_title}
                         </h2>
                         <p className="text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed">
-                            Our fleet of enterprise-grade drones are specifically modified for radiometric thermal solar inspection, ensuring every pass captures millimeter-accurate data across your entire solar array.
+                            {data.drone_tech_description}
                         </p>
                     </motion.div>
                     
@@ -405,22 +409,12 @@ export default function AboutPage() {
                                 <Activity className="w-4 h-4 text-orange-500" />
                                 <span className="text-xs font-bold text-slate-300 tracking-widest uppercase">Live Telemetry</span>
                             </div>
-                            <div className="flex justify-between gap-12 text-sm">
-                                <span className="text-slate-400">ALTITUDE</span>
-                                <span className="text-green-400 font-bold">120 FT</span>
-                            </div>
-                            <div className="flex justify-between gap-12 text-sm">
-                                <span className="text-slate-400">AIRSPEED</span>
-                                <span className="text-green-400 font-bold">15 MPH</span>
-                            </div>
-                            <div className="flex justify-between gap-12 text-sm">
-                                <span className="text-slate-400">THERMAL SENSOR</span>
-                                <span className="text-orange-400 font-bold">ACTIVE</span>
-                            </div>
-                            <div className="flex justify-between gap-12 text-sm">
-                                <span className="text-slate-400">PANEL SCAN</span>
-                                <span className="text-blue-400 font-bold">IN PROGRESS</span>
-                            </div>
+                            {data.drone_tech_specs.map((spec, idx) => (
+                                <div key={idx} className="flex justify-between gap-12 text-sm">
+                                    <span className="text-slate-400">{spec.label}</span>
+                                    <span className={`text-${spec.color}-400 font-bold`}>{spec.value}</span>
+                                </div>
+                            ))}
                             <div className="w-full h-1.5 bg-slate-800 mt-2 rounded-full overflow-hidden">
                                 <div className="w-full h-full bg-green-500 rounded-full animate-[pulse_2s_ease-in-out_infinite]" />
                             </div>
@@ -455,22 +449,25 @@ export default function AboutPage() {
                         </div>
 
                         <div className="lg:col-span-2 grid sm:grid-cols-2 gap-6">
-                            {capabilities.map((cap, i) => (
-                                <motion.div
-                                    key={i}
-                                    initial="hidden"
-                                    whileInView="show"
-                                    viewport={{ once: true }}
-                                    variants={fadeUp}
-                                    className="p-8 rounded-3xl bg-slate-800 border border-slate-700 hover:border-orange-500 hover:bg-slate-800/80 transition-all duration-300 group"
-                                >
-                                    <div className="w-14 h-14 rounded-2xl bg-slate-900/50 flex items-center justify-center mb-6 text-orange-500 border border-slate-700 group-hover:scale-110 group-hover:bg-orange-500 group-hover:text-white transition-all duration-300">
-                                        <cap.icon className="w-7 h-7" />
-                                    </div>
-                                    <h3 className="text-xl font-bold text-white mb-3">{cap.name}</h3>
-                                    <p className="text-slate-400 text-base leading-relaxed font-medium">{cap.description}</p>
-                                </motion.div>
-                            ))}
+                            {data.capabilities.map((cap, i) => {
+                                const Icon = ICON_MAP[cap.icon] || Activity;
+                                return (
+                                    <motion.div
+                                        key={i}
+                                        initial="hidden"
+                                        whileInView="show"
+                                        viewport={{ once: true }}
+                                        variants={fadeUp}
+                                        className="p-8 rounded-3xl bg-slate-800 border border-slate-700 hover:border-orange-500 hover:bg-slate-800/80 transition-all duration-300 group"
+                                    >
+                                        <div className="w-14 h-14 rounded-2xl bg-slate-900/50 flex items-center justify-center mb-6 text-orange-500 border border-slate-700 group-hover:scale-110 group-hover:bg-orange-500 group-hover:text-white transition-all duration-300">
+                                            <Icon className="w-7 h-7" />
+                                        </div>
+                                        <h3 className="text-xl font-bold text-white mb-3">{cap.name}</h3>
+                                        <p className="text-slate-400 text-base leading-relaxed font-medium">{cap.description}</p>
+                                    </motion.div>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
@@ -489,22 +486,25 @@ export default function AboutPage() {
                     </div>
 
                     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-                        {values.map((v, i) => (
-                            <motion.div
-                                key={i}
-                                initial="hidden"
-                                whileInView="show"
-                                viewport={{ once: true }}
-                                variants={fadeUp}
-                                className="group"
-                            >
-                                <div className="w-16 h-16 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center mb-6 shadow-sm group-hover:bg-orange-600 group-hover:text-white transition-all duration-300 group-hover:scale-110">
-                                    <v.icon className="w-8 h-8" />
-                                </div>
-                                <h3 className="text-2xl font-bold text-slate-900 mb-4">{v.title}</h3>
-                                <p className="text-slate-600 leading-relaxed font-medium">{v.description}</p>
-                            </motion.div>
-                        ))}
+                        {data.values.map((v, i) => {
+                            const Icon = ICON_MAP[v.icon] || Rocket;
+                            return (
+                                <motion.div
+                                    key={i}
+                                    initial="hidden"
+                                    whileInView="show"
+                                    viewport={{ once: true }}
+                                    variants={fadeUp}
+                                    className="group"
+                                >
+                                    <div className="w-16 h-16 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center mb-6 shadow-sm group-hover:bg-orange-600 group-hover:text-white transition-all duration-300 group-hover:scale-110">
+                                        <Icon className="w-8 h-8" />
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-slate-900 mb-4">{v.title}</h3>
+                                    <p className="text-slate-600 leading-relaxed font-medium">{v.description}</p>
+                                </motion.div>
+                            );
+                        })}
                     </div>
                 </div>
             </section>

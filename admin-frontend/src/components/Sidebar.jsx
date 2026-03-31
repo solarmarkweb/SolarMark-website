@@ -15,6 +15,7 @@ import {
     Sun,
     Link as LinkIcon,
     Camera,
+    FileText,
     MessageSquarePlus
 } from 'lucide-react';
 
@@ -28,8 +29,8 @@ const Sidebar = () => {
             path: '/dashboard',
         },
         {
-            title: 'Drive Links',
-            icon: <LinkIcon size={20} />,
+            title: 'Reports',
+            icon: <FileText size={20} />,
             path: '/drivelinks',
         },
         {
@@ -69,10 +70,10 @@ const Sidebar = () => {
             {/* Brand Section */}
             <div className="p-6 border-b border-slate-100">
                 <div className="flex flex-col items-center gap-4">
-                    <img 
-                      src="/solar_mark_logo.svg" 
-                      alt="SolarMark Logo" 
-                      className="h-12 w-auto"
+                    <img
+                        src="/solar_mark_logo.svg"
+                        alt="SolarMark Logo"
+                        className="h-12 w-auto"
                     />
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
                         Control Panel v2.0
@@ -110,12 +111,12 @@ const Sidebar = () => {
                     );
                 })}
 
-               
+
             </nav>
 
             {/* User Support / Footer */}
             <div className="p-4 border-t border-slate-100 bg-slate-50/50">
-               
+
 
                 <button
                     onClick={() => {

@@ -20,7 +20,8 @@ import {
     CheckSquare,
     Users,
     Filter,
-    Upload
+    Upload,
+    Trash2
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -28,6 +29,7 @@ export default function FormalReportReviewsPage() {
     const [reviews, setReviews] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [successMsg, setSuccessMsg] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedUserId, setSelectedUserId] = useState(null);
     const [updatingReview, setUpdatingReview] = useState(null);
@@ -41,7 +43,7 @@ export default function FormalReportReviewsPage() {
     const [updateStatus, setUpdateStatus] = useState('pending');
     const [replacementFile, setReplacementFile] = useState(null);
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8002/api';
     const router = useRouter();
 
     useEffect(() => {
@@ -171,10 +173,30 @@ export default function FormalReportReviewsPage() {
             await fetchReviews();
             setShowUpdateModal(false);
             setReplacementFile(null);
+            setSuccessMsg('Report replacement successfully updated!');
+            setTimeout(() => setSuccessMsg(''), 4000);
         } catch (err) {
             setError(err.message || 'Operational failure during status update.');
         } finally {
             setUpdatingReview(null);
+        }
+    };
+
+    const deleteReview = async (reviewId) => {
+        if (!confirm('Are you sure you want to permanently delete this review? This action cannot be undone.')) return;
+        try {
+            setError('');
+            const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
+            const response = await fetch(`${API_URL}/drive-links/report/review/${reviewId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error('Failed to delete review');
+            await fetchReviews();
+            setSuccessMsg('Review deleted successfully.');
+            setTimeout(() => setSuccessMsg(''), 4000);
+        } catch (err) {
+            setError(err.message || 'Failed to delete review.');
         }
     };
 
@@ -185,6 +207,13 @@ export default function FormalReportReviewsPage() {
 
     return (
         <div className="flex h-screen bg-[#FDFDFD] overflow-hidden text-slate-800 font-sans">
+            {successMsg && (
+                <div className="fixed top-6 right-6 bg-green-50 border border-green-200 text-green-700 px-6 py-4 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] flex items-center gap-3 z-50">
+                    <CheckCircle2 size={18} className="text-green-500" />
+                    <p className="text-[11px] font-bold uppercase tracking-widest">{successMsg}</p>
+                </div>
+            )}
+            
             {/* Sidebar: Navigation Inbox */}
             <div className="w-80 border-r border-slate-200 bg-white flex flex-col shrink-0">
                 <div className="p-6 border-b border-slate-100 bg-slate-50/30">
@@ -298,31 +327,53 @@ export default function FormalReportReviewsPage() {
 
                                             <div className="flex-1">
                                                 {/* Header Row */}
-                                                <div className="px-6 py-4 flex items-center justify-between border-b border-slate-50">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">
-                                                            <FileText size={14} />
+                                                <div className="px-6 py-4 flex flex-col gap-3 border-b border-slate-50">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">
+                                                                <FileText size={14} />
+                                                            </div>
+                                                            <div>
+                                                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Original File Submitted For Review</span>
+                                                                <p className="text-xs font-bold text-slate-900 leading-none mb-1">{review.filename}</p>
+                                                                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{formatDate(review.submitted_at)}</p>
+                                                            </div>
                                                         </div>
-                                                        <div>
-                                                            <p className="text-xs font-bold text-slate-900 leading-none mb-1">{review.filename}</p>
-                                                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{formatDate(review.submitted_at)}</p>
+                                                        <div className="flex flex-col items-end gap-2">
+                                                            <div className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${
+                                                                (review.status || '').toLowerCase() === 'completed' 
+                                                                    ? 'bg-green-100 text-green-700' 
+                                                                    : 'bg-orange-100 text-orange-700'
+                                                            }`}>
+                                                                {review.status || 'Pending'}
+                                                            </div>
+                                                            <button 
+                                                                onClick={() => handleManageClick(review)}
+                                                                className="text-[9px] font-black text-blue-600 hover:text-blue-800 uppercase tracking-widest px-3 py-1.5 border border-blue-100 rounded-md hover:bg-blue-50 transition-colors"
+                                                            >
+                                                                Update Decision
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => deleteReview(review.id)}
+                                                                className="p-1.5 text-rose-400 hover:text-white hover:bg-rose-500 rounded-md border border-rose-100 hover:border-rose-500 transition-all"
+                                                                title="Delete this review"
+                                                            >
+                                                                <Trash2 size={12} />
+                                                            </button>
                                                         </div>
                                                     </div>
-                                                    <div className="flex items-center gap-4">
-                                                        <div className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${
-                                                            (review.status || '').toLowerCase() === 'completed' 
-                                                                ? 'bg-green-100 text-green-700' 
-                                                                : 'bg-orange-100 text-orange-700'
-                                                        }`}>
-                                                            {review.status || 'Pending'}
+
+                                                    {review.replacement_filename && (
+                                                        <div className="flex items-center gap-4 mt-2 border-t border-slate-50 pt-3">
+                                                            <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center text-green-500 shrink-0 shadow-sm border border-green-100">
+                                                                <CheckCircle2 size={14} />
+                                                            </div>
+                                                            <div>
+                                                                <span className="text-[8px] font-black text-green-600 uppercase tracking-widest block mb-0.5">New Updated File:</span>
+                                                                <p className="text-xs font-bold text-slate-900 leading-none">{review.replacement_filename}</p>
+                                                            </div>
                                                         </div>
-                                                        <button 
-                                                            onClick={() => handleManageClick(review)}
-                                                            className="text-[9px] font-black text-blue-600 hover:text-blue-800 uppercase tracking-widest px-3 py-1.5 border border-blue-100 rounded-md hover:bg-blue-50 transition-colors"
-                                                        >
-                                                            Manage Status
-                                                        </button>
-                                                    </div>
+                                                    )}
                                                 </div>
 
                                                 {/* Content Row */}

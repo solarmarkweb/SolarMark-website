@@ -112,7 +112,9 @@ class GoogleDriveService:
             folder_name = user_name
             
             # 1. Check if folder already exists in the target parent folder
-            query = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+            # Escape single quotes to prevent Drive API query errors
+            safe_folder_name = folder_name.replace("'", "\\'")
+            query = f"name='{safe_folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
             if self.ADMIN_DRIVE_FOLDER_ID != 'root':
                 query += f" and '{self.ADMIN_DRIVE_FOLDER_ID}' in parents"
                 
@@ -170,7 +172,9 @@ class GoogleDriveService:
         Returns: subfolder_id
         """
         try:
-            query = f"name='{subfolder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false and '{parent_folder_id}' in parents"
+            # Escape single quotes to prevent Drive API query errors
+            safe_subfolder_name = subfolder_name.replace("'", "\\'")
+            query = f"name='{safe_subfolder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false and '{parent_folder_id}' in parents"
                 
             existing_folders = self.service.files().list(
                 q=query,

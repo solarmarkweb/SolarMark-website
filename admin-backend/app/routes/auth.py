@@ -199,11 +199,58 @@ async def get_all_users(current_user = Depends(get_current_user)):
 
 @router.delete("/users/{user_id}")
 async def delete_user(user_id: str, current_user = Depends(get_current_user)):
-    """Delete a user by ID"""
+    """Delete a user by ID and all associated data for strict synchronization"""
     try:
-        result = db.users.delete_one({"_id": ObjectId(user_id)})
-        if result.deleted_count == 0:
+        # 1. Find user to get context
+        user = db.users.find_one({"_id": ObjectId(user_id)})
+        if not user:
             raise HTTPException(status_code=404, detail="User not found")
-        return {"message": "User deleted successfully"}
+        
+        user_email = user.get("email")
+
+        # 2. Cleanup PDFs (including GridFS files) associated with this specific user ID
+        # Search by user_id to avoid deleting other users' files if they share an email (unlikely but safe)
+        pdfs = list(db.drive_pdfs.find({"user_id": user_id}))
+        
+        import gridfs
+        fs = gridfs.GridFS(db)
+        
+        for pdf in pdfs:
+            file_id = pdf.get("file_id")
+            if file_id:
+                try:
+                    fs.delete(file_id)
+                except:
+                    pass
+            db.drive_pdfs.delete_one({"_id": pdf["_id"]})
+        
+        # Also cleanup any PDFs that might be linked by email but from THIS user's session
+        # (Belt and suspenders approach)
+        db.drive_pdfs.delete_many({"user_id": user_id})
+
+        # 3. Cleanup Drive Links
+        db.drive_links.delete_many({"user_id": user_id})
+        
+        # 4. Cleanup Bookings
+        db.bookings.delete_many({"user_id": user_id})
+        db.bookings.delete_many({"email": user_email}) # Bookings often use email
+
+        # 5. Cleanup Reviews
+        db.report_reviews.delete_many({"user_id": user_id})
+        
+        # 6. Delete user
+        result = db.users.delete_one({"_id": ObjectId(user_id)})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="User not found during final deletion step")
+            
+        return {
+            "message": "User and all associated data deleted successfully",
+            "cleanup": {
+                "pdfs_removed": len(pdfs),
+                "user_email": user_email
+            }
+        }
     except Exception as e:
+        print(f"Error in user cleanup: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

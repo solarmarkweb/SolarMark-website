@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
 from typing import List
 import uuid
 from datetime import datetime
@@ -88,21 +88,25 @@ async def get_all_active_images():
 
 @router.post("/upload-rgb-images")
 async def upload_rgb_images(
+    project_name: str = Form(...),
+    area_size: str = Form(None),
     rgb_images: List[UploadFile] = File(...),
     current_user: dict = Depends(get_current_user)
 ):
-    """Upload RGB images to admin's Google Drive"""
-    return await upload_images(rgb_images, "rgb", current_user)
+    """Upload RGB images to admin's Google Drive inside a project folder"""
+    return await upload_images(rgb_images, "rgb", current_user, project_name, area_size)
 
 @router.post("/upload-thermal-images")
 async def upload_thermal_images(
+    project_name: str = Form(...),
+    area_size: str = Form(None),
     thermal_images: List[UploadFile] = File(...),
     current_user: dict = Depends(get_current_user)
 ):
-    """Upload Thermal images to admin's Google Drive"""
-    return await upload_images(thermal_images, "thermal", current_user)
+    """Upload Thermal images to admin's Google Drive inside a project folder"""
+    return await upload_images(thermal_images, "thermal", current_user, project_name, area_size)
 
-async def upload_images(files: List[UploadFile], image_type: str, current_user: dict):
+async def upload_images(files: List[UploadFile], image_type: str, current_user: dict, project_name: str, area_size: str = None):
     """Helper function to upload images"""
     
     if not files:
@@ -121,22 +125,33 @@ async def upload_images(files: List[UploadFile], image_type: str, current_user: 
         # Get or create user's main folder in admin's Drive
         user_folder = await get_or_create_user_folder(current_user)
         
-        # Determine the subfolder based on image type
+        # First, ensure the Project Name folder exists inside the User's folder
+        project_folder_id = drive_service.get_or_create_subfolder(
+            parent_folder_id=user_folder['folder_id'],
+            subfolder_name=project_name
+        )
+        
+        # Then, create the specific category folder inside the Project Name folder to keep it organized
         if image_type.lower() == "rgb":
             subfolder_name = "drone image"
         else:
             subfolder_name = "site plan"
 
         subfolder_id = drive_service.get_or_create_subfolder(
-            parent_folder_id=user_folder['folder_id'],
+            parent_folder_id=project_folder_id,
             subfolder_name=subfolder_name
         )
         
         for file in files:
-            # Determine if this file is valid for the chosen category - Both RGB and Thermal are images
             file_ext = file.filename.split('.')[-1].lower() if '.' in file.filename else ''
-            is_valid = file.content_type and file.content_type.startswith('image/')
             
+            # Determine if this file is valid for the chosen category
+            if image_type.lower() == "rgb":
+                is_valid = file.content_type and file.content_type.startswith('image/')
+            else:
+                # 'thermal' endpoint is currently used for Site Plan (KML) uploads
+                is_valid = file_ext == 'kml' or (file.content_type and 'kml' in file.content_type.lower())
+                
             if not is_valid:
                 logger.warning(f"Skipping unsupported or mismatched file for {image_type}: {file.filename}")
                 continue
@@ -164,6 +179,8 @@ async def upload_images(files: List[UploadFile], image_type: str, current_user: 
                 "user_id": current_user["id"],
                 "user_name": current_user["name"],
                 "user_email": current_user.get("email"),
+                "project_name": project_name,
+                "area_size": area_size,
                 "drive_file_id": drive_file_id,
                 "drive_file_url": drive_file_url,
                 "file_size": drive_file_size,

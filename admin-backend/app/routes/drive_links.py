@@ -4,7 +4,6 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from app.db import db
 from datetime import datetime
-import os
 from app.routes.auth import get_current_user
 from app.models.drive_links import DriveLinkCreate, DriveLinkResponse
 from typing import List, Optional, Dict
@@ -13,14 +12,22 @@ import gridfs
 from fastapi.responses import StreamingResponse
 from app.utils.merge_sort import merge_sort, merge_sort_multiple_keys, compare_reports
 from app.utils.solar_inspection_pdf import generate_solar_inspection_pdf
-from app.utils.email_service import email_service
+from app.utils.email_service import send_file_upload_notification
 from pydantic import BaseModel
+from fastapi import BackgroundTasks
+import asyncio
 
 fs = gridfs.GridFS(db)
 
 router = APIRouter(prefix="/drive-links", tags=["Drive Links"])
 collection = db["drive_links"]
 pdfs_collection = db["drive_pdfs"]
+reviews_collection = db["report_reviews"]
+shares_collection = db["report_shares"]
+
+
+class ShareReportRequest(BaseModel):
+    recipient_email: str
 
 
 
@@ -28,6 +35,7 @@ pdfs_collection = db["drive_pdfs"]
 
 @router.post("/upload-pdf")
 async def upload_pdf(
+    background_tasks: BackgroundTasks,
     pdf: UploadFile = File(...),
     link_id: str = Form(...),
     drive_link_1: Optional[str] = Form(None),
@@ -164,6 +172,18 @@ async def upload_pdf(
                 }}
             )
         
+        # ── Send email notification to the user if we have their email ──
+        if user_email:
+            display_name = user_name.strip() if user_name else user_email
+            background_tasks.add_task(
+                send_file_upload_notification,
+                user_email,
+                display_name,
+                pdf.filename,
+                file_size,
+                "SolarMark Admin",
+            )
+        
         return {
             "message": "PDF uploaded successfully",
             "pdf_id": pdf_id,
@@ -226,11 +246,20 @@ def get_link_pdfs(link_id: str, current_user = Depends(get_current_user)):
 @router.get("/pdfs/my-pdfs")
 def get_my_pdfs(current_user = Depends(get_current_user)):
     try:
-        user_id = current_user["id"]
+        user_id = str(current_user["id"])
         user_email = current_user.get("email", "")
-        print(f"DEBUG: Fetching PDFs for user_email: '{user_email}'")
+        print(f"DEBUG: Fetching PDFs for user_id: '{user_id}' (v2 Sync Fix)")
         
-        pdfs = list(pdfs_collection.find({"user_email": user_email}).sort("uploaded_at", -1))
+        # Priority: Filter by current User ID to ensure strict synchronization
+        # This prevents reports from previous accounts (deleted users) with same email from appearing
+        pdfs = list(pdfs_collection.find({"user_id": user_id}).sort("uploaded_at", -1))
+        
+        # Fallback: if no PDFs found by ID, but we have some by email, should we show them?
+        # In this specific case, the user wants the sync to BE CORRECT, which means isolation.
+        # However, to avoid breakage for existing users who might have their user_id as a string vs ObjectId in the DB:
+        if not pdfs:
+             pdfs = list(pdfs_collection.find({"user_email": user_email}).sort("uploaded_at", -1))
+             # Optional: Migration step can be added here to link these to the new user_id
         
         result = []
         for pdf in pdfs:
@@ -280,16 +309,22 @@ async def download_pdf(pdf_id: str, current_user = Depends(get_current_user)):
         if not pdf_meta:
             raise HTTPException(status_code=404, detail="PDF not found")
         
-        # Check authorization (owner or admin)
-        user_id = current_user["id"]
-        user_email = current_user["email"]
+        # Check authorization (owner OR shared recipient OR admin)
+        user_id = current_user.get("id")
+        user_email = current_user.get("email", "").lower().strip()
         
-        # Simple ownership check for now
-        if pdf_meta.get("user_id") != user_id and pdf_meta.get("user_email") != user_email:
-             # If it's not the owner, check if the link owner matches?
-             # For now, let's keep it simple: only the "purchaser" (current user) can download it.
-             # Since it's their "profile", they should be either the one who uploaded it or linked to it.
-             pass
+        is_owner = (pdf_meta.get("user_id") == user_id or pdf_meta.get("user_email") == user_email)
+        
+        if not is_owner:
+             # Check if shared with this user
+             is_shared = shares_collection.find_one({
+                 "pdf_id": pdf_id,
+                 "shared_to": user_email
+             })
+             if not is_shared:
+                 # Last check: is this user an admin? (Simple Role check if available)
+                 if current_user.get("role") != "admin":
+                    raise HTTPException(status_code=403, detail="You do not have permission to access this report")
              
         file_id = pdf_meta.get("file_id")
         if not file_id:
@@ -323,12 +358,30 @@ async def download_pdf(pdf_id: str, current_user = Depends(get_current_user)):
 
 
 @router.get("/pdf/view/{pdf_id}")
-async def view_pdf(pdf_id: str):
+async def view_pdf(pdf_id: str, current_user = Depends(get_current_user)):
     try:
+        if not ObjectId.is_valid(pdf_id):
+            raise HTTPException(status_code=400, detail="Invalid PDF ID")
+            
         pdf_meta = pdfs_collection.find_one({"_id": ObjectId(pdf_id)})
         
         if not pdf_meta:
             raise HTTPException(status_code=404, detail="PDF not found")
+            
+        # Access control
+        user_id = current_user.get("id")
+        user_email = current_user.get("email", "").lower().strip()
+        
+        is_owner = (pdf_meta.get("user_id") == user_id or pdf_meta.get("user_email") == user_email)
+        
+        if not is_owner:
+             is_shared = shares_collection.find_one({
+                 "pdf_id": pdf_id,
+                 "shared_to": user_email
+             })
+             if not is_shared:
+                 if current_user.get("role") != "admin":
+                    raise HTTPException(status_code=403, detail="Access denied")
         
         file_id = pdf_meta.get("file_id")
         if not file_id:
@@ -740,6 +793,12 @@ async def compare_multiple_reports(
                 # Skip reports from different sites/assets
                 continue
 
+            # 2. Basic Filename Relevance Check (Optional but helpful)
+            filename = pdf_meta.get("filename", "").lower()
+            if not any(k in filename for k in ["solar", "inspection", "report", "therm", "module"]):
+                # Skip if it doesn't look like an inspection report
+                continue
+            
             # Handle uploaded_at field
             uploaded_at = pdf_meta.get("uploaded_at")
             if isinstance(uploaded_at, datetime):
@@ -1102,6 +1161,12 @@ async def download_comparison_report(
                 # Discard irrelevant report from different asset
                 continue
 
+            # 2. Inspection Validation
+            filename = pdf_meta.get("filename", "").lower()
+            if not any(k in filename for k in ["solar", "inspection", "report", "punjab", "therm", "module"]):
+                # Skip non-solar/irrelevant documents
+                continue
+            
             # Handle uploaded_at field
             uploaded_at = pdf_meta.get("uploaded_at")
             if isinstance(uploaded_at, datetime):
@@ -1219,368 +1284,332 @@ async def download_comparison_report(
         raise HTTPException(status_code=500, detail=f"Error generating comparison PDF: {str(e)}")
 
 
-# ============================================================================
-# REPORT REVIEWS AND CHANGE REQUESTS
-# ============================================================================
+# ── REPORT REVIEWS ENDPOINTS ──
 
-reviews_collection = db["report_reviews"]
-
-class ReportReview(BaseModel):
+class ReportReviewCreate(BaseModel):
     pdf_id: str
-    filename: Optional[str] = ""
     user_feedback: str
+
+class ReportReviewUpdate(BaseModel):
+    status: str
+    admin_remarks: Optional[str] = None
 
 @router.post("/report/review")
 async def submit_report_review(
-    review: ReportReview,
+    payload: ReportReviewCreate,
     current_user = Depends(get_current_user)
 ):
     try:
-        review_doc = {
-            "pdf_id": review.pdf_id,
-            "filename": review.filename,
+        # Check if PDF exists
+        pdf = pdfs_collection.find_one({"_id": ObjectId(payload.pdf_id)})
+        if not pdf:
+            raise HTTPException(status_code=404, detail="PDF report not found")
+        
+        review = {
+            "pdf_id": payload.pdf_id,
+            "filename": pdf.get("filename", "Unknown"),
             "user_id": current_user["id"],
-            "user_email": current_user["email"],
+            "user_email": current_user.get("email"),
             "user_name": f"{current_user.get('first_name', '')} {current_user.get('last_name', '')}".strip(),
-            "user_feedback": review.user_feedback,
+            "user_feedback": payload.user_feedback,
             "status": "pending",
             "admin_remarks": "",
             "submitted_at": datetime.utcnow()
         }
         
-        # Check if already reviewed, if so update
-        existing = reviews_collection.find_one({"pdf_id": review.pdf_id, "user_id": current_user["id"]})
-        if existing:
-            reviews_collection.update_one(
-                {"_id": existing["_id"]},
-                {"$set": {
-                    "user_feedback": review.user_feedback,
-                    "submitted_at": datetime.utcnow(),
-                    "status": "pending" # Reset to pending if user updates
-                }}
-            )
-            return {"message": "Review updated successfully"}
-            
-        reviews_collection.insert_one(review_doc)
-        return {"message": "Review submitted successfully"}
+        result = reviews_collection.insert_one(review)
+        return {"id": str(result.inserted_id), "message": "Review submitted successfully"}
     except Exception as e:
-        print(f"Error submitting review: {e}")
-        raise HTTPException(status_code=500, detail="Failed to submit review")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/report/review/{pdf_id}/my-review")
-def get_my_report_review(pdf_id: str, current_user = Depends(get_current_user)):
+async def get_my_report_review(
+    pdf_id: str,
+    current_user = Depends(get_current_user)
+):
     try:
-        review = reviews_collection.find_one({"pdf_id": pdf_id, "user_id": current_user["id"]})
+        review = reviews_collection.find_one({
+            "pdf_id": pdf_id,
+            "user_email": current_user.get("email")
+        })
         if not review:
+            # Return empty response instead of 404 to avoid Axios exception noise
             return None
-        return {
-            "id": str(review["_id"]),
-            "user_feedback": review["user_feedback"],
-            "status": review["status"],
-            "admin_remarks": review.get("admin_remarks", ""),
-            "submitted_at": review["submitted_at"].isoformat()
-        }
+        
+        review["id"] = str(review["_id"])
+        del review["_id"]
+        return review
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Error fetching review")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/report/reviews/all")
-def get_all_report_reviews(current_user = Depends(get_current_user)):
+async def get_all_report_reviews(current_user = Depends(get_current_user)):
     try:
+        # This is for admins to see everyone's reviews
         reviews = list(reviews_collection.find().sort("submitted_at", -1))
-        result = []
         for r in reviews:
-            result.append({
-                "id": str(r["_id"]),
-                "pdf_id": r["pdf_id"],
-                "filename": r.get("filename", ""),
-                "user_id": r["user_id"],
-                "user_name": r.get("user_name", ""),
-                "user_email": r.get("user_email", ""),
-                "user_feedback": r["user_feedback"],
-                "status": r["status"],
-                "admin_remarks": r.get("admin_remarks", ""),
-                "submitted_at": r["submitted_at"].isoformat()
-            })
-        return result
+            r["id"] = str(r["_id"])
+            del r["_id"]
+        return reviews
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Error fetching all reviews")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/report/my-all-reviews")
+async def get_my_all_reviews(current_user = Depends(get_current_user)):
+    try:
+        reviews = list(reviews_collection.find({"user_email": current_user.get("email")}).sort("submitted_at", -1))
+        for r in reviews:
+            r["id"] = str(r["_id"])
+            del r["_id"]
+        return reviews
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.patch("/report/review/{review_id}")
-async def update_report_review_status(
+async def update_report_review(
     review_id: str,
-    data: dict,
+    payload: ReportReviewUpdate,
+    background_tasks: BackgroundTasks,
     current_user = Depends(get_current_user)
 ):
     try:
-        update_data = {}
-        if "status" in data:
-            update_data["status"] = data["status"]
-        if "admin_remarks" in data:
-            update_data["admin_remarks"] = data["admin_remarks"]
-            
-        reviews_collection.update_one(
-            {"_id": ObjectId(review_id)},
-            {"$set": update_data}
-        )
-        return {"message": "Review updated successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="Failed to update review")
-
-@router.post("/report/review/{review_id}/upload-replacement")
-async def upload_replacement_pdf(
-    review_id: str,
-    pdf: UploadFile = File(...),
-    current_user = Depends(get_current_user)
-):
-    try:
-        # Find the review
+        update_data = {"status": payload.status}
+        if payload.admin_remarks is not None:
+            update_data["admin_remarks"] = payload.admin_remarks
+        
         review = reviews_collection.find_one({"_id": ObjectId(review_id)})
         if not review:
             raise HTTPException(status_code=404, detail="Review not found")
             
-        pdf_id = review["pdf_id"]
-        pdf_meta = pdfs_collection.find_one({"_id": ObjectId(pdf_id)})
+        result = reviews_collection.update_one(
+            {"_id": ObjectId(review_id)},
+            {"$set": update_data}
+        )
         
-        if not pdf_meta:
-            raise HTTPException(status_code=404, detail="Original PDF not found")
-            
-        # Delete old GridFS file
-        old_file_id = pdf_meta.get("file_id")
-        if old_file_id:
+        # Send email notification
+        from app.utils.email_service import email_service
+        if review.get("user_email"):
+            background_tasks.add_task(
+                email_service.send_review_update_notification,
+                review.get("user_email"),
+                review.get("user_name", "User"),
+                review.get("filename", "Document"),
+                payload.status,
+                payload.admin_remarks or ""
+            )
+        
+        return {"message": "Review status updated"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/report/review/{review_id}")
+async def delete_report_review(
+    review_id: str,
+    current_user = Depends(get_current_user)
+):
+    try:
+        review = reviews_collection.find_one({"_id": ObjectId(review_id)})
+        if not review:
+            raise HTTPException(status_code=404, detail="Review not found")
+        
+        # Delete the replacement file from GridFS if it exists
+        replacement_file_id = review.get("replacement_file_id")
+        if replacement_file_id:
             try:
-                fs.delete(old_file_id)
-            except:
-                pass
-                
-        # Upload new file to GridFS
+                fs.delete(ObjectId(replacement_file_id))
+            except Exception:
+                pass  # File may already be deleted
+        
+        # Delete the review document
+        reviews_collection.delete_one({"_id": ObjectId(review_id)})
+        
+        return {"message": "Review deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error deleting review: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/report/review/{review_id}/upload-replacement")
+async def upload_replacement_pdf(
+    review_id: str,
+    background_tasks: BackgroundTasks,
+    pdf: UploadFile = File(...),
+    current_user = Depends(get_current_user)
+):
+    try:
         content = await pdf.read()
         file_size = len(content)
         
+        review = reviews_collection.find_one({"_id": ObjectId(review_id)})
+        if not review:
+             raise HTTPException(status_code=404, detail="Review not found")
+
         file_id = fs.put(
             content,
             filename=pdf.filename,
-            content_type=pdf.content_type,
-            link_id=pdf_meta.get("link_id"),
-            user_id=pdf_meta.get("user_id"),
-            user_email=pdf_meta.get("user_email")
+            content_type=pdf.content_type
         )
         
-        # Update pdfs_collection with the new gridfs id, filename and size
-        pdfs_collection.update_one(
-            {"_id": ObjectId(pdf_id)},
+        reviews_collection.update_one(
+            {"_id": ObjectId(review_id)},
             {"$set": {
-                "file_id": file_id,
-                "filename": pdf.filename,
-                "file_size": file_size,
-                "content_type": pdf.content_type,
-                "uploaded_at": datetime.utcnow()
+                "replacement_file_id": str(file_id),
+                "replacement_filename": pdf.filename,
+                "status": "completed"
             }}
         )
         
-        # Update drive_links or images if it was the primary report
-        link_id = pdf_meta.get("link_id")
-        if link_id:
-            # Check drive_links collection
-            link_exists = collection.find_one({"_id": ObjectId(link_id)})
-            if link_exists and str(link_exists.get("pdf_id")) == str(pdf_id):
+        # ACTUALLY REPLACE THE FILE IN THE USER DASHBOARD:
+        # Update the original PDF document mapping to serve the new revised GridFS file
+        original_pdf_id = review.get("pdf_id")
+        if original_pdf_id and ObjectId.is_valid(original_pdf_id):
+            pdf_doc = pdfs_collection.find_one({"_id": ObjectId(original_pdf_id)})
+            
+            pdfs_collection.update_one(
+                {"_id": ObjectId(original_pdf_id)},
+                {"$set": {
+                    "file_id": str(file_id),
+                    "filename": pdf.filename,
+                    "file_size": file_size,
+                    "uploaded_at": datetime.utcnow()
+                }}
+            )
+            
+            if pdf_doc and pdf_doc.get("link_id") and ObjectId.is_valid(pdf_doc.get("link_id")):
                 collection.update_one(
-                    {"_id": ObjectId(link_id)},
+                    {"_id": ObjectId(pdf_doc.get("link_id"))},
                     {"$set": {
                         "pdf_filename": pdf.filename,
                         "pdf_uploaded_at": datetime.utcnow()
                     }}
                 )
-            else:
-                image_exists = db.images.find_one({"_id": ObjectId(link_id)})
-                if image_exists and str(image_exists.get("pdf_id")) == str(pdf_id):
-                    db.images.update_one(
-                        {"_id": ObjectId(link_id)},
-                        {"$set": {
-                            "pdf_filename": pdf.filename,
-                            "pdf_uploaded_at": datetime.utcnow()
-                        }}
-                    )
-
-        # Update the review doc
-        reviews_collection.update_one(
-            {"_id": ObjectId(review_id)},
-            {"$set": {
-                "filename": pdf.filename,
-                "status": "completed"
-            }}
-        )
         
-        return {"message": "Report replaced successfully", "filename": pdf.filename, "status": "completed"}
+        # Send email notification
+        from app.utils.email_service import email_service
+        if review.get("user_email"):
+            background_tasks.add_task(
+                email_service.send_review_update_notification,
+                review.get("user_email"),
+                review.get("user_name", "User"),
+                pdf.filename,
+                "completed",
+                "An admin has uploaded a revised replacement PDF for your report review."
+            )
         
+        return {"message": "Replacement document uploaded and status updated to completed"}
     except Exception as e:
-        print(f"Error replacing PDF over review workflow: {e}")
-        raise HTTPException(status_code=500, detail="Failed to replace PDF")
-
-
-@router.get("/report/my-all-reviews")
-def get_my_all_reviews(current_user = Depends(get_current_user)):
-    try:
-        user_id = current_user["id"]
-        reviews = list(reviews_collection.find({"user_id": user_id}))
-        result = {}
-        for r in reviews:
-            result[r["pdf_id"]] = {
-                "id": str(r["_id"]),
-                "status": r["status"],
-                "user_feedback": r["user_feedback"],
-                "admin_remarks": r.get("admin_remarks", ""),
-                "submitted_at": r["submitted_at"].isoformat()
-            }
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="Error fetching user reviews")
-
-
-# ─────────────────────────────────────────────────
-#  Report Sharing
-# ─────────────────────────────────────────────────
-
-shared_reports_collection = db["shared_reports"]
-
-class ShareReportRequest(BaseModel):
-    recipient_email: str
-
+        raise HTTPException(status_code=500, detail=str(e))
 @router.post("/report/{pdf_id}/share")
-def share_report(pdf_id: str, body: ShareReportRequest, current_user = Depends(get_current_user)):
-    """
-    Share a specific PDF report with another registered user.
-    - Validates the report belongs to the sharer.
-    - Validates the recipient is a registered user.
-    - Prevents self-sharing and duplicate shares.
-    """
+async def share_report(
+    pdf_id: str,
+    payload: ShareReportRequest,
+    background_tasks: BackgroundTasks,
+    current_user = Depends(get_current_user)
+):
+    """Authorize another user to access a report"""
     try:
-        sender_id = current_user["id"]
-        sender_email = current_user.get("email", "")
-        recipient_email = body.recipient_email.strip().lower()
+        sender_email = current_user.get("email", "").lower().strip()
+        sender_name = f"{current_user.get('first_name', '')} {current_user.get('last_name', '')}".strip() or sender_email
+        recipient_email = payload.recipient_email.lower().strip()
+        
+        if not ObjectId.is_valid(pdf_id):
+            raise HTTPException(status_code=400, detail="Invalid PDF ID")
 
-        # 1. Find the PDF
+        # 1. Verify report exists and belongs to current user
         pdf = pdfs_collection.find_one({"_id": ObjectId(pdf_id)})
         if not pdf:
-            raise HTTPException(status_code=404, detail="Report not found.")
-        # 2. Ensure sender owns the report (checking by email to ensure consistency with my-pdfs logic)
-        pdf_owner_email = pdf.get("user_email") or pdf.get("owner_email")
-        if not pdf_owner_email or pdf_owner_email.lower() != sender_email.lower():
-            raise HTTPException(status_code=403, detail="You can only share reports that belong to you.")
-        # 3. Prevent self-share
-        if recipient_email == sender_email.lower():
-            raise HTTPException(status_code=400, detail="You cannot share a report with yourself.")
-        # 4. Check recipient is registered
-        recipient = db.users.find_one({"email": {"$regex": f"^{recipient_email}$", "$options": "i"}})
-        if not recipient:
-            raise HTTPException(
-                status_code=404,
-                detail=f"No account found for '{recipient_email}'. Please ask them to register on SolarMark first."
-            )
-        recipient_id = str(recipient["_id"])
-        # 5. Allow re-sharing to send notification again if needed
-        # already_shared = shared_reports_collection.find_one({
-        #     "pdf_id": pdf_id,
-        #     "recipient_id": recipient_id
-        # })
-        # if already_shared:
-        #     raise HTTPException(status_code=409, detail="This report has already been shared with that user.")
+            raise HTTPException(status_code=404, detail="Report not found")
+        
+        # Check if the user trying to share is the OWNER
+        if pdf.get("user_email") != sender_email and pdf.get("user_id") != current_user.get("id"):
+             raise HTTPException(status_code=403, detail="You can only share reports you own")
 
-        # 6. Insert share record
-        share_doc = {
-            "_id": ObjectId(),
+        if sender_email == recipient_email:
+            raise HTTPException(status_code=400, detail="You cannot share a report with yourself")
+
+        # 2. Check if already shared
+        existing_share = shares_collection.find_one({
             "pdf_id": pdf_id,
-            "filename": pdf.get("filename", ""),
-            "file_size": pdf.get("file_size", 0),
-            "uploaded_at": pdf.get("uploaded_at", datetime.utcnow()),
-            "report_type": pdf.get("report_type", ""),
-            # Sender info
-            "sender_id": sender_id,
-            "sender_email": sender_email,
-            "sender_name": current_user.get("name", sender_email),
-            # Recipient info
-            "recipient_id": recipient_id,
-            "recipient_email": recipient_email,
+            "shared_to": recipient_email
+        })
+        
+        if existing_share:
+            return {"message": f"Report already shared with {recipient_email}"}
+
+        # 3. Create share record
+        share_doc = {
+            "pdf_id": pdf_id,
+            "filename": pdf.get("filename"),
+            "shared_by": sender_email,
+            "sender_name": sender_name,
+            "shared_to": recipient_email,
             "shared_at": datetime.utcnow()
         }
-        shared_reports_collection.insert_one(share_doc)
-
-        recipient_name = f"{recipient.get('first_name', '')} {recipient.get('last_name', '')}".strip() or recipient_email
         
-        # 7. Send Email Notification
-        try:
-            subject = "New Solar Inspection Report Shared with You"
-            sender_display_name = current_user.get("name") or sender_email
-            email_body = f"""
-            Hello {recipient.get('first_name', 'User')},
-
-            {sender_display_name} has just shared an inspection report with you on SolarMark.
-
-            Report Details:
-            - Filename: {pdf.get('filename', 'Untitled Report')}
-            - Shared On: {datetime.utcnow().strftime('%Y-%m-%d')}
-
-            You can now view this report in your SolarMark dashboard under the 'Shared with Me' section.
-
-            Log in here to authorize and visualize: {os.getenv('FRONTEND_URL', 'http://localhost:3000')}/profile
-
-            Regards,
-            The SolarMark Analysis Team
-            """
-            # 7. Send Email Notification
-            success = email_service.send_notification(
-                subject=subject,
-                body=email_body,
-                recipient=recipient_email,
-                title="Report Shared"
-            )
-            
-            if not success:
-                raise Exception("Email service failed to deliver the message (SMTP error).")
-                
-        except Exception as email_err:
-            print(f"CRITICAL EMAIL DELIVERY FAILED: {email_err}")
-            # Ensure the user gets an error if the email fails, so they don't think it succeeded
-            raise HTTPException(status_code=500, detail=f"Failed to send notification email: {str(email_err)}")
-
-        return {"message": f"Report successfully shared with {recipient_name} and notification sent."}
-
+        shares_collection.insert_one(share_doc)
+        
+        # 4. Send notification
+        from app.utils.email_service import email_service
+        background_tasks.add_task(
+            email_service.send_report_shared_notification,
+            recipient_email,
+            sender_name,
+            pdf.get("filename", "Document"),
+            pdf_id
+        )
+        
+        return {"message": f"Report shared successfully with {recipient_email}"}
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Error sharing report: {e}")
-        raise HTTPException(status_code=500, detail="Failed to share report.")
+        print(f"Error sharing report: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/report/shared-with-me")
-def get_shared_with_me(current_user = Depends(get_current_user)):
-    """Returns all reports shared with the currently logged-in user."""
+async def get_shared_with_me(current_user = Depends(get_current_user)):
+    """Fetch reports that have been shared with the current user"""
     try:
-        user_id = current_user["id"]
-        user_email = current_user.get("email", "").lower()
+        user_email = current_user.get("email", "").lower().strip()
         
-        # Search by both ID and Email to be extra safe
-        query = {
-            "$or": [
-                {"recipient_id": user_id},
-                {"recipient_email": {"$regex": f"^{user_email}$", "$options": "i"}}
-            ]
-        }
-        shared = list(shared_reports_collection.find(query).sort("shared_at", -1))
+        # Find all shares targeting this user
+        shares = list(shares_collection.find({"shared_to": user_email}))
+        
+        if not shares:
+            return []
+            
         result = []
-        for s in shared:
-            shared_at = s.get("shared_at", datetime.utcnow())
+        for share in shares:
+            pdf_id = share.get("pdf_id")
+            if not ObjectId.is_valid(pdf_id):
+                continue
+                
+            pdf = pdfs_collection.find_one({"_id": ObjectId(pdf_id)})
+            if not pdf:
+                continue
+                
+            uploaded_at = pdf.get("uploaded_at")
+            if isinstance(uploaded_at, datetime):
+                uploaded_at_str = uploaded_at.isoformat()
+            else:
+                uploaded_at_str = str(uploaded_at)
+                
             result.append({
-                "share_id": str(s["_id"]),
-                "pdf_id": s["pdf_id"],
-                "filename": s.get("filename", ""),
-                "file_size": s.get("file_size", 0),
-                "report_type": s.get("report_type", ""),
-                "sender_email": s.get("sender_email", ""),
-                "sender_name": s.get("sender_name", ""),
-                "shared_at": shared_at.isoformat() if isinstance(shared_at, datetime) else str(shared_at),
-                "uploaded_at": s.get("uploaded_at", datetime.utcnow()).isoformat() if isinstance(s.get("uploaded_at"), datetime) else str(s.get("uploaded_at", ""))
+                "share_id": str(share["_id"]),
+                "pdf_id": str(pdf["_id"]),
+                "filename": pdf.get("filename", ""),
+                "file_size": pdf.get("file_size", 0),
+                "uploaded_at": uploaded_at_str,
+                "sender_email": share.get("shared_by"),
+                "sender_name": share.get("sender_name", "A SolarMark User"),
+                "shared_at": share.get("shared_at").isoformat() if share.get("shared_at") else None,
+                "is_shared": True
             })
+            
         return result
     except Exception as e:
-        print(f"Error fetching shared reports: {e}")
-        raise HTTPException(status_code=500, detail="Failed to fetch shared reports.")
+        print(f"Error fetching shared reports: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))

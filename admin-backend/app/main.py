@@ -48,13 +48,17 @@ from app.routes.legal import router as legal_router
 app.include_router(legal_router, prefix="/api/legal", tags=["legal"])
 
 from app.routes.otp_routes import router as otp_router
-app.include_router(otp_router)
+app.include_router(otp_router, prefix="/api/otp", tags=["OTP"])
+
 
 from app.routes.site_photos import router as site_photos_router
 app.include_router(site_photos_router, prefix="/api", tags=["site-photos"])
 
 from app.routes.payments import router as payments_router
 app.include_router(payments_router, prefix="/api", tags=["payments"])
+
+from app.routes.about import router as about_router
+app.include_router(about_router, prefix="/api", tags=["about"])
 
 @app.get("/")
 def root():
