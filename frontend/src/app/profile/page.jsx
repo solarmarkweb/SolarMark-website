@@ -4,14 +4,15 @@ import React, { useState, useEffect } from "react";
 import {
     User, Mail, HardDrive, Calendar,
     Download, ExternalLink, FileText,
-    Eye, File, Loader2, AlertCircle,
+    Eye, Loader2, AlertCircle,
     RefreshCw, Home, Folder, CheckCircle,
     Link as LinkIcon,
     AlertTriangle, Clock, ClipboardList,
     CheckCircle2, XCircle, MapPin, Phone,
     ShieldCheck, Trash2, Lock, CreditCard,
     Shield, X, GitCompare, ArrowUpDown, BarChart3, CheckSquare, Square, Zap, LogOut,
-    MessageSquarePlus, History, Send, MessageSquare, ListTodo, Share2, Users
+    MessageSquarePlus, History, Send, MessageSquare, ListTodo, Share2, Users,
+    Globe, Camera, Database, ArrowRight, CloudUpload
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -22,12 +23,15 @@ import dynamic from 'next/dynamic';
 // Dynamic import for react-pdf to prevent SSR errors (DOMMatrix is not defined)
 const Document = dynamic(() => import('react-pdf').then(mod => mod.Document), { ssr: false });
 const Page = dynamic(() => import('react-pdf').then(mod => mod.Page), { ssr: false });
+const KmlViewer = dynamic(() => import('@/components/KmlViewer'), { ssr: false });
 
 // Only import and configure pdfjs on the client
 if (typeof window !== 'undefined') {
     const { pdfjs } = require('react-pdf');
     pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 }
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://admin-backend-591983072009.asia-south1.run.app/api';
 
 export default function ProfilePage() {
     const router = useRouter();
@@ -64,6 +68,14 @@ export default function ProfilePage() {
     const [selectedPdfForReview, setSelectedPdfForReview] = useState(null);
     const [reviewText, setReviewText] = useState("");
     const [submittingReview, setSubmittingReview] = useState(false);
+    // Google Drive Upload States
+      const [rgbFiles, setRgbFiles] = useState([]);
+      const [thermalFiles, setThermalFiles] = useState([]);
+      const [uploading, setUploading] = useState(false);
+      const [uploadStatus, setUploadStatus] = useState({ type: "", message: "" });
+      const [dragActive, setDragActive] = useState({ rgb: false, thermal: false });
+      const [uploadProgress, setUploadProgress] = useState({ rgb: 0, thermal: 0 });
+
     const [reportReviews, setReportReviews] = useState({}); // {pdf_id: review_data}
 
     // Sharing States
@@ -72,6 +84,271 @@ export default function ProfilePage() {
     const [shareRecipientEmail, setShareRecipientEmail] = useState("");
     const [isSharing, setIsSharing] = useState(false);
     const [shareSuccess, setShareSuccess] = useState(false);
+
+  const handleDrag = (e, type) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(prev => ({ ...prev, [type]: true }));
+    } else if (e.type === "dragleave") {
+      setDragActive(prev => ({ ...prev, [type]: false }));
+    }
+  };
+
+  const handleDrop = (e, type) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(prev => ({ ...prev, [type]: false }));
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFiles(e.dataTransfer.files, type);
+    }
+  };
+
+  const handleFileChange = (e, type) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handleFiles(e.target.files, type);
+    }
+  };
+
+  const handleFiles = (files, type) => {
+    let validFiles = [];
+    const MAX_SIZE = 1000 * 1024 * 1024 * 1024; // 1000 GB
+
+    if (type === 'rgb') {
+      // Drone Images - only images
+      validFiles = Array.from(files).filter(file => {
+        const isImage = file.type.startsWith('image/') &&
+          (file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/jpg');
+        const isWithinSize = file.size <= MAX_SIZE;
+        return isImage && isWithinSize;
+      });
+    } else {
+      // Site Plan - KML format alone strictly
+      validFiles = Array.from(files).filter(file => {
+        const isKML = file.name.toLowerCase().endsWith('.kml') ||
+          file.type === 'application/vnd.google-earth.kml+xml';
+        const isWithinSize = file.size <= MAX_SIZE;
+        return isKML && isWithinSize;
+      });
+    }
+
+    if (validFiles.length === 0) {
+      setUploadStatus({
+        type: "error",
+        message: type === 'rgb'
+          ? "Please upload valid image files for Drone Images (JPEG, PNG, max 1000GB)"
+          : "Please upload KML format files strictly for Site Plan (max 1000GB)"
+      });
+      return;
+    }
+
+    if (type === 'rgb') {
+      setRgbFiles(prev => [...prev, ...validFiles]);
+    } else {
+      setThermalFiles(prev => [...prev, ...validFiles]);
+    }
+  };
+
+  const removeFile = (index, type) => {
+    if (type === 'rgb') {
+      setRgbFiles(prev => prev.filter((_, i) => i !== index));
+    } else {
+      setThermalFiles(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  const uploadRGBImages = async () => {
+    if (rgbFiles.length === 0) return;
+
+    const token = localStorage.getItem('auth_token');
+    const formData = new FormData();
+
+    rgbFiles.forEach(file => {
+      // Rename file to include username
+      const timestamp = Date.now();
+      const fileExt = file.name.split('.').pop();
+      const newFileName = `${(user?.name || 'User')}_rgb_${timestamp}.${fileExt}`;
+
+      // Create a new file with the updated name
+      const renamedFile = new File([file], newFileName, { type: file.type });
+      formData.append('rgb_images', renamedFile);
+    });
+
+    const response = await fetch(`${API_URL}/upload-rgb-images`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    });
+
+    if (response.status === 401) {
+      // Do NOT auto-logout — just notify the user
+      throw new Error('Session error. Please try refreshing the page.');
+    }
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || 'Failed to upload RGB images');
+    }
+
+    return response.json();
+  };
+
+  const uploadThermalImages = async () => {
+    if (thermalFiles.length === 0) return;
+
+    const token = localStorage.getItem('auth_token');
+    const formData = new FormData();
+
+    thermalFiles.forEach(file => {
+      // Rename file to include username
+      const timestamp = Date.now();
+      const fileExt = file.name.split('.').pop();
+      const newFileName = `${(user?.name || 'User')}_thermal_${timestamp}.${fileExt}`;
+
+      // Create a new file with the updated name
+      const renamedFile = new File([file], newFileName, { type: file.type });
+      formData.append('thermal_images', renamedFile);
+    });
+
+    const response = await fetch(`${API_URL}/upload-thermal-images`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    });
+
+    if (response.status === 401) {
+      // Do NOT auto-logout — just notify the user
+      throw new Error('Session error. Please try refreshing the page.');
+    }
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || 'Failed to upload Thermal images');
+    }
+
+    return response.json();
+  };
+
+  const handleImageUpload = async (e) => {
+    e.preventDefault();
+
+    if (rgbFiles.length === 0 && thermalFiles.length === 0) {
+      setUploadStatus({ type: "error", message: "Please select at least one asset to upload." });
+      return;
+    }
+
+    if (uploading) return;
+
+    setUploading(true);
+    setUploadStatus({ type: "info", message: "Uploading assets to Google Drive..." });
+
+    try {
+      let rgbResult = null;
+      let thermalResult = null;
+      let totalUploaded = 0;
+
+      // Upload Drone images if any
+      if (rgbFiles.length > 0) {
+        setUploadProgress(prev => ({ ...prev, rgb: 0 }));
+        rgbResult = await uploadRGBImages();
+        totalUploaded += rgbResult?.uploaded_count || rgbFiles.length;
+        setUploadProgress(prev => ({ ...prev, rgb: 100 }));
+      }
+
+      // Upload Site Plan if any
+      if (thermalFiles.length > 0) {
+        setUploadProgress(prev => ({ ...prev, thermal: 0 }));
+        thermalResult = await uploadThermalImages();
+        totalUploaded += thermalResult?.uploaded_count || thermalFiles.length;
+        setUploadProgress(prev => ({ ...prev, thermal: 100 }));
+      }
+
+      setUploadStatus({
+        type: "success",
+        message: `Successfully uploaded ${totalUploaded} assets to Google Drive!`
+      });
+
+      // Auto-clear message after 3 seconds
+      setTimeout(() => {
+        setUploadStatus({ type: "", message: "" });
+      }, 3000);
+
+      // Clear file lists
+      setRgbFiles([]);
+      setThermalFiles([]);
+      setUploadProgress({ rgb: 0, thermal: 0 });
+
+      // Refresh images list
+      // skip fetchUserImages here
+
+    } catch (err) {
+      console.error("Upload error:", err);
+      setUploadStatus({
+        type: "error",
+        message: err.message || "Failed to upload images to Google Drive. Please try again."
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const uploadSingleType = async (type) => {
+    if (type === 'rgb' && rgbFiles.length === 0) {
+      setUploadStatus({ type: "error", message: "No Drone Images selected." });
+      return;
+    }
+    if (type === 'thermal' && thermalFiles.length === 0) {
+      setUploadStatus({ type: "error", message: "No Site Plan selected." });
+      return;
+    }
+
+    setUploading(true);
+    setUploadStatus({ type: "info", message: `Uploading ${type === 'rgb' ? 'Drone Images' : 'Site Plan'} to Google Drive...` });
+
+    try {
+      let result;
+      if (type === 'rgb') {
+        setUploadProgress(prev => ({ ...prev, rgb: 0 }));
+        result = await uploadRGBImages();
+        setUploadProgress(prev => ({ ...prev, rgb: 100 }));
+        setRgbFiles([]);
+      } else {
+        setUploadProgress(prev => ({ ...prev, thermal: 0 }));
+        result = await uploadThermalImages();
+        setUploadProgress(prev => ({ ...prev, thermal: 100 }));
+        setThermalFiles([]);
+      }
+
+      setUploadStatus({
+        type: "success",
+        message: `Successfully uploaded ${result?.uploaded_count || (type === 'rgb' ? rgbFiles.length : thermalFiles.length)} ${type === 'rgb' ? 'RGB' : 'Thermal'} images to Google Drive!`
+      });
+
+      // Auto-clear message after 3 seconds
+      setTimeout(() => {
+        setUploadStatus({ type: "", message: "" });
+      }, 3000);
+
+      setUploadProgress({ rgb: 0, thermal: 0 });
+      // skip fetchUserImages here
+
+    } catch (err) {
+      console.error("Upload error:", err);
+      setUploadStatus({
+        type: "error",
+        message: err.message || `Failed to upload ${type === 'rgb' ? 'RGB' : 'Thermal'} images to Google Drive.`
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+
 
     const fetchProfileData = async (retryCount = 0) => {
         try {
@@ -115,7 +392,7 @@ export default function ProfilePage() {
                 setBookings(bData);
                 setPdfs(pdfsData || []);
                 setReportReviews(reviewsResponse?.data || {});
-                
+
                 console.log("DEBUG: Raw Shared Data response:", sharedData);
                 const sData = sharedData?.data || (Array.isArray(sharedData) ? sharedData : []);
                 console.log("DEBUG: Processed Shared Data for state:", sData);
@@ -150,18 +427,40 @@ export default function ProfilePage() {
 
     const startDirectVisualization = async (pdf) => {
         if (!pdf) return;
-        
+
         try {
             setDownloadingPdf(pdf.pdf_id);
             setError("");
 
             const response = await authAPI.downloadPDF(pdf.pdf_id);
 
-            const blob = new Blob([response.data], { type: 'application/pdf' });
+            // Determine MIME type based on extension
+            const filename = pdf.filename || '';
+            let mimeType = 'application/pdf';
+            if (filename.toLowerCase().endsWith('.html') || filename.toLowerCase().endsWith('.htm')) {
+                mimeType = 'text/html';
+            } else if (filename.toLowerCase().endsWith('.xlsx') || filename.toLowerCase().endsWith('.xls')) {
+                mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+            } else if (filename.toLowerCase().endsWith('.csv')) {
+                mimeType = 'text/csv';
+            } else if (filename.toLowerCase().endsWith('.kml')) {
+                mimeType = 'application/vnd.google-earth.kml+xml';
+            } else if (filename.toLowerCase().endsWith('.kmz')) {
+                mimeType = 'application/vnd.google-earth.kmz';
+            }
+
+            const blob = new Blob([response.data], { type: mimeType });
             const url = window.URL.createObjectURL(blob);
-            
+
             setViewingBlob(url);
             setShowViewModal(true);
+
+            // For non-PDF files, we don't use react-pdf loader
+            if (!filename.toLowerCase().endsWith('.pdf')) {
+                setPdfReady(true);
+            } else {
+                setPdfReady(false); // Reset for next PDF
+            }
 
         } catch (err) {
             console.error('Error fetching report data:', err);
@@ -205,7 +504,7 @@ export default function ProfilePage() {
 
     const handleConfirmShare = async () => {
         if (!shareRecipientEmail.trim()) return;
-        
+
         try {
             setIsSharing(true);
             setError("");
@@ -303,7 +602,7 @@ export default function ProfilePage() {
             setError("");
 
             const blob = await authAPI.downloadComparisonReport(selectedReports, sortBy, sortOrder);
-            
+
             setSelectedPdf({
                 filename: `COMPARISON ANALYSIS_REPORT`,
                 pdf_id: 'CMP-' + Math.random().toString(36).substring(7).toUpperCase()
@@ -312,7 +611,7 @@ export default function ProfilePage() {
             const url = window.URL.createObjectURL(blob);
             setViewingBlob(url);
             setShowViewModal(true);
-            setShowComparisonModal(false); 
+            setShowComparisonModal(false);
         } catch (err) {
             console.error("Error visualizing comparison report:", err);
             setError(err.response?.data?.detail || "Failed to visualize comparison report");
@@ -326,7 +625,7 @@ export default function ProfilePage() {
         setSelectedPdfForReview(pdf);
         setReviewText("");
         setShowReviewModal(true);
-        
+
         try {
             const existingReview = await authAPI.getMyReportReview(pdf.pdf_id);
             if (existingReview.data) {
@@ -357,8 +656,8 @@ export default function ProfilePage() {
 
             setReportReviews(prev => ({
                 ...prev,
-                [selectedPdfForReview.pdf_id]: { 
-                    status: 'pending', 
+                [selectedPdfForReview.pdf_id]: {
+                    status: 'pending',
                     user_feedback: reviewText,
                     submitted_at: new Date().toISOString()
                 }
@@ -635,80 +934,79 @@ export default function ProfilePage() {
                                         pdfs.map((pdf) => {
                                             const isSelected = selectedReports.includes(pdf.pdf_id);
                                             return (
-                                                 <div key={pdf.pdf_id} className={`flex items-center justify-between p-5 rounded-2xl border transition-all ${isSelected ? 'bg-orange-50/50 border-orange-200 shadow-sm' : 'bg-white border-slate-100 hover:border-slate-200 hover:shadow-md hover:shadow-slate-200/20'
-                                                     }`}>
-                                                     <div className="flex items-center gap-4 overflow-hidden">
-                                                         <button
-                                                             onClick={() => toggleReportSelection(pdf.pdf_id)}
-                                                             className={`w-5 h-5 rounded-lg flex items-center justify-center border-2 transition-all ${isSelected ? 'bg-orange-600 border-orange-600 scale-110 shadow-lg shadow-orange-600/20' : 'border-slate-200 hover:border-orange-400'
-                                                                 }`}
-                                                         >
-                                                             {isSelected && <CheckSquare size={10} strokeWidth={4} className="text-white" />}
-                                                         </button>
-  
-                                                         <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center shadow-sm border border-red-100 shrink-0">
-                                                             <FileText size={24} className="text-red-500" />
-                                                         </div>
-  
-                                                         <div className="min-w-0">
-                                                             <div className="flex flex-wrap items-center gap-2 mb-1">
-                                                                 <h4 className="font-bold text-slate-900 text-sm truncate pr-4">{pdf.filename || "Unnamed Report"}</h4>
-                                                                 {pdf.report_type && (
-                                                                     <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${pdf.report_type === 'rgb' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
-                                                                         }`}>
-                                                                         {pdf.report_type === 'rgb' ? 'DRONE DATA' : 'SITE PLAN'}
-                                                                     </span>
-                                                                 )}
-                                                             </div>
-                                                             <div className="flex items-center gap-3 text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
-                                                                 <span>{formatDate(pdf.uploaded_at)}</span>
-                                                                 <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-                                                                 <span>{formatFileSize(pdf.file_size)}</span>
-                                                             </div>
-                                                         </div>
-                                                     </div>
-  
-                                                     <div className="flex items-center gap-3">
-                                                         {reportReviews[pdf.pdf_id] && (
-                                                             <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border shadow-sm ${
-                                                                 reportReviews[pdf.pdf_id]?.status === 'completed' 
-                                                                 ? 'bg-green-100 text-green-700 border-green-200 animate-pulse' 
-                                                                 : 'bg-blue-100 text-blue-700 border-blue-200'
-                                                             }`}>
-                                                                 {reportReviews[pdf.pdf_id]?.status === 'completed' ? (
-                                                                     <><CheckCircle2 size={10} strokeWidth={3} /> CHANGES MADE</>
-                                                                 ) : (
-                                                                     <><Clock size={10} strokeWidth={3} /> REVIEW PENDING</>
-                                                                 )}
-                                                             </div>
-                                                         )}
-                                                         
-                                                         <button
-                                                             onClick={() => handleReviewClick(pdf)}
-                                                             className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm active:scale-95"
-                                                         >
-                                                             <MessageSquarePlus size={14} className="text-orange-500" />
-                                                             <span>Review</span>
-                                                         </button>
+                                                <div key={pdf.pdf_id} className={`flex items-center justify-between p-5 rounded-2xl border transition-all ${isSelected ? 'bg-orange-50/50 border-orange-200 shadow-sm' : 'bg-white border-slate-100 hover:border-slate-200 hover:shadow-md hover:shadow-slate-200/20'
+                                                    }`}>
+                                                    <div className="flex items-center gap-4 overflow-hidden">
+                                                        <button
+                                                            onClick={() => toggleReportSelection(pdf.pdf_id)}
+                                                            className={`w-5 h-5 rounded-lg flex items-center justify-center border-2 transition-all ${isSelected ? 'bg-orange-600 border-orange-600 scale-110 shadow-lg shadow-orange-600/20' : 'border-slate-200 hover:border-orange-400'
+                                                                }`}
+                                                        >
+                                                            {isSelected && <CheckSquare size={10} strokeWidth={4} className="text-white" />}
+                                                        </button>
 
-                                                         <button
-                                                             onClick={() => handleShareClick(pdf)}
-                                                             className="px-4 py-2 bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm active:scale-95 group"
-                                                         >
-                                                             <Share2 size={14} className="group-hover:text-white transition-colors" />
-                                                             <span>Share</span>
-                                                         </button>
+                                                        <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center shadow-sm border border-red-100 shrink-0">
+                                                            <FileText size={24} className="text-red-500" />
+                                                        </div>
 
-                                                         <button
-                                                             onClick={() => handleDownloadClick(pdf)}
-                                                             className="px-4 py-2 bg-slate-900 hover:bg-orange-600 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-xl shadow-slate-900/20 active:scale-95"
-                                                         >
-                                                             <Eye size={14} />
-                                                             <span>Visualize</span>
-                                                         </button>
-                                                     </div>
-                                                 </div>
-                                             );
+                                                        <div className="min-w-0">
+                                                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                                                                <h4 className="font-bold text-slate-900 text-sm truncate pr-4">{pdf.filename || "Unnamed Report"}</h4>
+                                                                {pdf.report_type && (
+                                                                    <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${pdf.report_type === 'rgb' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                                                                        }`}>
+                                                                        {pdf.report_type === 'rgb' ? 'DRONE DATA' : 'SITE PLAN'}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <div className="flex items-center gap-3 text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
+                                                                <span>{formatDate(pdf.uploaded_at)}</span>
+                                                                <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+                                                                <span>{formatFileSize(pdf.file_size)}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-3">
+                                                        {reportReviews[pdf.pdf_id] && (
+                                                            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border shadow-sm ${reportReviews[pdf.pdf_id]?.status === 'completed'
+                                                                    ? 'bg-green-100 text-green-700 border-green-200 animate-pulse'
+                                                                    : 'bg-blue-100 text-blue-700 border-blue-200'
+                                                                }`}>
+                                                                {reportReviews[pdf.pdf_id]?.status === 'completed' ? (
+                                                                    <><CheckCircle2 size={10} strokeWidth={3} /> CHANGES MADE</>
+                                                                ) : (
+                                                                    <><Clock size={10} strokeWidth={3} /> REVIEW PENDING</>
+                                                                )}
+                                                            </div>
+                                                        )}
+
+                                                        <button
+                                                            onClick={() => handleReviewClick(pdf)}
+                                                            className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm active:scale-95"
+                                                        >
+                                                            <MessageSquarePlus size={14} className="text-orange-500" />
+                                                            <span>Review</span>
+                                                        </button>
+
+                                                        <button
+                                                            onClick={() => handleShareClick(pdf)}
+                                                            className="px-4 py-2 bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm active:scale-95 group"
+                                                        >
+                                                            <Share2 size={14} className="group-hover:text-white transition-colors" />
+                                                            <span>Share</span>
+                                                        </button>
+
+                                                        <button
+                                                            onClick={() => handleDownloadClick(pdf)}
+                                                            className="px-4 py-2 bg-slate-900 hover:bg-orange-600 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-xl shadow-slate-900/20 active:scale-95"
+                                                        >
+                                                            <Eye size={14} />
+                                                            <span>Visualize</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            );
                                         })
                                     ) : (
                                         <div className="text-center py-20 border-2 border-dashed border-slate-100 rounded-3xl">
@@ -764,6 +1062,225 @@ export default function ProfilePage() {
                                 )}
                             </ContentProtection>
                         </div>
+                    </div>
+
+                    {/* Google Drive Upload Components Restored */}
+                    <div className="xl:col-span-3 mt-10">
+                        {/* Image Upload Section */}
+        <section id="image-upload-section" className="py-24 bg-white relative overflow-hidden rounded-[4rem] border border-slate-100 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.05)]">
+          {/* ARCHITECTURAL BACKGROUND SYSTEM */}
+          <div className="absolute inset-0 z-0">
+            {/* Drifting Grid */}
+            <motion.div 
+              animate={{ 
+                backgroundPosition: ["0% 0%", "100% 100%"] 
+              }}
+              transition={{ 
+                duration: 80, 
+                repeat: Infinity, 
+                ease: "linear" 
+              }}
+              className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:40px_40px]"
+            />
+            
+            {/* Tech Nodes */}
+            <div className="absolute inset-0 select-none pointer-events-none opacity-[0.02] font-mono text-[8px] font-black uppercase tracking-[0.5em] text-slate-900">
+              <motion.div animate={{ x: [0, 50, 0] }} transition={{ duration: 15, repeat: Infinity }} className="absolute top-[20%] left-[15%]">TRANSFER_PROTO_v4</motion.div>
+              <motion.div animate={{ x: [0, -40, 0] }} transition={{ duration: 18, repeat: Infinity }} className="absolute bottom-[25%] right-[20%]">SECURE_VAULT_ACTIVE</motion.div>
+            </div>
+
+            {/* Dynamic Blobs */}
+            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-orange-100/20 rounded-full blur-[100px] -mr-80 -mt-80 animate-pulse duration-[10s]" />
+            <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-100/10 rounded-full blur-[100px] -ml-80 -mb-80 animate-pulse duration-[8s]" />
+          </div>
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-20 items-center">
+
+              <motion.div
+                initial={{ opacity: 0, x: -50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+                className="lg:col-span-12 xl:col-span-5 text-center lg:text-left flex flex-col items-center lg:items-start"
+              >
+                <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-white text-slate-900 text-[9px] font-black uppercase tracking-[0.3em] mb-8 shadow-xl shadow-slate-200 border border-slate-100">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+                  </span>
+                  Data Ingestion
+                </div>
+                
+                <h2 className="text-5xl md:text-6xl font-black text-slate-900 mb-8 tracking-tighter uppercase leading-[0.9] italic">
+                  Digital <br />
+                  <span className="bg-gradient-to-r from-orange-600 to-orange-400 bg-clip-text text-transparent not-italic">Twin Uplink</span>
+                </h2>
+                
+                <p className="text-base text-slate-500 font-bold mb-10 leading-relaxed max-w-lg mx-auto lg:mx-0 opacity-70">
+                  Direct industrial-grade file ingestion for radiometric imagery and site plans. Managed via the SolarMark secure cloud interface.
+                </p>
+
+                <div className="flex flex-col gap-4 w-full max-w-sm">
+                  {[
+                    { icon: Camera, label: "Radiometric Data", sub: "Separate RGB & Thermal" },
+                    { icon: HardDrive, label: "Cloud Matrix", sub: "Secure Persistent Storage" },
+                  ].map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-5 p-5 bg-white/40 backdrop-blur-md border border-slate-100 rounded-3xl hover:bg-white hover:shadow-lg transition-all group duration-500">
+                      <div className="w-12 h-12 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-orange-600 group-hover:text-white transition-all shrink-0">
+                        <item.icon size={22} />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[11px] font-black text-slate-900 uppercase tracking-widest leading-none mb-1.5">{item.label}</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter leading-none">{item.sub}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+                className="lg:col-span-12 xl:col-span-7 flex flex-col items-center justify-center py-12"
+              >
+                {/* LARGE UPLINK TREE STRUCTURE */}
+                <div className="relative flex flex-col items-center max-w-md w-full">
+
+                  {/* Central Trunk Line - Thick & Bold */}
+                  <div className="absolute top-0 bottom-[80px] w-[2px] bg-slate-200 z-0 border-r border-dashed border-slate-300"></div>
+
+                  {/* Top Entry Node - Larger */}
+                  <div className="relative z-10 w-16 h-16 rounded-full bg-slate-900/95 flex items-center justify-center mb-12 border-[6px] border-white shadow-[0_0_40px_rgba(15,23,42,0.15)] scale-110">
+                    <CloudUpload size={26} className="text-white" />
+                  </div>
+
+                  {/* BRANCHES CONTAINER - Responsive Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-y-12 md:gap-x-24 relative z-10 w-full mb-16 px-4">
+
+                    {/* Drone Image Branch - Larger Card */}
+                    <div className="flex flex-col items-center relative group">
+                      {/* Branch Line Left - Only on Desktop */}
+                      <div className={`hidden md:block absolute top-[-30px] left-1/2 w-[calc(50%+48px)] h-[2px] transition-all duration-700 -translate-x-[100%] ${rgbFiles.length > 0 ? 'bg-orange-400 shadow-[0_0_10px_rgba(249,115,22,0.5)]' : 'bg-slate-200'}`}></div>
+
+                      <div className="relative group/node select-none cursor-pointer w-full max-w-[180px]">
+                        <input
+                          type="file" multiple accept="image/*"
+                          onChange={(e) => handleFileChange(e, 'rgb')}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                        />
+                        <div className={`p-8 rounded-[2.5rem] border-2 transition-all duration-500 ease-out flex flex-col items-center gap-4 w-full shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] ${
+                          rgbFiles.length > 0 
+                            ? 'border-orange-500 bg-orange-50/80 shadow-[0_20px_50px_-15px_rgba(249,115,22,0.25)] scale-105' 
+                            : 'border-slate-100 bg-white hover:border-orange-400 hover:shadow-[0_20px_50px_-20px_rgba(249,115,22,0.3)] hover:-translate-y-2'
+                          }`}>
+                          <div className={`w-12 h-12 rounded-[1.2rem] flex items-center justify-center transition-colors duration-500 ${rgbFiles.length > 0 ? 'bg-orange-600 text-white shadow-lg' : 'bg-slate-50 text-slate-400 group-hover:bg-orange-50 group-hover:text-orange-500'}`}>
+                            <Camera className="w-6 h-6" />
+                          </div>
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="text-[12px] font-black text-slate-900 uppercase tracking-[0.2em] text-center">Drone <br/> Image</span>
+                            {rgbFiles.length > 0 ? (
+                              <span className="text-[10px] mt-1 text-orange-600 font-black animate-pulse bg-orange-100 px-3 py-1 rounded-full">{rgbFiles.length} Selected</span>
+                            ) : (
+                              <span className="text-[9px] mt-1 text-slate-400 font-bold uppercase tracking-widest group-hover:text-orange-400 transition-colors">Select Files</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Site Plan Branch - Larger Card */}
+                    <div className="flex flex-col items-center relative group">
+                      {/* Branch Line Right - Only on Desktop */}
+                      <div className={`hidden md:block absolute top-[-30px] right-1/2 w-[calc(50%+48px)] h-[2px] transition-all duration-700 translate-x-[100%] ${thermalFiles.length > 0 ? 'bg-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.5)]' : 'bg-slate-200'}`}></div>
+
+                      <div className="relative group/node select-none cursor-pointer w-full max-w-[180px]">
+                        <input
+                          type="file" multiple accept=".kml"
+                          onChange={(e) => handleFileChange(e, 'thermal')}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                        />
+                        <div className={`p-8 rounded-[2.5rem] border-2 transition-all duration-500 ease-out flex flex-col items-center gap-4 w-full shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] ${
+                          thermalFiles.length > 0 
+                            ? 'border-blue-500 bg-blue-50/80 shadow-[0_20px_50px_-15px_rgba(59,130,246,0.25)] scale-105' 
+                            : 'border-slate-100 bg-white hover:border-blue-400 hover:shadow-[0_20px_50px_-20px_rgba(59,130,246,0.3)] hover:-translate-y-2'
+                          }`}>
+                          <div className={`w-12 h-12 rounded-[1.2rem] flex items-center justify-center transition-colors duration-500 ${thermalFiles.length > 0 ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-50 text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500'}`}>
+                            <Globe className="w-6 h-6" />
+                          </div>
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="text-[12px] font-black text-slate-900 uppercase tracking-[0.2em] text-center">Site <br/> Plan</span>
+                            {thermalFiles.length > 0 ? (
+                              <span className="text-[10px] mt-1 text-blue-600 font-black animate-pulse bg-blue-100 px-3 py-1 rounded-full">{thermalFiles.length} Selected</span>
+                            ) : (
+                              <span className="text-[9px] mt-1 text-slate-400 font-bold uppercase tracking-widest group-hover:text-blue-400 transition-colors">Import KML</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* BOTTOM ACTION NODE - Premium Large Button */}
+                  <div className="relative z-10 w-full max-w-[320px]">
+                    <button
+                      onClick={handleImageUpload}
+                      disabled={uploading || (rgbFiles.length === 0 && thermalFiles.length === 0)}
+                      className={`w-full py-5 rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.4em] transition-all duration-300 relative overflow-hidden flex items-center justify-center gap-3 z-20 group/uplink ${
+                        uploading || (rgbFiles.length === 0 && thermalFiles.length === 0)
+                          ? 'bg-slate-100 text-slate-400 cursor-not-allowed border-2 border-slate-200/50 shadow-none'
+                          : 'bg-slate-900 text-white shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:bg-orange-600 hover:shadow-[0_20px_50px_rgba(249,115,22,0.4)] active:scale-95'
+                      }`}
+                    >
+                      {!(uploading || (rgbFiles.length === 0 && thermalFiles.length === 0)) && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-orange-400 opacity-0 group-hover/uplink:opacity-100 transition-opacity duration-500"></div>
+                      )}
+                      <div className="relative z-10 flex items-center gap-3">
+                        {uploading ? (
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : (
+                          <ArrowRight size={20} className={`transition-transform duration-300 ${!(rgbFiles.length === 0 && thermalFiles.length === 0) ? 'group-hover/uplink:translate-x-1' : ''}`} />
+                        )}
+                        <span>{uploading ? 'Processing...' : 'Upload Data'}</span>
+                      </div>
+                    </button>
+
+                    {/* STATUS FEEDBACK - Floating */}
+                    <AnimatePresence mode="wait">
+                      {uploadStatus.message && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          className={`absolute top-full left-0 right-0 mt-6 text-[8px] font-black uppercase tracking-[0.2em] text-center p-3 rounded-xl border-2 shadow-sm ${uploadStatus.type === "success" ? "text-emerald-700 bg-emerald-50 border-emerald-100" :
+                            uploadStatus.type === "error" ? "text-red-700 bg-red-50 border-red-100" : "text-orange-700 bg-orange-50 border-orange-100"
+                            }`}
+                        >
+                          {uploadStatus.message}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                </div>
+
+                {/* SECURE LABELS - Stack on Mobile */}
+                <div className="mt-10 md:mt-16 flex flex-col md:flex-row gap-6 md:gap-8 opacity-40 items-center">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck size={12} className="text-emerald-500" />
+                    <span className="text-[9px] font-black text-slate-800 uppercase tracking-widest leading-none text-center md:text-left">Military-Grade Encryption</span>
+                  </div>
+                  <div className="flex items-center gap-2 border-t md:border-t-0 md:border-l border-slate-200 pt-4 md:pt-0 md:pl-8">
+                    <Database size={12} className="text-blue-500" />
+                    <span className="text-[9px] font-black text-slate-800 uppercase tracking-widest leading-none text-center md:text-left">Cloud Persistent</span>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </section>
                     </div>
                 </div>
             </div>
@@ -988,7 +1505,7 @@ export default function ProfilePage() {
                                             <div className="relative">
                                                 <div className="absolute -inset-4 bg-orange-500/20 rounded-full blur-2xl animate-pulse"></div>
                                                 <motion.div
-                                                    animate={{ 
+                                                    animate={{
                                                         scale: [1, 1.1, 1],
                                                         rotate: [0, 5, -5, 0]
                                                     }}
@@ -1008,36 +1525,73 @@ export default function ProfilePage() {
                                         </div>
                                     )}
 
-                                    {/* The Shielded Report Viewer (Canvas-based to block 'Save As') */}
-                                    <div 
+                                    {/* The Shielded Report Viewer (Canvas-based for PDF, Iframe for HTML, Download for others) */}
+                                    <div
                                         className="flex-1 overflow-auto bg-slate-800 p-8 flex justify-center scrollbar-thin scrollbar-thumb-slate-600"
                                         onContextMenu={(e) => e.preventDefault()}
                                     >
-                                        <div 
-                                            className="relative shadow-2xl shadow-black/40 ring-1 ring-slate-700 rounded"
+                                        <div
+                                            className="relative shadow-2xl shadow-black/40 ring-1 ring-slate-700 rounded w-full max-w-5xl"
                                         >
-                                            <Document
-                                                file={viewingBlob}
-                                                onLoadSuccess={({ numPages }) => {
-                                                    setNumPages(numPages);
-                                                    setPdfReady(true);
-                                                }}
-                                                loading={<div className="h-[800px] w-[600px] bg-slate-800 animate-pulse"></div>}
-                                            >
-                                                {Array.from(new Array(numPages), (el, index) => (
-                                                    <Page 
-                                                        key={`page_${index + 1}`} 
-                                                        pageNumber={index + 1} 
-                                                        scale={1.5}
-                                                        className="mb-8 last:mb-0"
-                                                        loading={<div className="h-[800px] w-[600px] bg-slate-800"></div>}
-                                                        renderTextLayer={false}
-                                                        renderAnnotationLayer={false}
+                                            {selectedPdf?.filename?.toLowerCase().endsWith('.pdf') ? (
+                                                <Document
+                                                    file={viewingBlob}
+                                                    onLoadSuccess={({ numPages }) => {
+                                                        setNumPages(numPages);
+                                                        setPdfReady(true);
+                                                    }}
+                                                    loading={<div className="h-[800px] w-full bg-slate-800 animate-pulse flex items-center justify-center">
+                                                        <Loader2 className="text-orange-500 animate-spin" size={32} />
+                                                    </div>}
+                                                >
+                                                    {Array.from(new Array(numPages), (el, index) => (
+                                                        <Page
+                                                            key={`page_${index + 1}`}
+                                                            pageNumber={index + 1}
+                                                            scale={1.5}
+                                                            className="mb-8 last:mb-0"
+                                                            loading={<div className="h-[800px] w-full bg-slate-800"></div>}
+                                                            renderTextLayer={false}
+                                                            renderAnnotationLayer={false}
+                                                        />
+                                                    ))}
+                                                </Document>
+                                            ) : selectedPdf?.filename?.toLowerCase().endsWith('.html') || selectedPdf?.filename?.toLowerCase().endsWith('.htm') ? (
+                                                <div className="w-full h-full bg-white min-h-[85vh] rounded-lg overflow-hidden relative">
+                                                    <iframe
+                                                        src={viewingBlob}
+                                                        className="w-full h-full border-none min-h-[85vh]"
+                                                        title="HTML Report Content"
                                                     />
-                                                ))}
-                                            </Document>
-                                            
-                                            {/* SECURE OVERLAY: Prevent any interaction with canvas data */}
+                                                </div>
+                                            ) : selectedPdf?.filename?.toLowerCase().match(/\.(kml|kmz)$/) ? (
+                                                <div className="w-full h-full min-h-[85vh] flex flex-col bg-slate-900 rounded-2xl overflow-hidden relative border border-slate-700 shadow-2xl">
+                                                    <KmlViewer kmlUrl={viewingBlob} />
+                                                </div>
+                                            ) : (
+                                                <div className="w-full min-h-[60vh] bg-slate-900 rounded-[2rem] border border-slate-700 flex flex-col items-center justify-center p-12 text-center gap-6">
+                                                    <div className="w-24 h-24 bg-orange-500/10 rounded-3xl flex items-center justify-center text-orange-500 border border-orange-500/20 shadow-2xl shadow-orange-500/10">
+                                                        <BarChart3 size={48} />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <h4 className="text-2xl font-black text-white uppercase tracking-tight">Technical Data Ready</h4>
+                                                        <p className="text-slate-400 max-w-md mx-auto text-sm">
+                                                            This spreadsheet dataset requires external software (Excel or CSV Editor) for full analysis.
+                                                        </p>
+                                                    </div>
+                                                    <a
+                                                        href={viewingBlob}
+                                                        download={selectedPdf?.filename}
+                                                        className="px-10 py-5 bg-orange-600 hover:bg-orange-500 text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-xl shadow-orange-900/40 flex items-center gap-3 active:scale-95"
+                                                    >
+                                                        <Download size={18} />
+                                                        Download Data Pack
+                                                    </a>
+                                                    <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest mt-4">Security Verified & Scanned</p>
+                                                </div>
+                                            )}
+
+                                            {/* SECURE OVERLAY: Prevent any interaction with content */}
                                             <div className="absolute inset-0 z-50 select-none pointer-events-none">
                                                 {/* Watermark Overlay for the Report itself */}
                                                 <div className="absolute inset-0 flex flex-wrap gap-12 items-center justify-center rotate-[-20deg] opacity-[0.05] overflow-hidden py-24">
@@ -1100,7 +1654,7 @@ export default function ProfilePage() {
                                             <p className="text-sm text-slate-500 font-bold uppercase tracking-widest text-[10px]">Reference: {selectedPdfForReview?.pdf_id?.substring(0, 8)}</p>
                                         </div>
                                     </div>
-                                    <button 
+                                    <button
                                         onClick={() => setShowReviewModal(false)}
                                         className="w-10 h-10 rounded-xl hover:bg-slate-200 flex items-center justify-center text-slate-400 transition-colors"
                                     >
@@ -1119,11 +1673,10 @@ export default function ProfilePage() {
                                                     <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-1">Request Tracking</h4>
                                                     <p className="text-xs text-slate-400 font-medium tracking-wide">Ref: {reportReviews[selectedPdfForReview?.pdf_id].id?.substring(18)}</p>
                                                 </div>
-                                                <div className={`px-5 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center gap-2.5 shadow-sm border ${
-                                                    reportReviews[selectedPdfForReview?.pdf_id].status === 'completed' 
-                                                    ? 'bg-green-50 text-green-700 border-green-200/50' 
-                                                    : 'bg-orange-50 text-orange-700 border-orange-200/50'
-                                                }`}>
+                                                <div className={`px-5 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center gap-2.5 shadow-sm border ${reportReviews[selectedPdfForReview?.pdf_id].status === 'completed'
+                                                        ? 'bg-green-50 text-green-700 border-green-200/50'
+                                                        : 'bg-orange-50 text-orange-700 border-orange-200/50'
+                                                    }`}>
                                                     {reportReviews[selectedPdfForReview?.pdf_id].status === 'completed' ? <CheckCircle2 size={16} /> : <Clock size={16} />}
                                                     {reportReviews[selectedPdfForReview?.pdf_id].status}
                                                 </div>
@@ -1181,7 +1734,7 @@ export default function ProfilePage() {
                                                 className="w-full h-40 bg-slate-50 border-2 border-slate-100 rounded-3xl p-6 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-500/10 transition-all resize-none text-[15px] font-medium leading-relaxed shadow-sm"
                                             />
                                         </div>
-                                        
+
                                         {!reportReviews[selectedPdfForReview?.pdf_id] && (
                                             <div className="bg-slate-50 border border-slate-200 p-5 rounded-2xl flex items-start gap-4">
                                                 <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shrink-0 border border-slate-200 shadow-sm">
@@ -1281,7 +1834,7 @@ export default function ProfilePage() {
                                         <div className="space-y-4 mb-8">
                                             <div>
                                                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Recipient Email Address</label>
-                                                <input 
+                                                <input
                                                     type="email"
                                                     value={shareRecipientEmail}
                                                     onChange={(e) => setShareRecipientEmail(e.target.value)}

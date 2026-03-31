@@ -37,18 +37,14 @@ async def upload_pdf(
     drive_link_2: Optional[str] = Form(None)
 ):
     try:
-        if not pdf.filename.lower().endswith('.pdf'):
-            raise HTTPException(status_code=400, detail="File must be a PDF")
-        
-        if not pdf.content_type or "pdf" not in pdf.content_type.lower():
-            raise HTTPException(status_code=400, detail="File must be a PDF")
+        # Restriction removed to allow all file formats (HTML, Excel, etc.)
         
         MAX_SIZE = 50 * 1024 * 1024
         content = await pdf.read()
         file_size = len(content)
         
         if file_size > MAX_SIZE:
-            raise HTTPException(status_code=400, detail="PDF file size should be less than 50MB")
+            raise HTTPException(status_code=400, detail="File size should be less than 50MB")
         
         link_exists = collection.find_one({"_id": ObjectId(link_id)})
         
@@ -180,7 +176,7 @@ async def upload_pdf(
             )
         
         return {
-            "message": "PDF uploaded successfully",
+            "message": "File uploaded successfully",
             "pdf_id": pdf_id,
             "file_id": str(file_id),
             "filename": pdf.filename,

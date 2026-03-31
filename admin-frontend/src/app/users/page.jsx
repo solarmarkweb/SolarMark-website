@@ -101,16 +101,10 @@ export default function UserManagementPage() {
         }
     };
 
-    // Upload PDF for user
+    // Upload document for user (PDF, HTML, Excel, etc.)
     const handleFileUpload = async (e, userId) => {
         const file = e.target.files[0];
         if (!file) return;
-
-        if (file.type !== 'application/pdf') {
-            alert('Please select a PDF file.');
-            e.target.value = null;
-            return;
-        }
 
         const formData = new FormData();
         formData.append('pdf', file);
@@ -330,11 +324,11 @@ export default function UserManagementPage() {
                                         </td>
                                         <td className="px-8 py-5">
                                             <div className="flex gap-2">
-                                                <label className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all border cursor-pointer flex items-center justify-center ${uploadingUserId === (user._id || user.id) ? 'bg-orange-100 text-orange-600 border-orange-200 cursor-not-allowed' : 'text-blue-600 hover:text-white hover:bg-blue-500 border-blue-100 bg-blue-50'}`} title="Upload Report to User Profile">
-                                                    {uploadingUserId === (user._id || user.id) ? '...' : 'REPORT'}
+                                                <label className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all border cursor-pointer flex items-center justify-center ${uploadingUserId === (user._id || user.id) ? 'bg-orange-100 text-orange-600 border-orange-200 cursor-not-allowed' : 'text-blue-600 hover:text-white hover:bg-blue-500 border-blue-100 bg-blue-50'}`} title="Upload Document to User Profile">
+                                                    {uploadingUserId === (user._id || user.id) ? '...' : 'UPLOAD'}
                                                     <input
                                                         type="file"
-                                                        accept="application/pdf"
+                                                        accept=".pdf,.html,.htm,.xlsx,.xls,.csv,.kml,.kmz"
                                                         className="hidden"
                                                         disabled={uploadingUserId === (user._id || user.id)}
                                                         onChange={(e) => handleFileUpload(e, user._id || user.id)}

@@ -165,7 +165,7 @@ export default function AboutPage() {
                                     Enterprise Solutions
                                 </span>
                             </motion.div>
-                            
+
                             <motion.h1
                                 variants={fadeUp}
                                 className="text-5xl md:text-6xl lg:text-7xl font-extrabold mb-6 tracking-tight text-slate-900 leading-[1.1]"
@@ -180,7 +180,7 @@ export default function AboutPage() {
                             >
                                 {data.hero_description}
                             </motion.p>
-                            
+
                             <motion.div variants={fadeUp} className="flex gap-4">
                                 <Link href="/booking" className="px-8 py-3.5 bg-orange-600 text-white rounded-xl font-bold transition-colors hover:bg-orange-700 shadow-lg shadow-orange-600/20">
                                     Schedule Inspection
@@ -190,9 +190,9 @@ export default function AboutPage() {
                                 </Link>
                             </motion.div>
                         </motion.div>
-                        
+
                         {/* Hero Image Group */}
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.8 }}
@@ -269,7 +269,7 @@ export default function AboutPage() {
                             <motion.p variants={fadeUp} className="text-lg text-slate-600 mb-8 leading-relaxed">
                                 {data.mission_text_2}
                             </motion.p>
-                            
+
                             <motion.ul variants={fadeUp} className="space-y-4">
                                 {data.mission_highlights.map((item, i) => (
                                     <li key={i} className="flex items-start gap-3">
@@ -363,7 +363,7 @@ export default function AboutPage() {
             {/* Drone Technology Showcase */}
             <section className="py-24 bg-white border-t border-slate-100">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <motion.div 
+                    <motion.div
                         initial="hidden"
                         whileInView="show"
                         viewport={{ once: true }}
@@ -377,21 +377,21 @@ export default function AboutPage() {
                             {data.drone_tech_description}
                         </p>
                     </motion.div>
-                    
-                    <motion.div 
+
+                    <motion.div
                         initial={{ opacity: 0, y: 40 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.8 }}
                         className="relative rounded-[2.5rem] overflow-hidden shadow-2xl group border border-slate-200 bg-slate-900"
                     >
-                        <img 
-                            src={getDynamicPhoto('About - Tech Showcase', '/agri-drone-survey.png')} 
-                            alt="Professional inspection drone in flight over panels" 
-                            className="w-full h-[500px] md:h-[600px] object-cover transition-transform duration-1000 group-hover:scale-105 opacity-90 mix-blend-lighten" 
+                        <img
+                            src={getDynamicPhoto('About - Tech Showcase', '/agri-drone-survey.png')}
+                            alt="Professional inspection drone in flight over panels"
+                            className="w-full h-[500px] md:h-[600px] object-cover transition-transform duration-1000 group-hover:scale-105 opacity-90 mix-blend-lighten"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent opacity-90" />
-                        
+
                         <div className="absolute bottom-8 md:bottom-12 left-8 md:left-12 max-w-2xl text-white pr-8">
                             <div className="bg-orange-600 text-white px-4 py-2 rounded-lg font-bold shadow-lg inline-flex items-center gap-2 mb-6">
                                 <Camera className="w-4 h-4" />
@@ -402,7 +402,7 @@ export default function AboutPage() {
                                 Equipped with dual-payload FLIR high-resolution thermal imaging and RGB cameras operating in tandem for precision hotspot detection and physical damage assessment.
                             </p>
                         </div>
-                        
+
                         {/* Futuristic UI Overlay Elements */}
                         <div className="absolute top-8 right-8 md:top-12 md:right-12 bg-black/40 backdrop-blur-md border border-white/10 p-5 rounded-2xl text-white font-mono flex flex-col gap-3 shadow-2xl hidden sm:flex">
                             <div className="flex items-center gap-2 mb-2">
@@ -419,7 +419,7 @@ export default function AboutPage() {
                                 <div className="w-full h-full bg-green-500 rounded-full animate-[pulse_2s_ease-in-out_infinite]" />
                             </div>
                         </div>
-                        
+
                         {/* Target reticle overlay */}
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 border border-white/20 rounded-full hidden md:flex items-center justify-center mix-blend-overlay">
                             <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
@@ -513,7 +513,7 @@ export default function AboutPage() {
             <section className="py-24 bg-slate-50 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-orange-200/50 rounded-full blur-[100px]" />
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-200/50 rounded-full blur-[100px]" />
-                
+
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
                     <h2 className="text-4xl md:text-6xl font-extrabold text-slate-900 mb-6 tracking-tight">
                         Ready to Secure Your <br className="hidden sm:block" />

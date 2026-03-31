@@ -1,10 +1,10 @@
 # FastAPI Framework
-fastapi==0.109.0
-uvicorn[standard]==0.27.0
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
 
 # MongoDB
-pymongo[srv]==4.6.1
-motor==3.3.2  # Async MongoDB driver (optional)
+pymongo[srv]>=4.6.1
+motor>=3.3.2  # Async MongoDB driver (optional)
 
 # Authentication
 python-jose[cryptography]==3.3.0  # JWT for FastAPI
@@ -12,9 +12,9 @@ bcrypt==4.1.2
 passlib[bcrypt]==1.7.4
 
 # Environment & Validation
-python-dotenv==1.0.1
-pydantic==2.6.1
-email-validator==2.1.0.post1
+python-dotenv>=1.0.1
+pydantic>=2.10.0 # Using a newer pydantic for better experimental Python support
+email-validator>=2.1.0.post1
 
 # CORS
 # fastapi-cors not needed
