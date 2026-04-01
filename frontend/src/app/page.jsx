@@ -5,7 +5,7 @@ import React, { useState, useEffect } from "react";
 import {
   ArrowRight, Zap, Shield, Globe, Sun, FileUp, Database, Cloud,
   HardDrive, CheckCircle, User, Mail, Phone, MapPin,
-  Settings, MessageSquare, Send, CloudUpload, Activity, Loader2, ShieldCheck, Star, ChevronDown, ChevronLeft, ChevronRight, RefreshCw,
+  Settings, MessageSquare, Send, CloudUpload, Activity, Loader2, ShieldCheck, Star, ChevronDown, ChevronLeft, ChevronRight, RefreshCw, Wind, BarChart3,
   Thermometer, ClipboardList, TrendingUp, Eye, Brain, FileText, Calendar, Image, Camera, Upload, X, Grid, List, ExternalLink, Cpu, Layers, Search, FileCheck, Sparkles, Leaf, Award
 } from "lucide-react";
 import Link from "next/link";
@@ -29,19 +29,23 @@ export default function HomePage() {
   const [uploadedImages, setUploadedImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [anomalyTab, setAnomalyTab] = useState('thermal');
   const [status, setStatus] = useState({ type: '', message: '' });
   const [viewMode, setViewMode] = useState('grid');
   const [selectedImage, setSelectedImage] = useState(null);
   const [dragActive, setDragActive] = useState({ rgb: false, thermal: false });
   const [uploadProgress, setUploadProgress] = useState({ rgb: 0, thermal: 0 });
   const [sitePhotos, setSitePhotos] = useState([]);
-  const [loadingPhotos, setLoadingPhotos] = useState(false);
+  const [loadingPhotos, setLoadingPhotos] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
 
   // Proposal and Offers Modal State
   const [showProposalModal, setShowProposalModal] = useState(false);
   const [showOffersModal, setShowOffersModal] = useState(false);
-  const [proposalForm, setProposalForm] = useState({ name: "", email: "", role: "", acres: "", mw: "" });
+  const [proposalForm, setProposalForm] = useState({
+    name: "", email: "", role: "", acres: "", mw: "",
+    pmax: "", total_panels: "", cuf: "", tariff: "", specific_yield: ""
+  });
   const [offerForm, setOfferForm] = useState({ name: "", email: "", offer_type: "" });
   const [submitStatus, setSubmitStatus] = useState({ type: "", message: "" });
 
@@ -236,7 +240,9 @@ export default function HomePage() {
 
   const getDynamicPhoto = (category, defaultImage) => {
     const photo = sitePhotos.find(p => p.category === category);
-    return photo ? `${API_URL.replace('/api', '')}${photo.url}` : defaultImage;
+    if (!photo) return defaultImage;
+    const baseUrl = API_URL.split('/api')[0];
+    return `${baseUrl}${photo.url}`;
   };
 
   const fetchUserImages = async () => {
@@ -705,14 +711,17 @@ export default function HomePage() {
         first_name: first_name,
         last_name: last_name,
         email: proposalForm.email,
-        message: `📢 PROPOSAL REQUEST\n\n- Role: ${proposalForm.role}\n- Area: ${proposalForm.acres} Acres\n- Capacity: ${proposalForm.mw} MW`
+        message: `📢 PROPOSAL REQUEST\n\n- Role: ${proposalForm.role}\n- Area: ${proposalForm.acres} Acres\n- Capacity: ${proposalForm.mw} MW\n- Pmax: ${proposalForm.pmax} W\n- Total Panels: ${proposalForm.total_panels}\n- CUF: ${proposalForm.cuf}%\n- Tariff: ${proposalForm.tariff} /KWh\n- Specific Yield: ${proposalForm.specific_yield} kWh/kWp`
       });
 
       if (response.status === 200 || response.status === 201) {
         setSubmitStatus({ type: "success", message: "Proposal request sent successfully!" });
         setTimeout(() => {
           setShowProposalModal(false);
-          setProposalForm({ name: "", email: "", role: "", acres: "", mw: "" });
+          setProposalForm({
+            name: "", email: "", role: "", acres: "", mw: "",
+            pmax: "", total_panels: "", cuf: "", tariff: "", specific_yield: ""
+          });
           setSubmitStatus({ type: "", message: "" });
         }, 2000);
       } else {
@@ -761,119 +770,353 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Refined Professional Hero - Strategic Narrative Scale */}
-      <section className="relative pt-28 md:pt-36 pb-20 md:pb-32 flex items-center justify-center overflow-hidden bg-white">
-        <div className="absolute inset-0 -z-10 overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-full bg-slate-50/10"></div>
-          <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
-            style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '60px 60px' }}></div>
+      {/* NEW DESIGN: SILENT FAILURE (HERO SECTION) */}
+      <section className="bg-slate-50 py-24 md:py-32 px-6 md:px-12 relative overflow-hidden flex items-center justify-center">
+        {/* Clean minimal background */}
+        <div className="absolute top-0 left-0 w-full h-full bg-slate-50"></div>
 
-          <motion.div
-            animate={{
-              scale: [1, 1.1, 1],
-              opacity: [0.3, 0.4, 0.3],
-            }}
-            transition={{ duration: 15, repeat: Infinity }}
-            className="absolute -top-1/4 -right-1/4 w-[600px] h-[600px] bg-orange-100/30 rounded-full blur-[140px]"
-          />
-          <div className="absolute -bottom-1/4 -left-1/4 w-[600px] h-[600px] bg-blue-50/20 rounded-full blur-[140px]" />
-        </div>
+        <div className="max-w-5xl mx-auto w-full relative z-10 text-center flex flex-col items-center mt-12">
+          <div className="flex flex-col items-center max-w-4xl">
+            {/* Heading */}
+            <div className="mb-8 flex flex-col items-center">
+              <div className="flex items-center gap-3 text-orange-600 font-mono text-[10px] md:text-xs uppercase tracking-[0.2em] mb-6 font-bold">
+                <div className="w-8 h-px bg-orange-500"></div> DRONE THERMOGRAPHY • SOLAR INSPECTION <div className="w-8 h-px bg-orange-500"></div>
+              </div>
 
-        <div className="max-w-5xl mx-auto px-4 text-center relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center space-x-2 text-orange-600 px-4 py-1.5 rounded-full font-black text-[10px] uppercase tracking-[0.4em] mb-10"
-          >
-          </motion.div>
+              <h1 className="font-extrabold text-4xl md:text-5xl lg:text-6xl text-slate-900 uppercase leading-[1.1] tracking-tight drop-shadow-sm">
+                YOUR PANELS ARE <span className="text-orange-500">FAILING</span><br />
+                <span className="text-transparent text-5xl md:text-6xl lg:text-[5rem]" style={{ WebkitTextStroke: '1.5px rgba(15,23,42,0.8)' }}>SILENTLY</span>
+              </h1>
+            </div>
 
-          <motion.h1
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8 }}
-            className="text-4xl md:text-7xl font-black text-slate-900 tracking-tighter mb-4 uppercase leading-[0.9] drop-shadow-sm"
-          >
-            Solar <span className="text-orange-600">Mark</span> <br />
+            {/* Contents & Buttons */}
+            <div className="flex flex-col items-center">
+              <p className="text-slate-600 text-sm md:text-base lg:text-lg leading-relaxed mb-8 max-w-2xl font-medium">
+                <strong className="text-slate-900 font-bold">Hidden faults cost solar operators 5–20% of annual yield —</strong> invisibly, every day. We fly thermal drones over your entire site and pinpoint every anomaly: exactly where it is, what it is, and why it's happening.
+              </p>
 
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-base md:text-xl text-slate-500 mb-8 leading-relaxed font-bold max-w-3xl mx-auto opacity-70"
-          >
-            Our platform doesn't just show you pictures. We provide geolocated defect coordinates, thermal grading, and estimated power loss for every anomaly detected across your entire field.
-          </motion.p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileActive={{ scale: 0.95 }}
-              onClick={() => setShowProposalModal(true)}
-              className="w-full sm:w-auto px-10 py-5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.2)] hover:bg-orange-600 transition-all flex items-center justify-center gap-4"
-            >
-              Request Proposal <ArrowRight size={18} />
-            </motion.button>
-            <Link
-              href="/about"
-              className="w-full sm:w-auto px-10 py-5 bg-white text-slate-900 border border-slate-200 rounded-2xl font-black text-xs uppercase tracking-[0.4em] hover:bg-slate-50 hover:border-orange-200 transition-all shadow-sm"
-            >
-              Tech Specs
-            </Link>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
+                <button onClick={() => setShowProposalModal(true)} className="w-full sm:w-auto px-8 py-4 bg-orange-500 text-white font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-orange-600 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-[0_15px_30px_-10px_rgba(249,115,22,0.4)]">
+                  REQUEST PROPOSAL <ArrowRight size={16} />
+                </button>
+                <button onClick={() => {
+                  const processSection = document.getElementById('process-section');
+                  if (processSection) processSection.scrollIntoView({ behavior: 'smooth' });
+                }} className="w-full sm:w-auto px-8 py-4 bg-white border-2 border-slate-200 text-slate-900 font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-slate-50 hover:border-orange-200 hover:scale-105 active:scale-95 transition-all flex items-center justify-center shadow-sm">
+                  SEE HOW IT WORKS
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Global Scale - Immersive Command Background UI */}
-      <section className="relative py-20 min-h-[600px] flex items-center overflow-hidden">
-        {/* Full-Width Immersive Background Site Photo */}
-        <div className="absolute inset-0 z-0">
-          <img
-            src={getDynamicPhoto('Global Deployment', '/premium-solar-farm.png')}
-            alt="Global Solar Asset"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px]"></div>
+      {/* NEW DESIGN: STATS BAR */}
+      <div className="bg-[#f8fafc] border-y border-slate-200 flex flex-wrap lg:flex-nowrap">
+        {[
+          { num: "5-20%", label: "Avg. energy loss from undetected faults in typical solar sites" },
+          { num: "17+", label: "Distinct fault types detected — thermal and visual — in one pass" },
+          { num: "100x", label: "Faster than manual walkdown inspection, with far higher accuracy" },
+          { num: "48hr", label: "From flight to a full GPS-tagged, actionable report per module" }
+        ].map((stat, i) => (
+          <div key={i} className="flex-1 min-w-[250px] p-8 md:p-10 border-b lg:border-b-0 lg:border-r border-slate-200 last:border-none relative overflow-hidden group">
+            <div className="font-black text-4xl text-orange-500 mb-2 leading-none">{stat.num}</div>
+            <div className="text-xs text-slate-500 font-medium leading-relaxed max-w-[200px]">{stat.label}</div>
+            <motion.div initial={{ scaleX: 0 }} whileHover={{ scaleX: 1 }} className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600 origin-left transition-transform duration-500" />
+          </div>
+        ))}
+      </div>
+
+      {/* NEW DESIGN: PROBLEM SECTION */}
+      <section className="bg-[#fff9f2] py-24 md:py-32 px-4 md:px-8 border-b border-orange-100 overflow-hidden relative">
+        <div className="max-w-[85rem] mx-auto relative">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-8 lg:gap-16 xl:gap-24 items-center">
+
+            {/* LEFT COLUMN: 2 Cards */}
+            <div className="order-2 lg:order-1 space-y-6 lg:space-y-12 relative z-10 w-full">
+              {[
+                {
+                  icon: Thermometer, title: <>Hidden<br />Hotspots</>, desc: "Cell-level heating defects degrade panels and create fire risks — completely invisible from the ground or with visual inspection alone.",
+                  gradient: "from-orange-400 to-orange-500", shadow: "shadow-orange-500/20"
+                },
+                {
+                  icon: Zap, title: <>Diode & String<br />Failures</>, desc: "Bypassed substrings and failed bypass diodes silently kill string output. You see the dip in SCADA, but you cannot locate the source.",
+                  gradient: "from-cyan-400 to-blue-500", shadow: "shadow-blue-500/20"
+                }
+              ].map((item, i) => {
+                const Icon = item.icon;
+                return (
+                  <motion.div key={i} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
+                    className="bg-white px-6 py-8 md:p-8 rounded-[1.5rem] shadow-[0_20px_50px_-20px_rgba(0,0,0,0.08)] border border-orange-100 relative lg:ml-auto w-full lg:max-w-[340px] flex flex-col items-end text-right z-20 hover:-translate-y-1 transition-transform">
+
+                    {/* DASHED CONNECTOR LINE TO CENTER */}
+                    <div className="hidden lg:block absolute top-[50%] -right-8 xl:-right-16 w-8 xl:w-16 border-t-[1.5px] border-dashed border-orange-300 -z-10">
+                      <div className="w-1.5 h-1.5 rounded-full bg-orange-400 absolute -right-0.5 top-1/2 -translate-y-1/2"></div>
+                      <div className="w-1 h-1 rounded-full bg-orange-300 absolute -left-0.5 top-1/2 -translate-y-1/2"></div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-4 mb-4 flex-row-reverse">
+                      <div className={`w-16 h-16 rounded-full bg-gradient-to-tr ${item.gradient} flex items-center justify-center text-white shrink-0 shadow-[0_10px_20px_-5px_rgba(0,0,0,0.2)] ${item.shadow} ring-4 ring-white relative z-10`}>
+                        <Icon size={28} strokeWidth={2} />
+                      </div>
+                      <h3 className="font-extrabold text-[15px] text-slate-900 tracking-tight uppercase leading-tight">{item.title}</h3>
+                    </div>
+                    <p className="text-slate-600 text-[13px] leading-relaxed max-w-[280px]">{item.desc}</p>
+                  </motion.div>
+                )
+              })}
+            </div>
+
+            {/* MIDDLE COLUMN: Text Content */}
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="order-1 lg:order-2 flex flex-col items-center text-center z-10 px-4 lg:px-8 xl:px-12 relative py-12 shrink-0">
+
+              <div className="w-12 h-12 bg-white rounded-full border border-orange-200 flex items-center justify-center mb-6 shadow-xl relative pointer-events-none">
+                <div className="absolute inset-0 rounded-full ring-4 ring-orange-200/50 -z-10"></div>
+                <Eye className="text-orange-500" size={20} strokeWidth={2.5} />
+              </div>
+
+              <div className="text-orange-600 text-[9px] uppercase tracking-[0.2em] font-bold mb-4 font-mono">
+                The Problem:
+              </div>
+
+              <h2 className="font-black text-4xl lg:text-[3.5rem] xl:text-[4rem] text-slate-900 uppercase leading-[1.0] tracking-tighter drop-shadow-sm">
+                The <br />
+                <span className="text-orange-500 block py-1">Danger</span>
+                You Can't See
+              </h2>
+
+            </motion.div>
+
+            {/* RIGHT COLUMN: 2 Cards */}
+            <div className="order-3 lg:order-3 space-y-6 lg:space-y-12 relative z-10 w-full">
+              {[
+                {
+                  icon: Layers, title: <>Soiling,<br />Shading & Damage</>, desc: "Soiling gradients, vegetation encroachment, broken glass — these compound daily. Without data, maintenance becomes costly guesswork.",
+                  gradient: "from-green-400 to-green-500", shadow: "shadow-green-500/20"
+                },
+                {
+                  icon: MapPin, title: <>No Actionable<br />Location Data</>, desc: "Without GPS-tagged module-level reports, your maintenance team spends hours searching — or skips the problem until its a major fault.",
+                  gradient: "from-amber-400 to-yellow-500", shadow: "shadow-yellow-500/20"
+                }
+              ].map((item, i) => {
+                const Icon = item.icon;
+                return (
+                  <motion.div key={i} initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
+                    className="bg-white px-6 py-8 md:p-8 rounded-[1.5rem] shadow-[0_20px_50px_-20px_rgba(0,0,0,0.08)] border border-orange-100 relative lg:mr-auto w-full lg:max-w-[340px] flex flex-col items-start text-left z-20 hover:-translate-y-1 transition-transform">
+
+                    {/* DASHED CONNECTOR LINE FROM CENTER */}
+                    <div className="hidden lg:block absolute top-[50%] -left-8 xl:-left-16 w-8 xl:w-16 border-t-[1.5px] border-dashed border-orange-300 -z-10">
+                      <div className="w-1 h-1 rounded-full bg-orange-300 absolute -right-0.5 top-1/2 -translate-y-1/2"></div>
+                      <div className="w-1.5 h-1.5 rounded-full bg-orange-400 absolute -left-0.5 top-1/2 -translate-y-1/2"></div>
+                    </div>
+
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className={`w-16 h-16 rounded-full bg-gradient-to-tr ${item.gradient} flex items-center justify-center text-white shrink-0 shadow-[0_10px_20px_-5px_rgba(0,0,0,0.2)] ${item.shadow} ring-4 ring-white relative z-10`}>
+                        <Icon size={28} strokeWidth={2} />
+                      </div>
+                      <h3 className="font-extrabold text-[15px] text-slate-900 tracking-tight uppercase leading-tight">{item.title}</h3>
+                    </div>
+                    <p className="text-slate-600 text-[13px] leading-relaxed max-w-[280px]">{item.desc}</p>
+                  </motion.div>
+                )
+              })}
+            </div>
+
+          </div>
         </div>
+      </section>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="max-w-3xl mx-auto mb-16"
-          >
-            <h2 className="text-5xl md:text-7xl font-black text-white mb-8 uppercase tracking-tighter leading-none">
-              Solar Scans <br />
-              <span className="text-orange-500">Across the World</span>
+      {/* NEW DESIGN: ANOMALIES DETECTION */}
+      <section className="bg-[#f8fafc] py-24 px-6 md:px-12 border-y border-slate-200">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-wrap justify-between items-end gap-8 mb-16">
+            <div>
+              <div className="flex items-center gap-3 text-cyan-500 font-mono text-xs uppercase tracking-widest mb-4">
+                <div className="w-6 h-px bg-cyan-500"></div> What We Detect
+              </div>
+              <h2 className="font-black text-3xl md:text-5xl text-slate-900 uppercase leading-none tracking-tight">
+                Nothing Missed. <span className="text-orange-500">Everything</span> Mapped.
+              </h2>
+            </div>
+            <div className="flex bg-white p-1 rounded-lg border border-slate-200">
+              <button onClick={() => setAnomalyTab("thermal")}
+                className={`font-mono text-xs uppercase tracking-wider px-6 py-2 rounded transition-all ${anomalyTab === "thermal" ? "bg-orange-600 text-white font-bold" : "text-slate-500 hover:text-slate-900"}`}>
+                Thermal
+              </button>
+              <button onClick={() => setAnomalyTab("visual")}
+                className={`font-mono text-xs uppercase tracking-wider px-6 py-2 rounded transition-all ${anomalyTab === "visual" ? "bg-orange-600 text-white font-bold" : "text-slate-500 hover:text-slate-900"}`}>
+                Visual (RGB)
+              </button>
+            </div>
+          </div>
+          <AnimatePresence mode="wait">
+            <motion.div key={anomalyTab} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
+              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {(anomalyTab === "thermal" ? [
+                { name: "Hotspot", category: "anomaly-hotspot", sev: "h", style: "radial-gradient(circle at 32% 42%, #fffde0 0%, #FFD700 12%, #FF4500 26%, #8B1500 48%, #2d0a00 72%, #120308 100%)" },
+                { name: "Multi Hotspot", category: "anomaly-multi-hotspot", sev: "h", style: "radial-gradient(circle at 30% 28%, #FFD700 9%, #FF6B1A 18%, transparent 30%), radial-gradient(circle at 67% 62%, #FFD700 9%, #FF6B1A 18%, transparent 28%), linear-gradient(135deg, #1a0900 0%, #3d1200 50%, #1a0900 100%)" },
+                { name: "Bypassed Substring", category: "anomaly-bypassed", sev: "m", style: "linear-gradient(0deg, #a03000 0%, #FF6B1A 28%, #FFAA00 33%, #ffffff 50%, #FF6B1A 72%, #a03000 100%)" },
+                { name: "Diode Failure", category: "anomaly-diode", sev: "m", style: "linear-gradient(160deg, #FF8C00 0%, #FF4500 25%, #8B1500 50%, #200600 75%, #080108 100%)" },
+                { name: "PID Effect", category: "anomaly-pid", sev: "h", style: "linear-gradient(135deg, #0a0012 0%, #3d0060 45%, #7a00a0 60%, #bb33cc 78%, #ff80ff 100%)" }
+              ] : [
+                { name: "Soiling", category: "anomaly-soiling", sev: "l", style: "radial-gradient(ellipse at 35% 50%, rgba(200,170,90,0.6) 0%, transparent 55%), linear-gradient(135deg, #1a2035 0%, #4a5580 100%)" },
+                { name: "Broken Glass", category: "anomaly-broken-glass", sev: "h", style: "repeating-linear-gradient(-48deg, transparent 0px, transparent 7px, rgba(255,255,255,0.15) 7px, rgba(255,255,255,0.15) 8px), linear-gradient(135deg, #1e2d4a 0%, #2e4a7a 100%)" },
+                { name: "Delamination", category: "anomaly-delamination", sev: "m", style: "radial-gradient(ellipse at 38% 40%, rgba(255,255,255,0.2) 0%, transparent 28%), linear-gradient(135deg, #1e2f60 0%, #2a4080 100%)" },
+                { name: "Vegetation", category: "anomaly-vegetation", sev: "l", style: "linear-gradient(135deg, #0f2010 0%, #1a4020 40%, #0e5010 65%, #0d2a0a 100%)" },
+                { name: "Shadowing", category: "anomaly-shadowing", sev: "m", style: "linear-gradient(135deg, #2a3550 0%, #1a2535 35%, #090f1a 55%, #2a3550 100%)" }
+              ]).map((card, i) => {
+                const imgUrl = getDynamicPhoto(card.category, null);
+                return (
+                  <div key={i} className="bg-white border border-slate-200 rounded-lg overflow-hidden group hover:border-orange-500/50 transition-all cursor-pointer shadow-sm">
+                    <div className="aspect-square relative overflow-hidden bg-slate-100">
+                      {loadingPhotos ? (
+                        <div className="absolute inset-0 bg-slate-200 animate-pulse"></div>
+                      ) : imgUrl ? (
+                        <img src={imgUrl} alt={card.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      ) : (
+                        <div className="absolute inset-0 group-hover:scale-105 transition-transform duration-500" style={{ background: card.style }}></div>
+                      )}
+                    </div>
+                    <div className="p-3 flex justify-between items-center text-xs font-mono uppercase tracking-widest text-slate-700 bg-white">
+                      {card.name}
+                      <div className={`w-1.5 h-1.5 rounded-full ${card.sev === "h" ? "bg-red-500" : card.sev === "m" ? "bg-orange-500" : "bg-yellow-400"}`}></div>
+                    </div>
+                  </div>
+                )
+              })}
+            </motion.div>
+          </AnimatePresence>
+          <div className="mt-8 flex flex-wrap items-center gap-x-10 gap-y-4 text-xs font-mono uppercase tracking-widest text-slate-500">
+            <span>Severity:</span>
+            <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-red-500"></div> Critical</div>
+            <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-orange-500"></div> Moderate</div>
+            <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-yellow-400"></div> Minor</div>
+          </div>
+        </div>
+      </section>
+
+      {/* NEW DESIGN: THE PROCESS */}
+      <section className="bg-[#fff9f2] py-32 px-6 md:px-12 relative overflow-hidden border-b border-orange-100">
+        {/* Subtle background decoration */}
+        <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-white/40 to-transparent"></div>
+        <div className="absolute bottom-0 left-0 w-1/4 h-1/2 bg-cyan-50/30 blur-3xl rounded-full"></div>
+        
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="flex flex-col items-center text-center mb-20">
+            <div className="flex items-center gap-3 text-cyan-500 font-mono text-xs uppercase tracking-[0.3em] mb-4">
+              <div className="w-12 h-px bg-cyan-500"></div> The Process <div className="w-12 h-px bg-cyan-500"></div>
+            </div>
+            <h2 className="font-black text-4xl md:text-5xl text-slate-900 uppercase tracking-tight max-w-2xl leading-[1.1]">
+              Find. <span className="text-orange-500">Fix.</span> Forget.
             </h2>
-            <p className="text-slate-200 text-lg md:text-xl font-bold uppercase tracking-widest leading-relaxed opacity-90">
-              Our team helps you keep your solar panels working well. <br />
-              We scan large farms and give you easy reports.
-            </p>
-          </motion.div>
+          </div>
 
-          {/* Centered Glassmorphic Feature Strip */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
+          <div className="relative">
+            {/* TIMELINE CONNECTOR LINE (Desktop) */}
+            <div className="hidden md:block absolute top-10 left-[15%] right-[15%] h-px border-t border-dashed border-slate-300 -z-0"></div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+              {[
+                { icon: Wind, num: "01", title: "Drone Survey", desc: "Automated thermal and RGB aerial coverage — scanning thousands of modules per hour with calibrated precision across any terrain." },
+                { icon: Brain, num: "02", title: "AI Analysis", desc: "Proprietary algorithms cross-reference datasets to classify faults and rank severity with automated root-cause attribution." },
+                { icon: BarChart3, num: "03", title: "Actionable Intelligence", desc: "Individual fault location on your site map with probable cause and recommended action — delivered within 48 hours." }
+              ].map((step, i) => {
+                const Icon = step.icon;
+                return (
+                <motion.div key={i} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.2 }}
+                  className="relative flex flex-col items-center text-center group">
+                  
+                  {/* ICON CIRCLE */}
+                  <div className="w-20 h-20 rounded-full bg-white shadow-[0_15px_35px_-12px_rgba(0,0,0,0.1)] border border-slate-100 flex items-center justify-center text-orange-500 mb-8 relative z-10 group-hover:bg-orange-500 group-hover:text-white group-hover:scale-110 transition-all duration-500">
+                    <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-slate-900 text-white text-[10px] font-black flex items-center justify-center shadow-lg border-2 border-white group-hover:bg-cyan-500 transition-colors">
+                      {step.num}
+                    </div>
+                    <Icon size={32} strokeWidth={1.5} />
+                  </div>
+
+                  <div className="bg-white/60 backdrop-blur-sm px-8 py-10 rounded-[2rem] border border-white shadow-[0_20px_50px_-20px_rgba(0,0,0,0.05)] hover:bg-white hover:shadow-[0_40px_70px_-25px_rgba(0,0,0,0.08)] transition-all duration-500 flex-grow w-full">
+                    <h3 className="font-extrabold text-xl text-slate-900 uppercase tracking-wider mb-4 leading-tight">{step.title}</h3>
+                    <p className="text-slate-500 text-[13px] leading-relaxed font-medium max-w-[280px] mx-auto">{step.desc}</p>
+                  </div>
+                </motion.div>
+              )})}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* NEW DESIGN: BENEFITS */}
+      <section className="bg-white py-32 px-6 md:px-12 border-t border-slate-100">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col mb-16">
+            <div className="flex items-center gap-3 text-cyan-500 font-mono text-xs uppercase tracking-[0.3em] mb-4">
+              <div className="w-12 h-px bg-cyan-500"></div> Why SolarMark
+            </div>
+            <h2 className="font-black text-3xl md:text-5xl text-slate-900 uppercase tracking-tight leading-[1.1]">
+              Because <span className="text-orange-500">Guessing</span> Costs More
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
             {[
-              { title: "Global Care", desc: "Many countries" },
-              { title: "Fast Scans", desc: "Save your time" },
-              { title: "Easy Reports", desc: "Simple to read" },
-              { title: "Expert Help", desc: "Solve problems" }
-            ].map((item, idx) => (
-              <motion.div
-                key={idx}
-                whileHover={{ y: -5 }}
-                className="bg-white/10 backdrop-blur-xl border border-white/10 p-6 rounded-[2.5rem] group hover:bg-white/20 transition-all duration-500"
-              >
-                <h4 className="text-[11px] font-black text-orange-500 uppercase tracking-[0.4em] mb-2">{item.title}</h4>
-                <p className="text-[10px] text-white font-bold uppercase tracking-wider opacity-80">{item.desc}</p>
+              { icon: Cpu, title: "Dual-Sensor Diagnosis", desc: "Thermal shows heat. RGB shows cracks. Combined, you know the root cause — not just the symptom. No other inspection delivers this precision." },
+              { icon: MapPin, title: "Module-Level Location", desc: "Every fault GPS-tagged and overlaid on your site layout. Your maintenance team walks directly to the right module — no searching, no hours wasted." },
+              { icon: TrendingUp, title: "Recover Lost Revenue", desc: "Clients routinely recover 8-15% yield post-inspection. One inspection pays for itself many times over in recovered generation within 12 months." },
+              { icon: FileCheck, title: "Warranty and Insurance Ready", desc: "IEC 62446-3 compliant thermal reports for panel warranty claims and insurance documentation. Evidence-grade data to protect your asset." }
+            ].map((benefit, i) => {
+              const Icon = benefit.icon;
+              return (
+              <motion.div key={i} initial={{ opacity: 0, x: i % 2 === 0 ? -20 : 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
+                className="group p-10 bg-slate-50/50 rounded-[2rem] border border-transparent hover:border-slate-100 hover:bg-white hover:shadow-[0_40px_80px_-30px_rgba(0,0,0,0.06)] transition-all duration-500">
+                
+                <div className="flex items-start gap-6">
+                  <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-orange-500 shrink-0 border border-slate-100 group-hover:bg-orange-500 group-hover:text-white transition-all duration-500 rotate-3 group-hover:rotate-0">
+                    <Icon size={24} strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-xl text-slate-900 uppercase tracking-widest mb-4 leading-tight">{benefit.title}</h3>
+                    <p className="text-slate-500 text-sm md:text-[15px] leading-relaxed font-medium">{benefit.desc}</p>
+                  </div>
+                </div>
               </motion.div>
+            )})}
+          </div>
+        </div>
+      </section>
+
+      {/* NEW DESIGN: CTA */}
+      <section className="bg-white py-32 px-6 md:px-12 text-center relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-orange-600/10 rounded-full blur-[140px] pointer-events-none"></div>
+        <div className="max-w-4xl mx-auto relative z-10">
+          <div className="flex items-center justify-center gap-3 text-cyan-500 font-mono text-xs uppercase tracking-widest mb-8">
+            <div className="w-6 h-px bg-cyan-500"></div> Get Started
+          </div>
+          <h2 className="font-black text-4xl md:text-7xl text-slate-900 uppercase leading-none tracking-tight mb-8">
+            Stop Losing Yield.<br /><span className="text-orange-500">See Your Site Clearly.</span>
+          </h2>
+          <p className="text-slate-600 text-base md:text-lg max-w-lg mx-auto mb-12 leading-relaxed">
+            Book a free 15-minute assessment. We will tell you exactly what your site needs and what you can expect to find.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-16">
+            <button onClick={() => setShowProposalModal(true)}
+              className="w-full sm:w-auto px-12 py-5 bg-orange-600 text-white font-black text-lg uppercase tracking-wider rounded-lg shadow-lg shadow-orange-500/30 hover:scale-105 transition-all flex items-center justify-center gap-4">
+              Book Free Assessment <ArrowRight size={20} />
+            </button>
+            <Link href="/contact"
+              className="w-full sm:w-auto px-10 py-5 bg-white border border-slate-300 text-slate-900 font-bold rounded-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-3 shadow-sm">
+              Talk to an Expert
+            </Link>
+          </div>
+          <div className="flex flex-wrap justify-center gap-x-10 gap-y-4">
+            {["IEC 62446-3 Compliant", "Same-week availability", "No site too large", "48-hr turnaround"].map((text, i) => (
+              <div key={i} className="flex items-center gap-3 text-slate-500 font-mono text-xs uppercase tracking-widest font-medium">
+                <div className="w-[3px] h-[3px] rounded-full bg-orange-500"></div> {text}
+              </div>
             ))}
           </div>
         </div>
       </section>
+
 
       {/* Elegant Formal Upload Section - Precision Intelligence Hub (Exclusive for Drone Service Providers) */}
       {user && userRole === "Drone Service Provider" && (
@@ -1647,6 +1890,7 @@ export default function HomePage() {
           </section>
         )
       }
+
       {/* Proposal Modal */}
       <AnimatePresence>
         {showProposalModal && (
@@ -1741,6 +1985,62 @@ export default function HomePage() {
                         onChange={(e) => setProposalForm({ ...proposalForm, mw: e.target.value })}
                         placeholder="e.g. 10"
                         className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Module Pmax (W)</label>
+                      <input
+                        type="number"
+                        value={proposalForm.pmax}
+                        onChange={(e) => setProposalForm({ ...proposalForm, pmax: e.target.value })}
+                        placeholder="e.g. 540"
+                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Total Panels</label>
+                      <input
+                        type="number"
+                        value={proposalForm.total_panels}
+                        onChange={(e) => setProposalForm({ ...proposalForm, total_panels: e.target.value })}
+                        placeholder="e.g. 20000"
+                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">CUF (%)</label>
+                      <input
+                        type="text"
+                        value={proposalForm.cuf}
+                        onChange={(e) => setProposalForm({ ...proposalForm, cuf: e.target.value })}
+                        placeholder="18.5"
+                        className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300 font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Tariff</label>
+                      <input
+                        type="text"
+                        value={proposalForm.tariff}
+                        onChange={(e) => setProposalForm({ ...proposalForm, tariff: e.target.value })}
+                        placeholder="4.5"
+                        className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300 font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">S. Yield</label>
+                      <input
+                        type="text"
+                        value={proposalForm.specific_yield}
+                        onChange={(e) => setProposalForm({ ...proposalForm, specific_yield: e.target.value })}
+                        placeholder="1650"
+                        className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300 font-mono"
                       />
                     </div>
                   </div>
