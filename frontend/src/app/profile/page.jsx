@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import {
     User, Mail, HardDrive, Calendar,
     Download, ExternalLink, FileText,
+    Eye, File as LucideFile, Loader2, AlertCircle,
     Eye, Loader2, AlertCircle,
     RefreshCw, Home, Folder, CheckCircle,
     Link as LinkIcon,
@@ -12,6 +13,7 @@ import {
     ShieldCheck, Trash2, Lock, CreditCard,
     Shield, X, GitCompare, ArrowUpDown, BarChart3, CheckSquare, Square, Zap, LogOut,
     MessageSquarePlus, History, Send, MessageSquare, ListTodo, Share2, Users,
+    CloudUpload, Camera, Globe,
     Globe, Camera, Database, ArrowRight, CloudUpload
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -24,6 +26,8 @@ import dynamic from 'next/dynamic';
 const Document = dynamic(() => import('react-pdf').then(mod => mod.Document), { ssr: false });
 const Page = dynamic(() => import('react-pdf').then(mod => mod.Page), { ssr: false });
 const KmlViewer = dynamic(() => import('@/components/KmlViewer'), { ssr: false });
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8002/api';
 
 // Only import and configure pdfjs on the client
 if (typeof window !== 'undefined') {
@@ -84,6 +88,15 @@ export default function ProfilePage() {
     const [shareRecipientEmail, setShareRecipientEmail] = useState("");
     const [isSharing, setIsSharing] = useState(false);
     const [shareSuccess, setShareSuccess] = useState(false);
+
+    // Upload States
+    const [rgbFiles, setRgbFiles] = useState([]);
+    const [thermalFiles, setThermalFiles] = useState([]);
+    const [uploading, setUploading] = useState(false);
+    const [uploadStatus, setUploadStatus] = useState({ type: "", message: "" });
+    const [uploadProgress, setUploadProgress] = useState({ rgb: 0, thermal: 0 });
+    const [showUploadModal, setShowUploadModal] = useState(false);
+    const [uploadForm, setUploadForm] = useState({ projectName: "", areaSize: "" });
 
   const handleDrag = (e, type) => {
     e.preventDefault();
@@ -391,7 +404,15 @@ export default function ProfilePage() {
                 const bData = bookingsResponse?.data || [];
                 setBookings(bData);
                 setPdfs(pdfsData || []);
-                setReportReviews(reviewsResponse?.data || {});
+                
+                const reviewsArray = reviewsResponse?.data || [];
+                const reviewsDict = {};
+                if (Array.isArray(reviewsArray)) {
+                    reviewsArray.forEach(r => {
+                        reviewsDict[r.pdf_id] = r;
+                    });
+                }
+                setReportReviews(reviewsDict);
 
                 console.log("DEBUG: Raw Shared Data response:", sharedData);
                 const sData = sharedData?.data || (Array.isArray(sharedData) ? sharedData : []);
@@ -417,6 +438,192 @@ export default function ProfilePage() {
             console.error("Critical error:", err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Upload Handlers
+    const handleFileChange = (e, type) => {
+        if (e.target.files && e.target.files.length > 0) {
+            handleFiles(e.target.files, type);
+        }
+    };
+
+    const handleFiles = (files, type) => {
+        let validFiles = [];
+        const MAX_SIZE = 1000 * 1024 * 1024 * 1024; // 1000 GB
+
+        if (type === 'rgb') {
+            // Drone Images - only images
+            validFiles = Array.from(files).filter(file => {
+                const isImage = file.type.startsWith('image/') &&
+                    (file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/jpg');
+                const isWithinSize = file.size <= MAX_SIZE;
+                return isImage && isWithinSize;
+            });
+        } else {
+            // Site Plan - KML format alone strictly
+            validFiles = Array.from(files).filter(file => {
+                const isKML = file.name.toLowerCase().endsWith('.kml') ||
+                    file.type === 'application/vnd.google-earth.kml+xml';
+                const isWithinSize = file.size <= MAX_SIZE;
+                return isKML && isWithinSize;
+            });
+        }
+
+        if (validFiles.length === 0) {
+            setUploadStatus({
+                type: "error",
+                message: type === 'rgb'
+                    ? "Please upload valid image files for Drone Images (JPEG, PNG, max 1000GB)"
+                    : "Please upload KML format files strictly for Site Plan (max 1000GB)"
+            });
+            return;
+        }
+
+        if (type === 'rgb') {
+            setRgbFiles(prev => [...prev, ...validFiles]);
+        } else {
+            setThermalFiles(prev => [...prev, ...validFiles]);
+        }
+    };
+
+    const uploadRGBImages = async () => {
+        if (rgbFiles.length === 0) return;
+
+        const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
+        const formData = new FormData();
+
+        rgbFiles.forEach(file => {
+            const timestamp = Date.now();
+            const fileExt = file.name.split('.').pop();
+            const newFileName = `${user?.name || 'User'}_rgb_${timestamp}.${fileExt}`;
+
+            const renamedFile = new File([file], newFileName, { type: file.type });
+            formData.append('rgb_images', renamedFile);
+        });
+
+        formData.append('project_name', uploadForm.projectName || 'Untitled Project');
+        if (uploadForm.areaSize) {
+            formData.append('area_size', uploadForm.areaSize);
+        }
+
+        const response = await fetch(`${API_URL}/upload-rgb-images`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
+
+        if (response.status === 401) {
+            throw new Error('Session error. Please try refreshing the page.');
+        }
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Failed to upload RGB images');
+        }
+
+        return response.json();
+    };
+
+    const uploadThermalImages = async () => {
+        if (thermalFiles.length === 0) return;
+
+        const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
+        const formData = new FormData();
+
+        thermalFiles.forEach(file => {
+            const timestamp = Date.now();
+            const fileExt = file.name.split('.').pop();
+            const newFileName = `${user?.name || 'User'}_thermal_${timestamp}.${fileExt}`;
+
+            const renamedFile = new File([file], newFileName, { type: file.type });
+            formData.append('thermal_images', renamedFile);
+        });
+
+        formData.append('project_name', uploadForm.projectName || 'Untitled Project');
+        if (uploadForm.areaSize) {
+            formData.append('area_size', uploadForm.areaSize);
+        }
+
+        const response = await fetch(`${API_URL}/upload-thermal-images`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
+
+        if (response.status === 401) {
+            throw new Error('Session error. Please try refreshing the page.');
+        }
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Failed to upload Thermal images');
+        }
+
+        return response.json();
+    };
+
+    const handleImageUpload = async (e) => {
+        e.preventDefault();
+
+        if (rgbFiles.length === 0 && thermalFiles.length === 0) {
+            setUploadStatus({ type: "error", message: "Please select at least one asset to upload." });
+            return;
+        }
+
+        if (uploading) return;
+
+        setUploading(true);
+        setUploadStatus({ type: "info", message: "Uploading assets to Google Drive..." });
+
+        try {
+            let rgbResult = null;
+            let thermalResult = null;
+            let totalUploaded = 0;
+
+            if (rgbFiles.length > 0) {
+                setUploadProgress(prev => ({ ...prev, rgb: 0 }));
+                rgbResult = await uploadRGBImages();
+                totalUploaded += rgbResult?.uploaded_count || rgbFiles.length;
+                setUploadProgress(prev => ({ ...prev, rgb: 100 }));
+            }
+
+            if (thermalFiles.length > 0) {
+                setUploadProgress(prev => ({ ...prev, thermal: 0 }));
+                thermalResult = await uploadThermalImages();
+                totalUploaded += thermalResult?.uploaded_count || thermalFiles.length;
+                setUploadProgress(prev => ({ ...prev, thermal: 100 }));
+            }
+
+            setUploadStatus({
+                type: "success",
+                message: `Successfully uploaded ${totalUploaded} assets to Google Drive!`
+            });
+
+            setTimeout(() => {
+                setUploadStatus({ type: "", message: "" });
+            }, 3000);
+
+            setRgbFiles([]);
+            setThermalFiles([]);
+            setUploadProgress({ rgb: 0, thermal: 0 });
+            setShowUploadModal(false);
+            setUploadForm({ projectName: "", areaSize: "" });
+
+            await fetchProfileData();
+
+        } catch (err) {
+            console.error("Upload error:", err);
+            setUploadStatus({
+                type: "error",
+                message: "Network Error: Failed to complete the upload. Please check your connection and try again."
+            });
+        } finally {
+            setUploading(false);
         }
     };
 
@@ -694,6 +901,14 @@ export default function ProfilePage() {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
     };
 
+    const truncateFilename = (filename) => {
+        if (!filename) return 'Unnamed Report';
+        const nameWithoutExt = filename.replace(/\.[^/.]+$/, '');
+        const words = nameWithoutExt.split(/[\s_-]+/);
+        if (words.length <= 2) return filename;
+        return words.slice(0, 2).join(' ') + '.....';
+    };
+
     const getUserInitials = (userName) => {
         if (!userName || userName === 'Anonymous User') return 'AU';
         const names = userName.split(' ');
@@ -763,6 +978,288 @@ export default function ProfilePage() {
                             <X size={18} />
                         </button>
                     </motion.div>
+                )}
+
+                {/* Elegant Formal Upload Section - Precision Intelligence Hub */}
+                {user && (
+                    <section id="image-upload-section" className="py-10 bg-[#f1f3f5] relative overflow-hidden shadow-sm mb-12 rounded-[2.5rem]">
+                        {/* Top Transition Blur Glow */}
+                        <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-white to-transparent opacity-50 backdrop-blur-3xl -z-10" />
+
+                        {/* Theme Inset: Sophisticated Ash Atmosphere */}
+                        <div className="absolute inset-0 opacity-[0.03] pointer-events-none -z-0"></div>
+                        <div className="absolute -bottom-1/4 -right-1/4 w-[500px] h-[500px] bg-orange-100/20 rounded-full blur-[120px] -z-10" />
+
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+
+                                {/* Left Column: Interactive Direct Flow Hub - Professional Ash Theme */}
+                                <div className="lg:col-span-6 xl:col-span-5 flex items-center justify-center">
+                                    <div className="w-full max-w-lg">
+                                        {/* Premium Ash Theme - Replaced Dark Mode */}
+                                        <div className="p-10 md:p-12 bg-slate-200/60 rounded-[2.5rem] shadow-sm relative overflow-hidden group hover:bg-slate-200/80 transition-all duration-500 border border-slate-300/50">
+                                            <div className="relative z-10">
+                                                <h2 className="text-4xl md:text-5xl font-black text-slate-900 leading-tight tracking-tighter uppercase">
+                                                    UPLOAD TO <br />
+                                                    <span className="text-orange-600 drop-shadow-sm transition-all duration-500">GOOGLE DRIVE</span>
+                                                </h2>
+                                                <p className="mt-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
+                                                    Easy cloud upload <br />
+                                                    for your solar projects.
+                                                </p>
+                                            </div>
+                                            {/* Subtle Background Accent */}
+                                            <div className="absolute top-0 right-0 w-32 h-32 bg-white/40 rounded-full blur-2xl -z-0" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Center Column: Perfectly Centered Solid Arrow - Black High-Contrast */}
+                                <div className="hidden xl:flex xl:col-span-2 items-center justify-center">
+                                    <div className="text-slate-950 flex-shrink-0 drop-shadow-sm">
+                                        <svg width="70" height="40" viewBox="0 0 70 40" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M0 13H45V27H0V13Z" />
+                                            <path d="M40 5L65 20L40 35V5Z" />
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                {/* Right Column: Balanced Interactive Terminal - Symmetrical 5-span */}
+                                <div className="lg:col-span-6 xl:col-span-5 flex justify-center">
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.98 }}
+                                        whileInView={{ opacity: 1, scale: 1 }}
+                                        viewport={{ once: true }}
+                                        whileHover={{ y: -4 }}
+                                        className="bg-white border-2 border-slate-950 rounded-[2.5rem] p-8 md:p-10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.05)] w-full max-w-xl relative overflow-hidden"
+                                    >
+                                        <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-50">
+                                            <h3 className="text-[11px] font-black text-slate-800 uppercase tracking-[0.3em]">Upload here</h3>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                                            {/* Zone A: Drone Image */}
+                                            <motion.div
+                                                whileHover={{ y: -2, scale: 1.01 }}
+                                                whileTap={{ scale: 0.97 }}
+                                                className="relative group cursor-pointer"
+                                            >
+                                                <input
+                                                    type="file" multiple accept="image/*"
+                                                    onChange={(e) => handleFileChange(e, 'rgb')}
+                                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                                />
+                                                <div className={`p-8 rounded-3xl border-2 transition-all duration-300 flex flex-col items-center justify-center gap-4 ${rgbFiles.length > 0
+                                                        ? 'border-orange-600 bg-orange-100 shadow-inner'
+                                                        : 'border-orange-100 bg-orange-50 hover:border-orange-200 hover:shadow-lg'
+                                                    }`}>
+                                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${rgbFiles.length > 0 ? 'bg-orange-600 text-white shadow-lg' : 'bg-white text-orange-400 shadow-sm'
+                                                        }`}>
+                                                        <Camera size={22} />
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <h4 className="text-sm font-bold text-slate-900 mb-0.5 uppercase tracking-tight">Drone Image</h4>
+                                                        <span className={`text-[10px] font-black tracking-widest transition-colors uppercase ${rgbFiles.length > 0 ? 'text-orange-600' : 'text-orange-400 opacity-60'}`}>
+                                                            {rgbFiles.length > 0 ? `${rgbFiles.length} Selected` : "Scan Hub"}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+
+                                            {/* Zone B: Site Plan */}
+                                            <motion.div
+                                                whileHover={{ y: -2, scale: 1.01 }}
+                                                whileTap={{ scale: 0.97 }}
+                                                className="relative group cursor-pointer"
+                                            >
+                                                <input
+                                                    type="file" multiple accept=".kml"
+                                                    onChange={(e) => handleFileChange(e, 'thermal')}
+                                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                                />
+                                                <div className={`p-8 rounded-3xl border-2 transition-all duration-300 flex flex-col items-center justify-center gap-4 ${thermalFiles.length > 0
+                                                        ? 'border-orange-600 bg-orange-100 shadow-inner'
+                                                        : 'border-orange-100 bg-orange-50 hover:border-orange-200 hover:shadow-lg'
+                                                    }`}>
+                                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${thermalFiles.length > 0 ? 'bg-orange-600 text-white shadow-lg' : 'bg-white text-orange-400 shadow-sm'
+                                                        }`}>
+                                                        <Globe size={22} />
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <h4 className="text-sm font-bold text-slate-900 mb-0.5 uppercase tracking-tight">Site Plan</h4>
+                                                        <span className={`text-[10px] font-black tracking-widest transition-colors uppercase ${thermalFiles.length > 0 ? 'text-orange-600' : 'text-orange-400 opacity-60'}`}>
+                                                            {thermalFiles.length > 0 ? `${thermalFiles.length} Vectors` : "KML Import"}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        </div>
+
+                                        <div className="max-w-md mx-auto">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    if (rgbFiles.length === 0 && thermalFiles.length === 0) return;
+                                                    setShowUploadModal(true);
+                                                }}
+                                                disabled={uploading || (rgbFiles.length === 0 && thermalFiles.length === 0)}
+                                                className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.4em] transition-all hover:bg-orange-600 active:scale-[0.98] disabled:opacity-40 flex items-center justify-center gap-3 shadow-xl"
+                                            >
+                                                {uploading ? (
+                                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                                ) : (
+                                                    <CloudUpload size={22} />
+                                                )}
+                                                <span>{uploading ? 'Processing' : 'Finalize Upload'}</span>
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </section>
+                )}
+
+                {/* Elegant Formal Upload Section - Precision Intelligence Hub */}
+                {user && (
+                    <section id="image-upload-section" className="py-10 bg-[#f1f3f5] relative overflow-hidden shadow-sm mb-12 rounded-[2.5rem]">
+                        {/* Top Transition Blur Glow */}
+                        <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-white to-transparent opacity-50 backdrop-blur-3xl -z-10" />
+
+                        {/* Theme Inset: Sophisticated Ash Atmosphere */}
+                        <div className="absolute inset-0 opacity-[0.03] pointer-events-none -z-0"></div>
+                        <div className="absolute -bottom-1/4 -right-1/4 w-[500px] h-[500px] bg-orange-100/20 rounded-full blur-[120px] -z-10" />
+
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+
+                                {/* Left Column: Interactive Direct Flow Hub - Professional Ash Theme */}
+                                <div className="lg:col-span-6 xl:col-span-5 flex items-center justify-center">
+                                    <div className="w-full max-w-lg">
+                                        {/* Premium Ash Theme - Replaced Dark Mode */}
+                                        <div className="p-10 md:p-12 bg-slate-200/60 rounded-[2.5rem] shadow-sm relative overflow-hidden group hover:bg-slate-200/80 transition-all duration-500 border border-slate-300/50">
+                                            <div className="relative z-10">
+                                                <h2 className="text-4xl md:text-5xl font-black text-slate-900 leading-tight tracking-tighter uppercase">
+                                                    UPLOAD TO <br />
+                                                    <span className="text-orange-600 drop-shadow-sm transition-all duration-500">GOOGLE DRIVE</span>
+                                                </h2>
+                                                <p className="mt-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
+                                                    Easy cloud upload <br />
+                                                    for your solar projects.
+                                                </p>
+                                            </div>
+                                            {/* Subtle Background Accent */}
+                                            <div className="absolute top-0 right-0 w-32 h-32 bg-white/40 rounded-full blur-2xl -z-0" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Center Column: Perfectly Centered Solid Arrow - Black High-Contrast */}
+                                <div className="hidden xl:flex xl:col-span-2 items-center justify-center">
+                                    <div className="text-slate-950 flex-shrink-0 drop-shadow-sm">
+                                        <svg width="70" height="40" viewBox="0 0 70 40" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M0 13H45V27H0V13Z" />
+                                            <path d="M40 5L65 20L40 35V5Z" />
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                {/* Right Column: Balanced Interactive Terminal - Symmetrical 5-span */}
+                                <div className="lg:col-span-6 xl:col-span-5 flex justify-center">
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.98 }}
+                                        whileInView={{ opacity: 1, scale: 1 }}
+                                        viewport={{ once: true }}
+                                        whileHover={{ y: -4 }}
+                                        className="bg-white border-2 border-slate-950 rounded-[2.5rem] p-8 md:p-10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.05)] w-full max-w-xl relative overflow-hidden"
+                                    >
+                                        <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-50">
+                                            <h3 className="text-[11px] font-black text-slate-800 uppercase tracking-[0.3em]">Upload here</h3>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                                            {/* Zone A: Drone Image */}
+                                            <motion.div
+                                                whileHover={{ y: -2, scale: 1.01 }}
+                                                whileTap={{ scale: 0.97 }}
+                                                className="relative group cursor-pointer"
+                                            >
+                                                <input
+                                                    type="file" multiple accept="image/*"
+                                                    onChange={(e) => handleFileChange(e, 'rgb')}
+                                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                                />
+                                                <div className={`p-8 rounded-3xl border-2 transition-all duration-300 flex flex-col items-center justify-center gap-4 ${rgbFiles.length > 0
+                                                        ? 'border-orange-600 bg-orange-100 shadow-inner'
+                                                        : 'border-orange-100 bg-orange-50 hover:border-orange-200 hover:shadow-lg'
+                                                    }`}>
+                                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${rgbFiles.length > 0 ? 'bg-orange-600 text-white shadow-lg' : 'bg-white text-orange-400 shadow-sm'
+                                                        }`}>
+                                                        <Camera size={22} />
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <h4 className="text-sm font-bold text-slate-900 mb-0.5 uppercase tracking-tight">Drone Image</h4>
+                                                        <span className={`text-[10px] font-black tracking-widest transition-colors uppercase ${rgbFiles.length > 0 ? 'text-orange-600' : 'text-orange-400 opacity-60'}`}>
+                                                            {rgbFiles.length > 0 ? `${rgbFiles.length} Selected` : "Scan Hub"}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+
+                                            {/* Zone B: Site Plan */}
+                                            <motion.div
+                                                whileHover={{ y: -2, scale: 1.01 }}
+                                                whileTap={{ scale: 0.97 }}
+                                                className="relative group cursor-pointer"
+                                            >
+                                                <input
+                                                    type="file" multiple accept=".kml"
+                                                    onChange={(e) => handleFileChange(e, 'thermal')}
+                                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                                />
+                                                <div className={`p-8 rounded-3xl border-2 transition-all duration-300 flex flex-col items-center justify-center gap-4 ${thermalFiles.length > 0
+                                                        ? 'border-orange-600 bg-orange-100 shadow-inner'
+                                                        : 'border-orange-100 bg-orange-50 hover:border-orange-200 hover:shadow-lg'
+                                                    }`}>
+                                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${thermalFiles.length > 0 ? 'bg-orange-600 text-white shadow-lg' : 'bg-white text-orange-400 shadow-sm'
+                                                        }`}>
+                                                        <Globe size={22} />
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <h4 className="text-sm font-bold text-slate-900 mb-0.5 uppercase tracking-tight">Site Plan</h4>
+                                                        <span className={`text-[10px] font-black tracking-widest transition-colors uppercase ${thermalFiles.length > 0 ? 'text-orange-600' : 'text-orange-400 opacity-60'}`}>
+                                                            {thermalFiles.length > 0 ? `${thermalFiles.length} Vectors` : "KML Import"}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        </div>
+
+                                        <div className="max-w-md mx-auto">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    if (rgbFiles.length === 0 && thermalFiles.length === 0) return;
+                                                    setShowUploadModal(true);
+                                                }}
+                                                disabled={uploading || (rgbFiles.length === 0 && thermalFiles.length === 0)}
+                                                className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.4em] transition-all hover:bg-orange-600 active:scale-[0.98] disabled:opacity-40 flex items-center justify-center gap-3 shadow-xl"
+                                            >
+                                                {uploading ? (
+                                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                                ) : (
+                                                    <CloudUpload size={22} />
+                                                )}
+                                                <span>{uploading ? 'Processing' : 'Finalize Upload'}</span>
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </section>
                 )}
 
                 {/* Stats Grid - 4 Containers System */}
@@ -1004,7 +1501,7 @@ export default function ProfilePage() {
 
                                                         <div className="min-w-0">
                                                             <div className="flex flex-wrap items-center gap-2 mb-1">
-                                                                <h4 className="font-bold text-slate-900 text-sm truncate pr-4">{pdf.filename || "Unnamed Report"}</h4>
+                                                                <h4 className="font-bold text-slate-900 text-sm pr-4" title={pdf.filename}>{truncateFilename(pdf.filename)}</h4>
                                                                 {pdf.report_type && (
                                                                     <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${pdf.report_type === 'rgb' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
                                                                         }`}>
@@ -1361,11 +1858,15 @@ export default function ProfilePage() {
                                         </div>
                                     )}
 
+                                    {/* The Shielded Report Viewer (Canvas-based to block 'Save As') */}
+                                    <div
                                     {/* The Shielded Report Viewer (Canvas-based for PDF, Iframe for HTML, Download for others) */}
                                     <div
                                         className="flex-1 overflow-auto bg-slate-800 p-8 flex justify-center scrollbar-thin scrollbar-thumb-slate-600"
                                         onContextMenu={(e) => e.preventDefault()}
                                     >
+                                        <div
+                                            className="relative shadow-2xl shadow-black/40 ring-1 ring-slate-700 rounded"
                                         <div
                                             className="relative shadow-2xl shadow-black/40 ring-1 ring-slate-700 rounded w-full max-w-5xl"
                                         >
@@ -1509,6 +2010,10 @@ export default function ProfilePage() {
                                                     <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-1">Request Tracking</h4>
                                                     <p className="text-xs text-slate-400 font-medium tracking-wide">Ref: {reportReviews[selectedPdfForReview?.pdf_id].id?.substring(18)}</p>
                                                 </div>
+                                                <div className={`px-5 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center gap-2.5 shadow-sm border ${reportReviews[selectedPdfForReview?.pdf_id].status === 'completed'
+                                                        ? 'bg-green-50 text-green-700 border-green-200/50'
+                                                        : 'bg-orange-50 text-orange-700 border-orange-200/50'
+                                                    }`}>
                                                 <div className={`px-5 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center gap-2.5 shadow-sm border ${reportReviews[selectedPdfForReview?.pdf_id].status === 'completed'
                                                         ? 'bg-green-50 text-green-700 border-green-200/50'
                                                         : 'bg-orange-50 text-orange-700 border-orange-200/50'
@@ -1697,6 +2202,96 @@ export default function ProfilePage() {
                                         </button>
                                     </>
                                 )}
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Upload Details Modal - Project Structure */}
+            <AnimatePresence>
+                {showUploadModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 overflow-hidden">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => !uploading && setShowUploadModal(false)}
+                            className="absolute inset-0 bg-slate-950/40 backdrop-blur-md"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="relative w-full max-w-lg bg-white rounded-[2rem] shadow-2xl overflow-hidden border border-slate-100 z-10"
+                        >
+                            <div className="p-8 md:p-10">
+                                <button
+                                    onClick={() => !uploading && setShowUploadModal(false)}
+                                    className="absolute top-6 right-6 p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-colors disabled:opacity-50"
+                                    disabled={uploading}
+                                >
+                                    <X size={20} />
+                                </button>
+
+                                <div className="mb-8">
+                                    <div className="w-12 h-12 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center mb-6 shadow-inner">
+                                        <CloudUpload size={24} />
+                                    </div>
+                                    <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase">Project Details</h3>
+                                    <p className="text-sm font-bold text-slate-500 mt-2 leading-relaxed">
+                                        Provide the project details to structure your Google Drive folders correctly.
+                                    </p>
+                                </div>
+
+                                <form onSubmit={handleImageUpload} className="space-y-5">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Name *</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            placeholder="e.g. Nevada Solar Array 1"
+                                            value={uploadForm.projectName}
+                                            onChange={(e) => setUploadForm({ ...uploadForm, projectName: e.target.value })}
+                                            disabled={uploading}
+                                            className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-700 disabled:opacity-50"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Area Size (Acres/MW) <span className="text-slate-300">- Optional</span></label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. 50 MW or 120 Acres"
+                                            value={uploadForm.areaSize}
+                                            onChange={(e) => setUploadForm({ ...uploadForm, areaSize: e.target.value })}
+                                            disabled={uploading}
+                                            className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-700 disabled:opacity-50"
+                                        />
+                                    </div>
+
+                                    {uploadStatus.message && (
+                                        <div className={`p-4 rounded-xl text-xs font-bold leading-relaxed border ${uploadStatus.type === 'error' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-blue-50 text-blue-600 border-blue-100'
+                                            }`}>
+                                            {uploadStatus.message}
+                                        </div>
+                                    )}
+
+                                    <button
+                                        disabled={uploading}
+                                        type="submit"
+                                        className="w-full py-5 bg-orange-600 text-white rounded-[1.25rem] font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:bg-orange-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50 mt-4 shadow-orange-900/20"
+                                    >
+                                        {uploading ? (
+                                            <>
+                                                <Loader2 size={16} className="animate-spin" />
+                                                <span>Processing Upload...</span>
+                                            </>
+                                        ) : (
+                                            "Upload to Drive"
+                                        )}
+                                    </button>
+                                </form>
                             </div>
                         </motion.div>
                     </div>

@@ -31,6 +31,8 @@ const Sidebar = () => {
         {
             title: 'Reports',
             icon: <FileText size={20} />,
+            title: 'Reports',
+            icon: <FileText size={20} />,
             path: '/drivelinks',
         },
         {

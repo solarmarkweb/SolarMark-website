@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
 from typing import List
 import uuid
 from datetime import datetime
@@ -89,20 +89,22 @@ async def get_all_active_images():
 @router.post("/upload-rgb-images")
 async def upload_rgb_images(
     rgb_images: List[UploadFile] = File(...),
+    project_name: str = Form("Untitled Project"),
     current_user: dict = Depends(get_current_user)
 ):
     """Upload RGB images to admin's Google Drive"""
-    return await upload_images(rgb_images, "rgb", current_user)
+    return await upload_images(rgb_images, "rgb", current_user, project_name)
 
 @router.post("/upload-thermal-images")
 async def upload_thermal_images(
     thermal_images: List[UploadFile] = File(...),
+    project_name: str = Form("Untitled Project"),
     current_user: dict = Depends(get_current_user)
 ):
     """Upload Thermal images to admin's Google Drive"""
-    return await upload_images(thermal_images, "thermal", current_user)
+    return await upload_images(thermal_images, "thermal", current_user, project_name)
 
-async def upload_images(files: List[UploadFile], image_type: str, current_user: dict):
+async def upload_images(files: List[UploadFile], image_type: str, current_user: dict, project_name: str = "Untitled Project"):
     """Helper function to upload images"""
     
     if not files:
@@ -121,14 +123,20 @@ async def upload_images(files: List[UploadFile], image_type: str, current_user: 
         # Get or create user's main folder in admin's Drive
         user_folder = await get_or_create_user_folder(current_user)
         
-        # Determine the subfolder based on image type
+        # 1. Create/Get a project-specific folder under the user's folder
+        project_folder_id = drive_service.get_or_create_subfolder(
+            parent_folder_id=user_folder['folder_id'],
+            subfolder_name=project_name
+        )
+        
+        # 2. Determine the subfolder based on image type inside the project folder
         if image_type.lower() == "rgb":
             subfolder_name = "drone image"
         else:
             subfolder_name = "site plan"
 
         subfolder_id = drive_service.get_or_create_subfolder(
-            parent_folder_id=user_folder['folder_id'],
+            parent_folder_id=project_folder_id,
             subfolder_name=subfolder_name
         )
         
@@ -141,8 +149,9 @@ async def upload_images(files: List[UploadFile], image_type: str, current_user: 
                 logger.warning(f"Skipping unsupported or mismatched file for {image_type}: {file.filename}")
                 continue
             
-            # Use only the user name for the filename as requested
-            new_filename = f"{current_user['name']}.{file_ext}"
+            # Use user name and project name for the filename
+            timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
+            new_filename = f"{current_user['name']}_{project_name}_{image_type}_{timestamp}.{file_ext}"
             
             # Read file data
             file_data = await file.read()

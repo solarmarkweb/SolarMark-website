@@ -16,6 +16,7 @@ from app.auth import (
 from jose import JWTError, jwt
 from app.db import db
 from bson import ObjectId
+import gridfs
 
 from app.utils.otp_service import otp_service
 
@@ -199,11 +200,86 @@ async def get_all_users(current_user = Depends(get_current_user)):
 
 @router.delete("/users/{user_id}")
 async def delete_user(user_id: str, current_user = Depends(get_current_user)):
-    """Delete a user by ID"""
+    """Delete a user and all their associated data (Cleanup)"""
+    # Security: Only admins can delete users
+    if not current_user.get("is_admin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: Only administrators can delete users"
+        )
+
     try:
+        if not ObjectId.is_valid(user_id):
+            raise HTTPException(status_code=400, detail="Invalid user ID format")
+
+        # 1. Get user info before deletion (for email-based cleanup if needed)
+        user = db.users.find_one({"_id": ObjectId(user_id)})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        user_email = user.get("email")
+
+        # 2. Delete Drive PDFs and GridFS files
+        fs = gridfs.GridFS(db)
+        # Search by both ID and Email to ensure full cleanup
+        pdf_query = {"$or": [{"user_id": user_id}]}
+        if user_email:
+            pdf_query["$or"].append({"user_email": user_email})
+            
+        pdfs = list(db.drive_pdfs.find(pdf_query))
+        for pdf in pdfs:
+            file_id = pdf.get("file_id")
+            if file_id:
+                try:
+                    if isinstance(file_id, str) and ObjectId.is_valid(file_id):
+                        fs.delete(ObjectId(file_id))
+                    else:
+                        fs.delete(file_id)
+                except Exception as e:
+                    print(f"Error deleting GridFS file {file_id}: {e}")
+        
+        db.drive_pdfs.delete_many(pdf_query)
+
+        # 3. Delete Drive Links
+        link_query = {"$or": [{"user_id": user_id}]}
+        if user_email:
+            link_query["$or"].append({"user_email": user_email})
+        db.drive_links.delete_many(link_query)
+
+        # 4. Delete Bookings
+        booking_query = {"$or": [{"user_id": user_id}]}
+        if user_email:
+            booking_query["$or"].append({"email": user_email})
+        db.bookings.delete_many(booking_query)
+
+        # 5. Delete Images (Drone images/Site plans)
+        image_query = {"$or": [{"user_id": user_id}]}
+        if user_email:
+            image_query["$or"].append({"user_email": user_email})
+        db.images.delete_many(image_query)
+
+        # 6. Delete Report Reviews
+        review_query = {"$or": [{"user_id": user_id}]}
+        if user_email:
+            review_query["$or"].append({"user_email": user_email})
+        db.report_reviews.delete_many(review_query)
+        
+        # 7. Delete Shared Report records (where user is sender or recipient)
+        share_query = [{"sender_id": user_id}, {"recipient_id": user_id}]
+        if user_email:
+            share_query.append({"recipient_email": user_email})
+            share_query.append({"sender_email": user_email})
+        db.shared_reports.delete_many({"$or": share_query})
+
+        # 8. Finally delete the user itself
         result = db.users.delete_one({"_id": ObjectId(user_id)})
+        
         if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="User not found")
-        return {"message": "User deleted successfully"}
+            
+        return {"message": "User and all associated data deleted successfully"}
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"CRITICAL ERROR in delete_user: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete user: {str(e)}")

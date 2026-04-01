@@ -238,10 +238,9 @@ def get_link_pdfs(link_id: str, current_user = Depends(get_current_user)):
 def get_my_pdfs(current_user = Depends(get_current_user)):
     try:
         user_id = current_user["id"]
-        user_email = current_user.get("email", "")
-        print(f"DEBUG: Fetching PDFs for user_email: '{user_email}'")
+        print(f"DEBUG: Fetching PDFs for user_id: '{user_id}'")
         
-        pdfs = list(pdfs_collection.find({"user_email": user_email}).sort("uploaded_at", -1))
+        pdfs = list(pdfs_collection.find({"user_id": user_id}).sort("uploaded_at", -1))
         
         result = []
         for pdf in pdfs:
@@ -1280,6 +1279,26 @@ async def submit_report_review(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/report/review/{pdf_id}/my-review")
+async def get_my_report_review(
+    pdf_id: str,
+    current_user = Depends(get_current_user)
+):
+    try:
+        review = reviews_collection.find_one({
+            "pdf_id": pdf_id,
+            "user_email": current_user.get("email")
+        })
+        if not review:
+            # Return empty response instead of 404 to avoid Axios exception noise
+            return None
+        
+        review["id"] = str(review["_id"])
+        del review["_id"]
+        return review
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/report/reviews/all")
 async def get_all_report_reviews(current_user = Depends(get_current_user)):
     try:
@@ -1307,6 +1326,7 @@ async def get_my_all_reviews(current_user = Depends(get_current_user)):
 async def update_report_review(
     review_id: str,
     payload: ReportReviewUpdate,
+    background_tasks: BackgroundTasks,
     current_user = Depends(get_current_user)
 ):
     try:
@@ -1314,31 +1334,44 @@ async def update_report_review(
         if payload.admin_remarks is not None:
             update_data["admin_remarks"] = payload.admin_remarks
         
+        review = reviews_collection.find_one({"_id": ObjectId(review_id)})
+        if not review:
+            raise HTTPException(status_code=404, detail="Review not found")
+            
         result = reviews_collection.update_one(
             {"_id": ObjectId(review_id)},
             {"$set": update_data}
         )
         
-        if result.matched_count == 0:
-            raise HTTPException(status_code=404, detail="Review not found")
+        # Send email notification
+        from app.utils.email_service import email_service
+        if review.get("user_email"):
+            background_tasks.add_task(
+                email_service.send_review_update_notification,
+                review.get("user_email"),
+                review.get("user_name", "User"),
+                review.get("filename", "Document"),
+                payload.status,
+                payload.admin_remarks or ""
+            )
         
         return {"message": "Review status updated"}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/report/review/{review_id}/upload-replacement")
 async def upload_replacement_pdf(
     review_id: str,
+    background_tasks: BackgroundTasks,
     pdf: UploadFile = File(...),
     current_user = Depends(get_current_user)
 ):
     try:
-        # Just reuse the existing upload logic essentially, but mark it for this review
-        # For simplicity, we'll store it as a new PDF and link it
         content = await pdf.read()
         file_size = len(content)
         
-        # Get review to find the user/link it belongs to
         review = reviews_collection.find_one({"_id": ObjectId(review_id)})
         if not review:
              raise HTTPException(status_code=404, detail="Review not found")
@@ -1351,8 +1384,49 @@ async def upload_replacement_pdf(
         
         reviews_collection.update_one(
             {"_id": ObjectId(review_id)},
-            {"$set": {"replacement_file_id": str(file_id), "status": "completed"}}
+            {"$set": {
+                "replacement_file_id": str(file_id),
+                "replacement_filename": f"REVISED_{pdf.filename}",
+                "status": "completed"
+            }}
         )
+        
+        # ACTUALLY REPLACE THE FILE IN THE USER DASHBOARD:
+        # Update the original PDF document mapping to serve the new revised GridFS file
+        original_pdf_id = review.get("pdf_id")
+        if original_pdf_id and ObjectId.is_valid(original_pdf_id):
+            pdf_doc = pdfs_collection.find_one({"_id": ObjectId(original_pdf_id)})
+            
+            pdfs_collection.update_one(
+                {"_id": ObjectId(original_pdf_id)},
+                {"$set": {
+                    "file_id": str(file_id),
+                    "filename": f"REVISED_{pdf.filename}",
+                    "file_size": file_size,
+                    "uploaded_at": datetime.utcnow()
+                }}
+            )
+            
+            if pdf_doc and pdf_doc.get("link_id") and ObjectId.is_valid(pdf_doc.get("link_id")):
+                collection.update_one(
+                    {"_id": ObjectId(pdf_doc.get("link_id"))},
+                    {"$set": {
+                        "pdf_filename": f"REVISED_{pdf.filename}",
+                        "pdf_uploaded_at": datetime.utcnow()
+                    }}
+                )
+        
+        # Send email notification
+        from app.utils.email_service import email_service
+        if review.get("user_email"):
+            background_tasks.add_task(
+                email_service.send_review_update_notification,
+                review.get("user_email"),
+                review.get("user_name", "User"),
+                f"REVISED_{pdf.filename}",
+                "completed",
+                "An admin has uploaded a revised replacement PDF for your report review."
+            )
         
         return {"message": "Replacement document uploaded and status updated to completed"}
     except Exception as e:

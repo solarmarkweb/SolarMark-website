@@ -28,12 +28,13 @@ export default function FormalReportReviewsPage() {
     const [reviews, setReviews] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [successMsg, setSuccessMsg] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedUserId, setSelectedUserId] = useState(null);
     const [updatingReview, setUpdatingReview] = useState(null);
     const [statusFilter, setStatusFilter] = useState('all');
     const [userSubsetFilter, setUserSubsetFilter] = useState('all'); // All, Pending, Completed for active user
-    
+
     // Manage Review Modal State
     const [showUpdateModal, setShowUpdateModal] = useState(false);
     const [currentReview, setCurrentReview] = useState(null);
@@ -41,7 +42,7 @@ export default function FormalReportReviewsPage() {
     const [updateStatus, setUpdateStatus] = useState('pending');
     const [replacementFile, setReplacementFile] = useState(null);
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8002/api';
     const router = useRouter();
 
     useEffect(() => {
@@ -59,7 +60,7 @@ export default function FormalReportReviewsPage() {
             if (!response.ok) throw new Error('Failed to fetch reviews');
             const data = await response.json();
             setReviews(data);
-            
+
             if (data.length > 0 && !selectedUserId) {
                 const firstUser = data[0].user_id;
                 setSelectedUserId(firstUser);
@@ -98,25 +99,25 @@ export default function FormalReportReviewsPage() {
                 groups[review.user_id].pendingCount += 1;
             }
         });
-        
+
         return Object.values(groups)
             .filter(group => {
-                const matchesSearch = searchTerm === '' || 
-                    group.user_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                const matchesSearch = searchTerm === '' ||
+                    group.user_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     group.user_email.toLowerCase().includes(searchTerm.toLowerCase());
-                
-                const matchesStatus = statusFilter === 'all' || 
+
+                const matchesStatus = statusFilter === 'all' ||
                     (statusFilter === 'pending' && group.pendingCount > 0) ||
                     (statusFilter === 'completed' && group.pendingCount === 0);
-                
+
                 return matchesSearch && matchesStatus;
             })
             .sort((a, b) => b.pendingCount - a.pendingCount);
     }, [reviews, searchTerm, statusFilter]);
 
-    const activeUserData = useMemo(() => 
+    const activeUserData = useMemo(() =>
         groupedUsers.find(u => u.user_id === selectedUserId),
-    [selectedUserId, groupedUsers]);
+        [selectedUserId, groupedUsers]);
 
     const filteredActiveReviews = useMemo(() => {
         if (!activeUserData) return [];
@@ -138,18 +139,18 @@ export default function FormalReportReviewsPage() {
         try {
             setUpdatingReview(currentReview.id);
             const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
-            
+
             // 1. First upload the document if any
             if (replacementFile) {
                 const formData = new FormData();
                 formData.append('pdf', replacementFile);
-                
+
                 const uploadRes = await fetch(`${API_URL}/drive-links/report/review/${currentReview.id}/upload-replacement`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` },
                     body: formData
                 });
-                
+
                 if (!uploadRes.ok) throw new Error('Document replacement failed');
             }
 
@@ -167,10 +168,12 @@ export default function FormalReportReviewsPage() {
             });
 
             if (!response.ok) throw new Error('Status update failed');
-            
+
             await fetchReviews();
             setShowUpdateModal(false);
             setReplacementFile(null);
+            setSuccessMsg('Report replacement successfully updated!');
+            setTimeout(() => setSuccessMsg(''), 4000);
         } catch (err) {
             setError(err.message || 'Operational failure during status update.');
         } finally {
@@ -185,15 +188,22 @@ export default function FormalReportReviewsPage() {
 
     return (
         <div className="flex h-screen bg-[#FDFDFD] overflow-hidden text-slate-800 font-sans">
+            {successMsg && (
+                <div className="fixed top-6 right-6 bg-green-50 border border-green-200 text-green-700 px-6 py-4 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] flex items-center gap-3 z-50">
+                    <CheckCircle2 size={18} className="text-green-500" />
+                    <p className="text-[11px] font-bold uppercase tracking-widest">{successMsg}</p>
+                </div>
+            )}
+
             {/* Sidebar: Navigation Inbox */}
             <div className="w-80 border-r border-slate-200 bg-white flex flex-col shrink-0">
                 <div className="p-6 border-b border-slate-100 bg-slate-50/30">
                     <h1 className="text-lg font-bold tracking-tight mb-4">Report Reviews</h1>
-                    
+
                     <div className="relative mb-4">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                        <input 
-                            type="text" 
+                        <input
+                            type="text"
                             placeholder="Search by name or email"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -203,12 +213,11 @@ export default function FormalReportReviewsPage() {
 
                     <div className="flex gap-1.5 p-1 bg-slate-100 rounded-lg">
                         {['all', 'pending', 'completed'].map(f => (
-                            <button 
+                            <button
                                 key={f}
                                 onClick={() => setStatusFilter(f)}
-                                className={`flex-1 py-1.5 text-[9px] font-bold uppercase tracking-wider rounded-md transition-all ${
-                                    statusFilter === f ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'
-                                }`}
+                                className={`flex-1 py-1.5 text-[9px] font-bold uppercase tracking-wider rounded-md transition-all ${statusFilter === f ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                                    }`}
                             >
                                 {f}
                             </button>
@@ -221,19 +230,17 @@ export default function FormalReportReviewsPage() {
                         <div className="p-10 text-center text-slate-300 text-[10px] font-bold uppercase">No records found</div>
                     ) : (
                         groupedUsers.map(user => (
-                            <button 
+                            <button
                                 key={user.user_id}
                                 onClick={() => {
                                     setSelectedUserId(user.user_id);
                                     setUserSubsetFilter('all');
                                 }}
-                                className={`w-full p-4 flex items-center gap-3 border-b border-slate-50 transition-colors ${
-                                    selectedUserId === user.user_id ? 'bg-slate-100/50' : 'hover:bg-slate-50'
-                                }`}
+                                className={`w-full p-4 flex items-center gap-3 border-b border-slate-50 transition-colors ${selectedUserId === user.user_id ? 'bg-slate-100/50' : 'hover:bg-slate-50'
+                                    }`}
                             >
-                                <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                                    user.pendingCount > 0 ? 'bg-orange-50 text-orange-600' : 'bg-slate-100 text-slate-500'
-                                }`}>
+                                <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${user.pendingCount > 0 ? 'bg-orange-50 text-orange-600' : 'bg-slate-100 text-slate-500'
+                                    }`}>
                                     <User size={16} />
                                 </div>
                                 <div className="text-left flex-1 min-w-0">
@@ -268,12 +275,11 @@ export default function FormalReportReviewsPage() {
                             </div>
                             <div className="flex gap-2 bg-slate-50 p-1 rounded-lg border border-slate-200">
                                 {['all', 'pending', 'completed'].map(f => (
-                                    <button 
+                                    <button
                                         key={f}
                                         onClick={() => setUserSubsetFilter(f)}
-                                        className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all ${
-                                            userSubsetFilter === f ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-600'
-                                        }`}
+                                        className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all ${userSubsetFilter === f ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-600'
+                                            }`}
                                     >
                                         {f}
                                     </button>
@@ -298,31 +304,45 @@ export default function FormalReportReviewsPage() {
 
                                             <div className="flex-1">
                                                 {/* Header Row */}
-                                                <div className="px-6 py-4 flex items-center justify-between border-b border-slate-50">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">
-                                                            <FileText size={14} />
+                                                <div className="px-6 py-4 flex flex-col gap-3 border-b border-slate-50">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">
+                                                                <FileText size={14} />
+                                                            </div>
+                                                            <div>
+                                                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Original File Submitted For Review</span>
+                                                                <p className="text-xs font-bold text-slate-900 leading-none mb-1">{review.filename}</p>
+                                                                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{formatDate(review.submitted_at)}</p>
+                                                            </div>
                                                         </div>
-                                                        <div>
-                                                            <p className="text-xs font-bold text-slate-900 leading-none mb-1">{review.filename}</p>
-                                                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{formatDate(review.submitted_at)}</p>
+                                                        <div className="flex flex-col items-end gap-2">
+                                                            <div className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${(review.status || '').toLowerCase() === 'completed'
+                                                                    ? 'bg-green-100 text-green-700'
+                                                                    : 'bg-orange-100 text-orange-700'
+                                                                }`}>
+                                                                {review.status || 'Pending'}
+                                                            </div>
+                                                            <button
+                                                                onClick={() => handleManageClick(review)}
+                                                                className="text-[9px] font-black text-blue-600 hover:text-blue-800 uppercase tracking-widest px-3 py-1.5 border border-blue-100 rounded-md hover:bg-blue-50 transition-colors"
+                                                            >
+                                                                Update Decision
+                                                            </button>
                                                         </div>
                                                     </div>
-                                                    <div className="flex items-center gap-4">
-                                                        <div className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${
-                                                            (review.status || '').toLowerCase() === 'completed' 
-                                                                ? 'bg-green-100 text-green-700' 
-                                                                : 'bg-orange-100 text-orange-700'
-                                                        }`}>
-                                                            {review.status || 'Pending'}
+
+                                                    {review.replacement_filename && (
+                                                        <div className="flex items-center gap-4 mt-2 border-t border-slate-50 pt-3">
+                                                            <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center text-green-500 shrink-0 shadow-sm border border-green-100">
+                                                                <CheckCircle2 size={14} />
+                                                            </div>
+                                                            <div>
+                                                                <span className="text-[8px] font-black text-green-600 uppercase tracking-widest block mb-0.5">Revised File Successfully Re-Uploaded</span>
+                                                                <p className="text-xs font-bold text-slate-900 leading-none">{review.replacement_filename}</p>
+                                                            </div>
                                                         </div>
-                                                        <button 
-                                                            onClick={() => handleManageClick(review)}
-                                                            className="text-[9px] font-black text-blue-600 hover:text-blue-800 uppercase tracking-widest px-3 py-1.5 border border-blue-100 rounded-md hover:bg-blue-50 transition-colors"
-                                                        >
-                                                            Manage Status
-                                                        </button>
-                                                    </div>
+                                                    )}
                                                 </div>
 
                                                 {/* Content Row */}
@@ -366,24 +386,22 @@ export default function FormalReportReviewsPage() {
                                 <X size={20} />
                             </button>
                         </div>
-                        
+
                         <div className="p-8 space-y-6">
                             <div>
                                 <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Classification</label>
                                 <div className="flex gap-2">
-                                    <button 
+                                    <button
                                         onClick={() => setUpdateStatus('pending')}
-                                        className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest border rounded-lg transition-all ${
-                                            updateStatus === 'pending' ? 'bg-orange-50 border-orange-200 text-orange-700' : 'bg-white border-slate-200 text-slate-400 hover:bg-slate-50'
-                                        }`}
+                                        className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest border rounded-lg transition-all ${updateStatus === 'pending' ? 'bg-orange-50 border-orange-200 text-orange-700' : 'bg-white border-slate-200 text-slate-400 hover:bg-slate-50'
+                                            }`}
                                     >
                                         Pending Action
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => setUpdateStatus('completed')}
-                                        className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest border rounded-lg transition-all ${
-                                            updateStatus === 'completed' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-white border-slate-200 text-slate-400 hover:bg-slate-50'
-                                        }`}
+                                        className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest border rounded-lg transition-all ${updateStatus === 'completed' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-white border-slate-200 text-slate-400 hover:bg-slate-50'
+                                            }`}
                                     >
                                         Resolved / Adjusted
                                     </button>
@@ -392,7 +410,7 @@ export default function FormalReportReviewsPage() {
 
                             <div>
                                 <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Administrative Remark</label>
-                                <textarea 
+                                <textarea
                                     className="w-full h-32 p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:border-slate-400 transition-colors placeholder:text-slate-300"
                                     placeholder="Enter formal response for the client..."
                                     value={adminRemarks}
@@ -408,19 +426,19 @@ export default function FormalReportReviewsPage() {
                                         <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 group-hover:text-orange-600">
                                             {replacementFile ? replacementFile.name : 'Select Updated PDF'}
                                         </span>
-                                        <input 
-                                            type="file" 
-                                            accept=".pdf" 
-                                            className="hidden" 
+                                        <input
+                                            type="file"
+                                            accept=".pdf"
+                                            className="hidden"
                                             onChange={(e) => {
-                                                if(e.target.files && e.target.files.length > 0) {
+                                                if (e.target.files && e.target.files.length > 0) {
                                                     setReplacementFile(e.target.files[0]);
                                                 }
                                             }}
                                         />
                                     </label>
                                     {replacementFile && (
-                                        <button 
+                                        <button
                                             onClick={() => setReplacementFile(null)}
                                             className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors border border-transparent hover:border-rose-100 flex-shrink-0"
                                         >
@@ -430,7 +448,7 @@ export default function FormalReportReviewsPage() {
                                 </div>
                             </div>
 
-                            <button 
+                            <button
                                 onClick={updateReview}
                                 disabled={updatingReview}
                                 className="w-full py-4 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-[0.2em] rounded-xl hover:bg-black transition-all flex items-center justify-center gap-2"

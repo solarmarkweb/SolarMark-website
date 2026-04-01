@@ -3,10 +3,10 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  ArrowRight, Zap, Shield, Globe, Sun, FileUp, Database,
+  ArrowRight, Zap, Shield, Globe, Sun, FileUp, Database, Cloud,
   HardDrive, CheckCircle, User, Mail, Phone, MapPin,
-  Settings, MessageSquare, Send, CloudUpload, Activity, Loader2, ShieldCheck, Star, ChevronDown, ChevronLeft, ChevronRight,
-  Thermometer, ClipboardList, TrendingUp, Eye, Brain, FileText, Calendar, Camera, Upload, X, Grid, List, ExternalLink, Cpu, Layers, Search, FileCheck, Sparkles, Folder, Trash2, Download
+  Settings, MessageSquare, Send, CloudUpload, Activity, Loader2, ShieldCheck, Star, ChevronDown, ChevronLeft, ChevronRight, RefreshCw,
+  Thermometer, ClipboardList, TrendingUp, Eye, Brain, FileText, Calendar, Image, Camera, Upload, X, Grid, List, ExternalLink, Cpu, Layers, Search, FileCheck, Sparkles, Leaf, Award
 } from "lucide-react";
 import Link from "next/link";
 import api from "@/lib/axios";
@@ -15,8 +15,7 @@ import { authAPI } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import ContentProtection from "@/components/ContentProtection";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api';
-console.log("Current API_URL:", API_URL);
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8002/api';
 
 export default function HomePage() {
   const router = useRouter();
@@ -44,6 +43,10 @@ export default function HomePage() {
   const [proposalForm, setProposalForm] = useState({ name: "", email: "", role: "", acres: "", mw: "" });
   const [offerForm, setOfferForm] = useState({ name: "", email: "", offer_type: "" });
   const [submitStatus, setSubmitStatus] = useState({ type: "", message: "" });
+
+  // New Upload Form Modal State
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadForm, setUploadForm] = useState({ projectName: "", areaSize: "" });
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -361,6 +364,11 @@ export default function HomePage() {
       formData.append('rgb_images', renamedFile);
     });
 
+    formData.append('project_name', uploadForm.projectName || 'Untitled Project');
+    if (uploadForm.areaSize) {
+      formData.append('area_size', uploadForm.areaSize);
+    }
+
     const response = await fetch(`${API_URL}/upload-rgb-images`, {
       method: 'POST',
       headers: {
@@ -398,6 +406,11 @@ export default function HomePage() {
       const renamedFile = new File([file], newFileName, { type: file.type });
       formData.append('thermal_images', renamedFile);
     });
+
+    formData.append('project_name', uploadForm.projectName || 'Untitled Project');
+    if (uploadForm.areaSize) {
+      formData.append('area_size', uploadForm.areaSize);
+    }
 
     const response = await fetch(`${API_URL}/upload-thermal-images`, {
       method: 'POST',
@@ -464,19 +477,22 @@ export default function HomePage() {
         setUploadStatus({ type: "", message: "" });
       }, 3000);
 
-      // Clear file lists
+      // Clear file lists and modal
       setRgbFiles([]);
       setThermalFiles([]);
       setUploadProgress({ rgb: 0, thermal: 0 });
+      setShowUploadModal(false);
+      setUploadForm({ projectName: "", areaSize: "" });
 
       // Refresh images list
       await fetchUserImages();
 
     } catch (err) {
       console.error("Upload error:", err);
+      // Simplified, user-friendly error message so non-technical users aren't confused by API logs
       setUploadStatus({
         type: "error",
-        message: err.message || "Failed to upload images to Google Drive. Please try again."
+        message: "Network Error: Failed to complete the upload. Please check your connection and try again."
       });
     } finally {
       setUploading(false);
@@ -742,443 +758,181 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-20 lg:pt-40 lg:pb-32 overflow-hidden bg-white perspective-1000">
-        {/* Advanced Background System */}
+      {/* Refined Professional Hero - Strategic Narrative Scale */}
+      <section className="relative pt-28 md:pt-36 pb-20 md:pb-32 flex items-center justify-center overflow-hidden bg-white">
         <div className="absolute inset-0 -z-10 overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-full bg-slate-50/20"></div>
-
-          {/* 3D Floating Particles */}
-          {isMounted && [...Array(20)].map((_, i) => (
-            <motion.div
-              key={i}
-              animate={{
-                y: [0, -100, 0],
-                x: [0, i % 2 === 0 ? 50 : -50, 0],
-                opacity: [0.1, 0.3, 0.1],
-                scale: [1, 1.5, 1],
-              }}
-              transition={{
-                duration: 10 + i,
-                repeat: Infinity,
-                delay: i * 0.5,
-              }}
-              className="absolute w-1 h-1 bg-orange-400/30 rounded-full"
-              style={{
-                top: `${Math.random() * 100}%`,
-                left: `${Math.random() * 100}%`,
-              }}
-            />
-          ))}
+          <div className="absolute top-0 left-0 w-full h-full bg-slate-50/10"></div>
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
+            style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '60px 60px' }}></div>
 
           <motion.div
             animate={{
-              scale: [1, 1.2, 1],
-              rotate: [0, 5, 0],
+              scale: [1, 1.1, 1],
+              opacity: [0.3, 0.4, 0.3],
             }}
-            transition={{ duration: 20, repeat: Infinity }}
-            className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] bg-gradient-to-br from-orange-200/20 to-blue-200/10 rounded-full blur-[140px]"
-          ></motion.div>
+            transition={{ duration: 15, repeat: Infinity }}
+            className="absolute -top-1/4 -right-1/4 w-[600px] h-[600px] bg-orange-100/30 rounded-full blur-[140px]"
+          />
+          <div className="absolute -bottom-1/4 -left-1/4 w-[600px] h-[600px] bg-blue-50/20 rounded-full blur-[140px]" />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <div className="max-w-5xl mx-auto px-4 text-center relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="inline-flex items-center space-x-2 text-orange-600 px-4 py-1.5 rounded-full font-black text-[10px] uppercase tracking-[0.4em] mb-10"
+          >
+          </motion.div>
 
-            {/* Left Content Column */}
-            <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              whileHover={{ rotateY: -5, rotateX: 2 }}
-              className="lg:col-span-12 xl:col-span-6 text-center lg:text-left transition-all duration-500 preserve-3d"
+          <motion.h1
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8 }}
+            className="text-4xl md:text-7xl font-black text-slate-900 tracking-tighter mb-4 uppercase leading-[0.9] drop-shadow-sm"
+          >
+            Solar <span className="text-orange-600">Mark</span> <br />
+
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="text-base md:text-xl text-slate-500 mb-8 leading-relaxed font-bold max-w-3xl mx-auto opacity-70"
+          >
+            Our platform doesn't just show you pictures. We provide geolocated defect coordinates, thermal grading, and estimated power loss for every anomaly detected across your entire field.
+          </motion.p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileActive={{ scale: 0.95 }}
+              onClick={() => setShowProposalModal(true)}
+              className="w-full sm:w-auto px-10 py-5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.2)] hover:bg-orange-600 transition-all flex items-center justify-center gap-4"
             >
-              <div className="inline-flex items-center space-x-2 bg-orange-100 text-orange-700 px-4 py-1.5 rounded-full font-black text-[9px] uppercase tracking-[0.3em] mb-6 border border-orange-200/50">
-                <div className="w-1.5 h-1.5 rounded-full bg-orange-600 animate-pulse"></div>
-                <span>Autonomous Solar Intelligence</span>
-              </div>
-
-              <motion.h1
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8 }}
-                className="text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tighter mb-6 uppercase leading-[1.1]"
-              >
-                Expert <span className="text-orange-600 italic">Solar</span> <br />
-                <span className="relative">
-                  Inspection
-                  <motion.span
-                    animate={{ opacity: [0.3, 0.6, 0.3] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                    className="absolute -inset-1 blur-lg bg-orange-500/20 rounded-full -z-10"
-                  ></motion.span>
-                </span>
-                <br />
-                Solutions
-              </motion.h1>
-
-              <motion.p
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
-                className="text-sm md:text-base text-slate-500 mb-10 leading-relaxed font-semibold max-w-xl mx-auto lg:mx-0 opacity-80"
-              >
-                Elevate your asset performance with autonomous drone <br className="hidden md:block" />
-                thermography and precision-grade AI defect analytics.
-              </motion.p>
-
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
-                <button
-                  onClick={() => setShowProposalModal(true)}
-                  className="w-full sm:w-auto px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] shadow-xl shadow-slate-200 hover:bg-orange-600 hover:-translate-y-1 transition-all flex items-center justify-center gap-3"
-                >
-                  Request Proposal <ArrowRight size={16} />
-                </button>
-                <Link
-                  href="/about"
-                  className="w-full sm:w-auto px-8 py-4 bg-white text-slate-900 border border-slate-200 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] hover:bg-slate-50 hover:border-orange-200 transition-all shadow-sm"
-                >
-                  Tech Specs
-                </Link>
-              </div>
-
-
-            </motion.div>
-
-            {/* Right Professional Visual Column */}
-            <div className="lg:col-span-12 xl:col-span-6 relative perspective-1000 hidden lg:block py-10">
-              <div className="relative w-full aspect-[4/3] flex items-center justify-center">
-
-                {/* 1. Backdrop Coordinate Grid (Enterprise Tech Feel) */}
-                <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
-                  style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
-
-                {/* 2. Main Terminal Hub (Perspective Device) */}
-                <motion.div
-                  style={{ transformStyle: "preserve-3d" }}
-                  whileHover={{ rotateY: 10, rotateX: -5 }}
-                  transition={{ type: "spring", stiffness: 100, damping: 30 }}
-                  className="relative z-20 w-[85%] h-[85%] rounded-[2.5rem] bg-slate-900 p-1.5 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.4)] border border-white/10"
-                >
-                  <div className="w-full h-full rounded-[2.2rem] overflow-hidden relative">
-                    <img
-                      src={getDynamicPhoto('Main Hero', '/drone-command-ui.png')}
-                      alt="Solar Command Hub"
-                      className="w-full h-full object-cover scale-105"
-                    />
-
-                    {/* Professional Horizon Scanner */}
-                    <motion.div
-                      animate={{ top: ["0%", "100%", "0%"] }}
-                      transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
-                      className="absolute left-0 right-0 h-[2px] bg-orange-500/50 shadow-[0_0_20px_rgba(249,115,22,0.8)] z-30"
-                    ></motion.div>
-
-                    {/* AI Target Reticles (Small Overlay icons) */}
-                    <div className="absolute inset-0 z-20 pointer-events-none">
-                      <div className="absolute top-1/4 left-1/3 w-16 h-16 border border-orange-500/30 rounded-lg animate-pulse"></div>
-                      <div className="absolute bottom-1/3 right-1/4 w-12 h-12 border border-blue-500/30 rounded-full animate-ping [animation-duration:3s]"></div>
-                    </div>
-                  </div>
-                </motion.div>
-
-                {/* 3. Data Widget A: Thermal Analysis (Structured UI Look) */}
-                <motion.div
-                  animate={{ y: [0, -10, 0] }}
-                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                  className="absolute -top-4 -right-4 z-30 w-52 bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl border border-slate-100 overflow-hidden"
-                >
-                  <div className="px-3 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Spectral View</span>
-                    <div className="flex gap-1">
-                      <div className="w-1 h-1 rounded-full bg-red-500 animate-pulse"></div>
-                      <div className="w-1 h-1 rounded-full bg-slate-200"></div>
-                    </div>
-                  </div>
-                  <div className="p-2">
-                    <img src={getDynamicPhoto('Spectral View', '/solar_thermal_scan.png')} className="w-full h-24 object-cover rounded-lg mb-2" />
-                    <div className="flex items-center justify-between px-1">
-                      <span className="text-[9px] font-bold text-slate-800">TEMP_VAR</span>
-                      <span className="text-[9px] font-black text-red-600">+12.4°C</span>
-                    </div>
-                  </div>
-                </motion.div>
-
-                {/* 4. Data Widget B: Geospatial Telemetry */}
-                <motion.div
-                  animate={{ y: [0, 15, 0] }}
-                  transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                  className="absolute -bottom-8 -left-8 z-30 w-48 bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 overflow-hidden"
-                >
-                  <div className="px-3 py-2 border-b border-white/5 flex items-center gap-2">
-                    <Globe size={10} className="text-blue-400" />
-                    <span className="text-[8px] font-black text-white uppercase tracking-widest">Site Survey</span>
-                  </div>
-                  <div className="p-3 space-y-2">
-                    <img src={getDynamicPhoto('Site Survey', '/agri-drone-survey.png')} className="w-full h-20 object-cover rounded-lg opacity-80" />
-                    <div className="space-y-1">
-                      <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
-                        <motion.div
-                          animate={{ width: ["10%", "90%"] }}
-                          transition={{ duration: 4, repeat: Infinity }}
-                          className="h-full bg-blue-500"
-                        ></motion.div>
-                      </div>
-                      <div className="flex justify-between text-[7px] font-bold text-slate-400 uppercase tracking-tighter">
-                        <span>Scanning...</span>
-                        <span>82%</span>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-
-                {/* 5. Minimal Telemetry Nodes */}
-                <div className="absolute top-[15%] left-[5%] z-40 flex items-center gap-2 px-3 py-2 bg-white rounded-full shadow-lg border border-slate-50">
-                  <Cpu size={12} className="text-orange-600" />
-                  <span className="text-[8px] font-black text-slate-900 uppercase tracking-widest">Edge Analysis ON</span>
-                </div>
-
-              </div>
-            </div>
-
+              Request Proposal <ArrowRight size={18} />
+            </motion.button>
+            <Link
+              href="/about"
+              className="w-full sm:w-auto px-10 py-5 bg-white text-slate-900 border border-slate-200 rounded-2xl font-black text-xs uppercase tracking-[0.4em] hover:bg-slate-50 hover:border-orange-200 transition-all shadow-sm"
+            >
+              Tech Specs
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* Image Upload Section - Commanded/Hided as per architectural update (Now moved to Profile Dashboard) */}
-      {/* 
-      {user && (
-        <section id="image-upload-section" className="py-24 bg-white relative overflow-hidden">
-          ... (content hidden) ...
-        </section>
-      )}
-      */}
-      {/* AI Intelligence Workflow - Dynamic Flow Showcase */}
-      <section className="py-12 md:py-16 bg-white relative overflow-hidden">
-        {/* Animated Background Nodes */}
-        <div className="absolute top-0 left-0 w-full h-full opacity-30 select-none pointer-events-none -z-0 hidden lg:block">
-          <svg width="100%" height="100%" viewBox="0 0 1200 600" fill="none">
-            <motion.circle
-              cx="150" cy="300" r="100" stroke="#f97316" strokeWidth="0.5" strokeDasharray="10 10"
-              animate={{ rotate: 360 }} transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-            />
-            <motion.circle
-              cx="1050" cy="300" r="140" stroke="#10b981" strokeWidth="0.5" strokeDasharray="15 15"
-              animate={{ rotate: -360 }} transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
-            />
-          </svg>
+      {/* Global Scale - Immersive Command Background UI */}
+      <section className="relative py-20 min-h-[600px] flex items-center overflow-hidden">
+        {/* Full-Width Immersive Background Site Photo */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src={getDynamicPhoto('Global Deployment', '/premium-solar-farm.png')}
+            alt="Global Solar Asset"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px]"></div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-12 md:mb-16">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.3em] mb-6 shadow-xl shadow-slate-200"
-            >
-              <Zap size={14} className="text-orange-500" />
-              Operational Excellence
-            </motion.div>
-            <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-6 tracking-tighter uppercase leading-none">
-              Elite <span className="text-orange-600">Solar Inspection</span>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="max-w-3xl mx-auto mb-16"
+          >
+            <h2 className="text-5xl md:text-7xl font-black text-white mb-8 uppercase tracking-tighter leading-none">
+              Solar Scans <br />
+              <span className="text-orange-500">Across the World</span>
             </h2>
-            <p className="text-slate-500 font-bold text-xs md:text-sm max-w-xl mx-auto leading-relaxed tracking-widest uppercase opacity-60">
-              A specialized four-stage technical protocol designed to maximize photovoltaic energy yield and long-term asset health.
+            <p className="text-slate-200 text-lg md:text-xl font-bold uppercase tracking-widest leading-relaxed opacity-90">
+              Our team helps you keep your solar panels working well. <br />
+              We scan large farms and give you easy reports.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="relative">
-            {/* Visual Data Flow Line */}
-            <div className="absolute top-1/2 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-slate-200 to-transparent -translate-y-1/2 hidden lg:block"></div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {[
-                { title: "Thermal Scan", desc: "High-spec radiometric capture of module heat signatures.", icon: Thermometer, step: "01", delay: 0 },
-                { title: "AI Mapping", desc: "Automated geolocation of bypass diode & string failures.", icon: Layers, step: "02", delay: 0.1 },
-                { title: "Revenue ROI", desc: "Impact analysis quantifying recovered power savings.", icon: TrendingUp, step: "03", delay: 0.2 },
-                { title: "Digital Twin", desc: "Full interactive 3D site layout with geotagged markers.", icon: MapPin, step: "04", delay: 0.3 }
-              ].map((item, idx) => (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: item.delay, duration: 0.8 }}
-                  className="group relative"
-                >
-                  <div className="relative p-10 rounded-[3rem] bg-white border border-slate-100/60 hover:border-slate-200 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_50px_100px_-20px_rgba(0,0,0,0.1)] transition-all duration-700 h-full flex flex-col items-center text-center">
-
-                    {/* Floating Glow */}
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-slate-50 rounded-full blur-3xl -z-10 group-hover:bg-orange-50 transition-colors duration-700"></div>
-
-                    <div className="mb-8 relative">
-                      <div className="w-16 h-16 rounded-[1.75rem] bg-slate-50 flex items-center justify-center group-hover:bg-slate-900 group-hover:text-white transition-all duration-500 group-hover:rotate-12">
-                        <item.icon size={28} className="transition-transform group-hover:scale-110" />
-                      </div>
-                      <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-white border-2 border-slate-50 flex items-center justify-center text-[10px] font-black text-slate-400 group-hover:bg-orange-600 group-hover:text-white group-hover:border-white transition-all shadow-sm">
-                        {item.step}
-                      </div>
-                    </div>
-
-                    <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.3em] mb-4 group-hover:text-orange-600 transition-colors">
-                      {item.title}
-                    </h3>
-
-                    <p className="text-[10px] text-slate-500 font-bold leading-relaxed mb-8 opacity-70 group-hover:opacity-100 transition-opacity">
-                      {item.desc}
-                    </p>
-
-                    <div className="mt-auto w-full">
-                      <div className="h-[2px] w-12 bg-slate-100 mx-auto group-hover:w-full transition-all duration-1000 overflow-hidden relative">
-                        <motion.div
-                          animate={{ x: ["-100%", "100%"] }}
-                          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                          className={`absolute inset-0 bg-gradient-to-r from-transparent via-orange-500 to-transparent`}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+          {/* Centered Glassmorphic Feature Strip */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
+            {[
+              { title: "Global Care", desc: "Many countries" },
+              { title: "Fast Scans", desc: "Save your time" },
+              { title: "Easy Reports", desc: "Simple to read" },
+              { title: "Expert Help", desc: "Solve problems" }
+            ].map((item, idx) => (
+              <motion.div
+                key={idx}
+                whileHover={{ y: -5 }}
+                className="bg-white/10 backdrop-blur-xl border border-white/10 p-6 rounded-[2.5rem] group hover:bg-white/20 transition-all duration-500"
+              >
+                <h4 className="text-[11px] font-black text-orange-500 uppercase tracking-[0.4em] mb-2">{item.title}</h4>
+                <p className="text-[10px] text-white font-bold uppercase tracking-wider opacity-80">{item.desc}</p>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Defect Intelligence Section */}
-      <section className="py-12 bg-slate-50 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="px-2"
-            >
-              <span className="text-orange-600 font-bold tracking-widest uppercase text-xs mb-4 block">Precision Intelligence</span>
-              <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-8 tracking-tighter uppercase leading-[0.9]">
-                Pinpoint <span className="text-orange-600 italic">Anomalies</span> <br />
-                with 5cm Accuracy
-              </h2>
-              <p className="text-slate-600 text-lg leading-relaxed mb-6 max-w-lg">
-                Our platform doesn't just show you pictures. We provide geolocated defect coordinates, thermal grading, and estimated power loss for every anomaly detected across your entire field.
-              </p>
-
-              <div className="space-y-4">
-                {[
-                  { title: "Bypass Diode Failures", val: "Critical", icon: <Zap size={16} /> },
-                  { title: "Cell-level Hotspots", val: "High Impact", icon: <Thermometer size={16} /> },
-                  { title: "Soiling & Shading", val: "Operational", icon: <Sun size={16} /> }
-                ].map((item, i) => (
-                  <motion.div
-                    key={i}
-                    whileHover={{ x: 10 }}
-                    className="flex items-center justify-between p-5 bg-white rounded-3xl border border-slate-200 shadow-sm hover:border-blue-200 transition-all cursor-default"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:text-orange-600">
-                        {item.icon}
-                      </div>
-                      <span className="font-bold text-slate-700">{item.title}</span>
-                    </div>
-                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${item.val === 'Critical' ? 'bg-red-50 text-red-600 border border-red-100' :
-                      item.val === 'High Impact' ? 'bg-orange-50 text-orange-600 border border-orange-100' :
-                        'bg-blue-50 text-orange-600 border border-orange-100'
-                      }`}>
-                      {item.val}
-                    </span>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              className="relative mt-12 lg:mt-0"
-            >
-              <div className="relative bg-slate-900 rounded-[3.5rem] p-4 md:p-6 shadow-2xl overflow-hidden border border-white/10">
-                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 via-orange-500 to-emerald-500"></div>
-
-                <div className="aspect-[4/3] bg-slate-800 rounded-[2.5rem] overflow-hidden flex flex-col items-center justify-center relative group">
-                  <div
-                    className="absolute inset-0 bg-cover bg-center opacity-20 transition-opacity duration-700 group-hover:opacity-40"
-                    style={{ backgroundImage: `url(${getDynamicPhoto('Precision Intelligence', '/premium-solar-farm.png')})` }}
-                  ></div>
-
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-60"></div>
-
-                  <Activity className="text-orange-500 w-16 h-16 absolute animate-pulse opacity-20" />
-
-                  <div className="relative z-10 flex flex-col items-center gap-3">
-                    <motion.span
-                      animate={{ opacity: [0.5, 1, 0.5] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    >
-                      <span className="text-white font-black text-6xl md:text-8xl tracking-tighter">98.4%</span>
-                    </motion.span>
-                    <span className="text-orange-400 font-bold text-xs uppercase tracking-[0.4em] bg-orange-500/10 px-4 py-1 rounded-full border border-orange-500/20">
-                      System Health Index
-                    </span>
-                  </div>
-                </div>
-
-                <div className="p-6 grid grid-cols-2 gap-4">
-                  <div className="h-16 bg-white/5 rounded-2xl border border-white/5 flex items-center px-6 gap-3 group hover:bg-white/10 transition-colors">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
-                    <span className="text-white text-xs uppercase font-black tracking-widest">Real-time Scan</span>
-                  </div>
-                  <div className="h-16 bg-orange-600 rounded-2xl flex items-center px-6 gap-3 shadow-lg shadow-orange-600/20 hover:bg-orange-700 transition-all cursor-pointer">
-                    <ShieldCheck className="text-white w-5 h-5" />
-                    <span className="text-white text-xs uppercase font-black tracking-widest">Reports</span>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Global Scale Section */}
+      {/* OUR SERVICES - Minimalist Performance Matrix Redesign */}
+      {/* OUR SERVICES - Exact Image UI Style Match */}
       <section className="py-24 bg-white relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-            >
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.3em] mb-8">
-                <Globe size={14} className="text-blue-400" />
-                Global Deployment
-              </div>
-              <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-8 uppercase tracking-tighter leading-[0.9]">
-                Scaling Solar <br />
-                <span className="text-orange-600">Across Continents</span>
-              </h2>
-              <p className="text-slate-600 text-lg mb-10 leading-relaxed">
-                Whether it's a 100MW utility site in the desert or a distributed portfolio across Europe, our standardized inspection protocol ensures consistent, high-fidelity data everywhere.
-              </p>
-            </motion.div>
+          <div className="text-center mb-24">
+            <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-2 tracking-tighter">
+              Our <span className="text-orange-600">Services</span>
+            </h2>
+            <div className="w-10 h-[2px] bg-orange-600 mx-auto opacity-20"></div>
+          </div>
 
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              className="relative p-2"
-            >
-              <div className="relative rounded-[3rem] overflow-hidden shadow-2xl border border-slate-100">
-                <img src={getDynamicPhoto('Global Deployment', '/premium-solar-farm.png')} alt="Global Solar Asset" className="w-full h-[500px] object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
-                <div className="absolute bottom-10 left-10 text-white">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-3 h-3 rounded-full bg-orange-500 animate-ping"></div>
-                    <span className="text-xs font-black uppercase tracking-[0.2em]">Active Survey India</span>
-                  </div>
-                  <p className="text-sm font-bold opacity-80 uppercase tracking-widest leading-relaxed">Rajasthan 250MW Utility Phase IV</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              {
+                icon: Cpu,
+                title: "Live Scans",
+                desc: "We use smart drones to scan your site while it works. You get fast results that show every problem in real-time.",
+                color: "bg-orange-50 text-orange-600"
+              },
+              {
+                icon: Database,
+                title: "Safety Backups",
+                desc: "All your panel data is kept safe in our secure cloud. You can track your health for many years and see changes.",
+                color: "bg-orange-50 text-orange-600"
+              },
+              {
+                icon: ShieldCheck,
+                title: "Easy Reports",
+                desc: "Our platform makes professional reports that are easy to read. These are great for insurance and bank checks.",
+                color: "bg-orange-600 text-white"
+              },
+              {
+                icon: Globe,
+                title: "Expert Help",
+                desc: "If you find a problem, our team is here to help you fix it. We give expert advice to keep you saving money.",
+                color: "bg-orange-50 text-orange-600"
+              }
+            ].map((item, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.1 }}
+                whileHover={{ y: -8, scale: 1.02 }}
+                className="flex flex-col items-start text-left p-8 md:p-12 rounded-[2.5rem] bg-white border border-slate-100/50 group cursor-default transition-all duration-500 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.04)] hover:shadow-[0_40px_120px_-20px_rgba(249,115,22,0.12)] hover:border-orange-600/10"
+              >
+                {/* Catchy Top Accent Icon */}
+                <div className={`w-14 h-14 rounded-2xl ${item.color} flex items-center justify-center mb-10 transition-all duration-500 group-hover:scale-110 group-hover:shadow-lg`}>
+                  <item.icon size={26} strokeWidth={1.5} />
                 </div>
-              </div>
-            </motion.div>
+
+                <h3 className="text-xl md:text-2xl font-bold text-slate-900 mb-4 tracking-tight group-hover:text-orange-600 transition-colors">{item.title}</h3>
+                <p className="text-slate-500 text-[14px] font-medium leading-relaxed opacity-80">
+                  {item.desc}
+                </p>
+
+                {/* Catchy Bottom Micro-Interactive Line */}
+                <div className="w-0 h-[2px] bg-orange-600 mt-8 group-hover:w-8 transition-all duration-500"></div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
@@ -1189,7 +943,7 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div className="text-center mb-16">
               <span className="text-orange-600 font-black text-[10px] uppercase tracking-[0.4em] mb-4 block">Project Showcase</span>
-              <h2 className="text-4xl md:text-6xl font-black text-slate-900 uppercase tracking-tighter">Site <span className="text-orange-600 italic">Gallery</span></h2>
+              <h2 className="text-4xl md:text-6xl font-black text-slate-900 uppercase tracking-tighter">Site <span className="text-orange-600 uppercase">Gallery</span></h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -1224,37 +978,7 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* NEW: Enterprise Feature Grid */}
-      <section className="py-24 bg-slate-900 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-orange-600/10 rounded-full blur-[150px]"></div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-20">
-            <div>
-              <span className="text-orange-500 font-black text-[10px] uppercase tracking-[0.4em] mb-4 block">Platform Core</span>
-              <h2 className="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter">Enterprise <span className="text-orange-500 italic">Capabilities</span></h2>
-            </div>
-            <p className="text-slate-400 text-sm max-w-sm mt-6 lg:mt-0 font-bold uppercase tracking-widest leading-relaxed">
-              Designed for reliability, security, and velocity in large-scale renewable operations.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              { icon: Cpu, title: "Edge Analytics", desc: "Process datasets at the source with zero latency AI on-device processing." },
-              { icon: Database, title: "Historical Vault", desc: "Track every asset's degradation over decades with cryptographically secure logging." },
-              { icon: ShieldCheck, title: "Audit Ready", desc: "Automated compliance reports formatted for insurance and financial institutions." }
-            ].map((feat, i) => (
-              <div key={i} className="p-10 rounded-[2.5rem] bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.07] transition-all group">
-                <div className="w-14 h-14 rounded-2xl bg-orange-600/20 text-orange-500 flex items-center justify-center mb-8 group-hover:bg-orange-600 group-hover:text-white transition-all">
-                  <feat.icon size={28} />
-                </div>
-                <h3 className="text-lg font-black text-white uppercase tracking-widest mb-4">{feat.title}</h3>
-                <p className="text-slate-500 text-xs font-bold leading-relaxed tracking-wide uppercase">{feat.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Dynamic Main Gallery Section */}
 
       {/* Solutions & Platforms Grid Section */}
       {/* 
@@ -1400,20 +1124,20 @@ export default function HomePage() {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
               >
-                <span className="text-orange-600 font-bold tracking-widest uppercase text-sm mb-4 block">Request Service</span>
-                <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-8 leading-tight">
-                  Get Your Solar Panels <br />
-                  <span className="text-orange-600 italic">Inspected Today.</span>
+                <span className="text-orange-600 font-bold tracking-widest uppercase text-sm mb-4 block">Get Help</span>
+                <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-8 leading-tight uppercase tracking-tighter">
+                  Book Your <br />
+                  <span className="text-orange-600">Scan Today</span>
                 </h2>
                 <p className="text-slate-600 text-lg mb-8 leading-relaxed">
-                  Fill out the form to schedule a professional thermographic inspection. Our team will get back to you within 24 hours with a customized quote and deployment plan.
+                  Fill out the form to schedule a professional solar scan. Our team will get back to you within 24 hours with a simple plan and price.
                 </p>
 
                 <div className="space-y-6">
                   {[
-                    { icon: CheckCircle, text: "High-Resolution Thermal Imaging" },
-                    { icon: CheckCircle, text: "AI-Powered Fault Analysis" },
-                    { icon: CheckCircle, text: "Detailed ROI Impact Reports" }
+                    { icon: CheckCircle, text: "High-Quality Heat Images" },
+                    { icon: CheckCircle, text: "Smart Fault Finding" },
+                    { icon: CheckCircle, text: "Reports that show your savings" }
                   ].map((item, i) => (
                     <div key={i} className="flex items-center space-x-3 text-slate-700 font-medium">
                       <item.icon className="text-orange-500 w-5 h-5" />
@@ -1690,16 +1414,16 @@ export default function HomePage() {
               viewport={{ once: true }}
               className="text-4xl md:text-6xl font-black tracking-tight mb-6 uppercase"
             >
-              THE INSPECTION <span className="text-orange-500 italic">ALGORITHM</span>
+              THE INSPECTION <span className="text-orange-500">ALGORITHM</span>
             </motion.h2>
             <motion.p
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
-              className="text-slate-500 text-sm md:text-base font-bold max-w-xl mx-auto leading-relaxed tracking-wide"
+              className="text-slate-500 text-sm md:text-base font-bold max-w-xl mx-auto leading-relaxed tracking-wide uppercase"
             >
-              Four stages of precision data engineering to transform aerial imagery into actionable maintenance tasks.
+              Four simple steps to turn solar photos into clear jobs for your team.
             </motion.p>
           </div>
 
@@ -1707,26 +1431,26 @@ export default function HomePage() {
             {[
               {
                 num: "01",
-                title: "MISSION CONTROL",
-                desc: "Autonomous flight path generation based on site topography and KML layouts.",
+                title: "DRONE CONTROL",
+                desc: "Our drones fly by themselves to scan your site.",
                 icon: Globe
               },
               {
                 num: "02",
-                title: "DATA INGEST",
-                desc: "High-throughput capture of synchronized RGB and radiometric thermal datasets.",
+                title: "HEAT PHOTOS",
+                desc: "We take high-quality heat photos of every panel.",
                 icon: Camera
               },
               {
                 num: "03",
-                title: "NEURAL PROCESSING",
-                desc: "Proprietary AI models identify and quantify health state of every PV module.",
+                title: "AI FINDING",
+                desc: "Our smart AI finds every fault and crack automatically.",
                 icon: Brain
               },
               {
                 num: "04",
-                title: "SMART REPORTING",
-                desc: "A comprehensive digital twin with geolocated findings for rapid remediation.",
+                title: "SIMPLE REPORTS",
+                desc: "Easy reports that show exactly where the problems are.",
                 icon: FileText
               }
             ].map((step, idx) => (
@@ -1977,6 +1701,7 @@ export default function HomePage() {
           </div>
         )}
       </AnimatePresence>
+
     </div >
   );
 }
