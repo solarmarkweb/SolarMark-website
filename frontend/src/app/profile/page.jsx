@@ -765,24 +765,24 @@ export default function ProfilePage() {
                     </motion.div>
                 )}
 
-                {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                {/* Stats Grid - 4 Containers System */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
-                        className="p-8 bg-white rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 flex flex-col justify-between"
+                        className="p-8 bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 flex flex-col justify-between group hover:border-orange-200 transition-all duration-500"
                     >
                         <div>
-                            <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center mb-6 text-orange-600">
+                            <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center mb-6 text-orange-600 group-hover:bg-orange-600 group-hover:text-white transition-all duration-500 shadow-lg shadow-orange-100">
                                 <FileText size={24} />
                             </div>
-                            <h3 className="text-3xl font-bold text-slate-900 mb-1">{stats.total_pdfs}</h3>
-                            <p className="text-slate-500 font-medium">Inspection Reports</p>
+                            <h3 className="text-3xl font-black text-slate-900 mb-1 tracking-tight">{stats.total_pdfs}</h3>
+                            <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Inspection Reports</p>
                         </div>
-                        <div className="mt-6 pt-6 border-t border-slate-50 flex justify-between items-center text-xs font-bold text-slate-400 uppercase tracking-wider">
-                            <span>Total Storage</span>
-                            <span>{stats.total_size} MB</span>
+                        <div className="mt-6 pt-6 border-t border-slate-50 flex justify-between items-center text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                            <span>Data Volume</span>
+                            <span className="text-slate-900">{stats.total_size} MB</span>
                         </div>
                     </motion.div>
 
@@ -790,18 +790,18 @@ export default function ProfilePage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
-                        className="p-8 bg-white rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 flex flex-col justify-between"
+                        className="p-8 bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 flex flex-col justify-between group hover:border-blue-200 transition-all duration-500"
                     >
                         <div>
-                            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 text-blue-600">
+                            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 shadow-lg shadow-blue-100">
                                 <ClipboardList size={24} />
                             </div>
-                            <h3 className="text-3xl font-bold text-slate-900 mb-1">{stats.total_bookings}</h3>
-                            <p className="text-slate-500 font-medium">Total Bookings</p>
+                            <h3 className="text-3xl font-black text-slate-900 mb-1 tracking-tight">{stats.total_bookings}</h3>
+                            <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Total Bookings</p>
                         </div>
-                        <div className="mt-6 pt-6 border-t border-slate-50 flex justify-between items-center text-xs font-bold text-slate-400 uppercase tracking-wider">
-                            <span>Pending Actions</span>
-                            <span className="text-orange-600">{bookings.filter(b => b.status === 'pending').length}</span>
+                        <div className="mt-6 pt-6 border-t border-slate-50 flex justify-between items-center text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                            <span>Pending Jobs</span>
+                            <span className="text-orange-600">{bookings.filter(b => b.status === 'pending').length} Active</span>
                         </div>
                     </motion.div>
 
@@ -809,19 +809,72 @@ export default function ProfilePage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
-                        className="p-8 bg-white rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 flex flex-col justify-between"
+                        className="p-8 bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 flex flex-col justify-between group hover:border-emerald-200 transition-all duration-500"
                     >
                         <div>
-                            <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center mb-6 text-emerald-600">
+                            <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center mb-6 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-500 shadow-lg shadow-emerald-100">
                                 <CheckCircle2 size={24} />
                             </div>
-                            <h3 className="text-3xl font-bold text-slate-900 mb-1">{bookings.filter(b => b.status === 'completed' || b.status === 'confirmed').length}</h3>
-                            <p className="text-slate-500 font-medium">Completed Inspections</p>
+                            <h3 className="text-3xl font-black text-slate-900 mb-1 tracking-tight">{bookings.filter(b => b.status === 'completed' || b.status === 'confirmed').length}</h3>
+                            <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Completed Audits</p>
                         </div>
-                        <div className="mt-6 pt-6 border-t border-slate-50 flex justify-between items-center text-xs font-bold text-slate-400 uppercase tracking-wider">
-                            <span>Completion Rate</span>
-                            <span>{stats.total_bookings > 0 ? Math.round((bookings.filter(b => b.status === 'completed').length / stats.total_bookings) * 100) : 0}%</span>
+                        <div className="mt-6 pt-6 border-t border-slate-50 flex justify-between items-center text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                            <span>Success Rate</span>
+                            <span className="text-emerald-600">{stats.total_bookings > 0 ? Math.round((bookings.filter(b => b.status === 'completed').length / stats.total_bookings) * 100) : 0}%</span>
                         </div>
+                    </motion.div>
+
+                    {/* NEW 4th CONTAINER: DIGITAL TWIN UPLINK - White Palette matched */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4 }}
+                        className="p-6 bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 flex flex-col relative overflow-hidden group hover:border-blue-200 transition-all duration-500"
+                    >
+                        {/* Background Ornament - Subtle */}
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-blue-100/50 transition-colors duration-700"></div>
+                        
+                        <div className="relative z-10 flex-1">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 shadow-lg shadow-blue-50">
+                                    <CloudUpload size={20} />
+                                </div>
+                                <div>
+                                    <h4 className="text-slate-900 text-sm font-black uppercase tracking-tight">Data Uplink</h4>
+                                    <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest">Secure Cloud Sync</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 mb-4">
+                                <div className="relative group/node">
+                                    <input type="file" multiple accept="image/*" onChange={(e) => handleFileChange(e, 'rgb')} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                                    <div className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-1 ${rgbFiles.length > 0 ? 'bg-orange-600 border-orange-400 text-white shadow-lg shadow-orange-500/20' : 'bg-slate-50 border-slate-100 text-slate-400 group-hover:border-orange-500 group-hover:text-orange-500 hover:bg-white'}`}>
+                                        <Camera size={14} />
+                                        <span className="text-[8px] font-black uppercase tracking-tight leading-none text-center">RGB <br/> {rgbFiles.length > 0 ? `${rgbFiles.length}` : 'DATA'}</span>
+                                    </div>
+                                </div>
+                                <div className="relative group/node">
+                                    <input type="file" multiple accept=".kml" onChange={(e) => handleFileChange(e, 'thermal')} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                                    <div className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-1 ${thermalFiles.length > 0 ? 'bg-blue-700 border-blue-400 text-white shadow-lg shadow-blue-600/20' : 'bg-slate-50 border-slate-100 text-slate-400 group-hover:border-blue-500 group-hover:text-blue-500 hover:bg-white'}`}>
+                                        <Globe size={14} />
+                                        <span className="text-[8px] font-black uppercase tracking-tight leading-none text-center">KMZ <br/> {thermalFiles.length > 0 ? `${thermalFiles.length}` : 'SITE'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button 
+                            onClick={handleImageUpload}
+                            disabled={uploading || (rgbFiles.length === 0 && thermalFiles.length === 0)}
+                            className={`w-full py-3.5 rounded-2xl text-[9px] font-black uppercase tracking-[0.2em] transition-all relative overflow-hidden flex items-center justify-center gap-2 ${
+                                uploading || (rgbFiles.length === 0 && thermalFiles.length === 0)
+                                    ? 'bg-slate-50 text-slate-300 border border-slate-100 cursor-not-allowed'
+                                    : 'bg-slate-900 text-white shadow-xl hover:bg-blue-600 active:scale-95'
+                            }`}
+                        >
+                            {uploading ? <Loader2 className="animate-spin w-3 h-3" /> : (uploadStatus.type === 'success' ? <CheckCircle2 className="w-3 h-3" /> : <ArrowRight className="w-3 h-3" />)}
+                            <span>{uploading ? 'Uplinking' : (uploadStatus.type === 'success' ? 'Success' : 'Start Uplink')}</span>
+                        </button>
                     </motion.div>
                 </div>
 
@@ -1064,224 +1117,7 @@ export default function ProfilePage() {
                         </div>
                     </div>
 
-                    {/* Google Drive Upload Components Restored */}
-                    <div className="xl:col-span-3 mt-10">
-                        {/* Image Upload Section */}
-        <section id="image-upload-section" className="py-24 bg-white relative overflow-hidden rounded-[4rem] border border-slate-100 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.05)]">
-          {/* ARCHITECTURAL BACKGROUND SYSTEM */}
-          <div className="absolute inset-0 z-0">
-            {/* Drifting Grid */}
-            <motion.div 
-              animate={{ 
-                backgroundPosition: ["0% 0%", "100% 100%"] 
-              }}
-              transition={{ 
-                duration: 80, 
-                repeat: Infinity, 
-                ease: "linear" 
-              }}
-              className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:40px_40px]"
-            />
-            
-            {/* Tech Nodes */}
-            <div className="absolute inset-0 select-none pointer-events-none opacity-[0.02] font-mono text-[8px] font-black uppercase tracking-[0.5em] text-slate-900">
-              <motion.div animate={{ x: [0, 50, 0] }} transition={{ duration: 15, repeat: Infinity }} className="absolute top-[20%] left-[15%]">TRANSFER_PROTO_v4</motion.div>
-              <motion.div animate={{ x: [0, -40, 0] }} transition={{ duration: 18, repeat: Infinity }} className="absolute bottom-[25%] right-[20%]">SECURE_VAULT_ACTIVE</motion.div>
-            </div>
 
-            {/* Dynamic Blobs */}
-            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-orange-100/20 rounded-full blur-[100px] -mr-80 -mt-80 animate-pulse duration-[10s]" />
-            <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-100/10 rounded-full blur-[100px] -ml-80 -mb-80 animate-pulse duration-[8s]" />
-          </div>
-
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-20 items-center">
-
-              <motion.div
-                initial={{ opacity: 0, x: -50 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-                className="lg:col-span-12 xl:col-span-5 text-center lg:text-left flex flex-col items-center lg:items-start"
-              >
-                <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-white text-slate-900 text-[9px] font-black uppercase tracking-[0.3em] mb-8 shadow-xl shadow-slate-200 border border-slate-100">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
-                  </span>
-                  Data Ingestion
-                </div>
-                
-                <h2 className="text-5xl md:text-6xl font-black text-slate-900 mb-8 tracking-tighter uppercase leading-[0.9] italic">
-                  Digital <br />
-                  <span className="bg-gradient-to-r from-orange-600 to-orange-400 bg-clip-text text-transparent not-italic">Twin Uplink</span>
-                </h2>
-                
-                <p className="text-base text-slate-500 font-bold mb-10 leading-relaxed max-w-lg mx-auto lg:mx-0 opacity-70">
-                  Direct industrial-grade file ingestion for radiometric imagery and site plans. Managed via the SolarMark secure cloud interface.
-                </p>
-
-                <div className="flex flex-col gap-4 w-full max-w-sm">
-                  {[
-                    { icon: Camera, label: "Radiometric Data", sub: "Separate RGB & Thermal" },
-                    { icon: HardDrive, label: "Cloud Matrix", sub: "Secure Persistent Storage" },
-                  ].map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-5 p-5 bg-white/40 backdrop-blur-md border border-slate-100 rounded-3xl hover:bg-white hover:shadow-lg transition-all group duration-500">
-                      <div className="w-12 h-12 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-orange-600 group-hover:text-white transition-all shrink-0">
-                        <item.icon size={22} />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-[11px] font-black text-slate-900 uppercase tracking-widest leading-none mb-1.5">{item.label}</span>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter leading-none">{item.sub}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-                className="lg:col-span-12 xl:col-span-7 flex flex-col items-center justify-center py-12"
-              >
-                {/* LARGE UPLINK TREE STRUCTURE */}
-                <div className="relative flex flex-col items-center max-w-md w-full">
-
-                  {/* Central Trunk Line - Thick & Bold */}
-                  <div className="absolute top-0 bottom-[80px] w-[2px] bg-slate-200 z-0 border-r border-dashed border-slate-300"></div>
-
-                  {/* Top Entry Node - Larger */}
-                  <div className="relative z-10 w-16 h-16 rounded-full bg-slate-900/95 flex items-center justify-center mb-12 border-[6px] border-white shadow-[0_0_40px_rgba(15,23,42,0.15)] scale-110">
-                    <CloudUpload size={26} className="text-white" />
-                  </div>
-
-                  {/* BRANCHES CONTAINER - Responsive Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-y-12 md:gap-x-24 relative z-10 w-full mb-16 px-4">
-
-                    {/* Drone Image Branch - Larger Card */}
-                    <div className="flex flex-col items-center relative group">
-                      {/* Branch Line Left - Only on Desktop */}
-                      <div className={`hidden md:block absolute top-[-30px] left-1/2 w-[calc(50%+48px)] h-[2px] transition-all duration-700 -translate-x-[100%] ${rgbFiles.length > 0 ? 'bg-orange-400 shadow-[0_0_10px_rgba(249,115,22,0.5)]' : 'bg-slate-200'}`}></div>
-
-                      <div className="relative group/node select-none cursor-pointer w-full max-w-[180px]">
-                        <input
-                          type="file" multiple accept="image/*"
-                          onChange={(e) => handleFileChange(e, 'rgb')}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                        />
-                        <div className={`p-8 rounded-[2.5rem] border-2 transition-all duration-500 ease-out flex flex-col items-center gap-4 w-full shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] ${
-                          rgbFiles.length > 0 
-                            ? 'border-orange-500 bg-orange-50/80 shadow-[0_20px_50px_-15px_rgba(249,115,22,0.25)] scale-105' 
-                            : 'border-slate-100 bg-white hover:border-orange-400 hover:shadow-[0_20px_50px_-20px_rgba(249,115,22,0.3)] hover:-translate-y-2'
-                          }`}>
-                          <div className={`w-12 h-12 rounded-[1.2rem] flex items-center justify-center transition-colors duration-500 ${rgbFiles.length > 0 ? 'bg-orange-600 text-white shadow-lg' : 'bg-slate-50 text-slate-400 group-hover:bg-orange-50 group-hover:text-orange-500'}`}>
-                            <Camera className="w-6 h-6" />
-                          </div>
-                          <div className="flex flex-col items-center gap-1">
-                            <span className="text-[12px] font-black text-slate-900 uppercase tracking-[0.2em] text-center">Drone <br/> Image</span>
-                            {rgbFiles.length > 0 ? (
-                              <span className="text-[10px] mt-1 text-orange-600 font-black animate-pulse bg-orange-100 px-3 py-1 rounded-full">{rgbFiles.length} Selected</span>
-                            ) : (
-                              <span className="text-[9px] mt-1 text-slate-400 font-bold uppercase tracking-widest group-hover:text-orange-400 transition-colors">Select Files</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Site Plan Branch - Larger Card */}
-                    <div className="flex flex-col items-center relative group">
-                      {/* Branch Line Right - Only on Desktop */}
-                      <div className={`hidden md:block absolute top-[-30px] right-1/2 w-[calc(50%+48px)] h-[2px] transition-all duration-700 translate-x-[100%] ${thermalFiles.length > 0 ? 'bg-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.5)]' : 'bg-slate-200'}`}></div>
-
-                      <div className="relative group/node select-none cursor-pointer w-full max-w-[180px]">
-                        <input
-                          type="file" multiple accept=".kml"
-                          onChange={(e) => handleFileChange(e, 'thermal')}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                        />
-                        <div className={`p-8 rounded-[2.5rem] border-2 transition-all duration-500 ease-out flex flex-col items-center gap-4 w-full shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] ${
-                          thermalFiles.length > 0 
-                            ? 'border-blue-500 bg-blue-50/80 shadow-[0_20px_50px_-15px_rgba(59,130,246,0.25)] scale-105' 
-                            : 'border-slate-100 bg-white hover:border-blue-400 hover:shadow-[0_20px_50px_-20px_rgba(59,130,246,0.3)] hover:-translate-y-2'
-                          }`}>
-                          <div className={`w-12 h-12 rounded-[1.2rem] flex items-center justify-center transition-colors duration-500 ${thermalFiles.length > 0 ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-50 text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500'}`}>
-                            <Globe className="w-6 h-6" />
-                          </div>
-                          <div className="flex flex-col items-center gap-1">
-                            <span className="text-[12px] font-black text-slate-900 uppercase tracking-[0.2em] text-center">Site <br/> Plan</span>
-                            {thermalFiles.length > 0 ? (
-                              <span className="text-[10px] mt-1 text-blue-600 font-black animate-pulse bg-blue-100 px-3 py-1 rounded-full">{thermalFiles.length} Selected</span>
-                            ) : (
-                              <span className="text-[9px] mt-1 text-slate-400 font-bold uppercase tracking-widest group-hover:text-blue-400 transition-colors">Import KML</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* BOTTOM ACTION NODE - Premium Large Button */}
-                  <div className="relative z-10 w-full max-w-[320px]">
-                    <button
-                      onClick={handleImageUpload}
-                      disabled={uploading || (rgbFiles.length === 0 && thermalFiles.length === 0)}
-                      className={`w-full py-5 rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.4em] transition-all duration-300 relative overflow-hidden flex items-center justify-center gap-3 z-20 group/uplink ${
-                        uploading || (rgbFiles.length === 0 && thermalFiles.length === 0)
-                          ? 'bg-slate-100 text-slate-400 cursor-not-allowed border-2 border-slate-200/50 shadow-none'
-                          : 'bg-slate-900 text-white shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:bg-orange-600 hover:shadow-[0_20px_50px_rgba(249,115,22,0.4)] active:scale-95'
-                      }`}
-                    >
-                      {!(uploading || (rgbFiles.length === 0 && thermalFiles.length === 0)) && (
-                        <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-orange-400 opacity-0 group-hover/uplink:opacity-100 transition-opacity duration-500"></div>
-                      )}
-                      <div className="relative z-10 flex items-center gap-3">
-                        {uploading ? (
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                        ) : (
-                          <ArrowRight size={20} className={`transition-transform duration-300 ${!(rgbFiles.length === 0 && thermalFiles.length === 0) ? 'group-hover/uplink:translate-x-1' : ''}`} />
-                        )}
-                        <span>{uploading ? 'Processing...' : 'Upload Data'}</span>
-                      </div>
-                    </button>
-
-                    {/* STATUS FEEDBACK - Floating */}
-                    <AnimatePresence mode="wait">
-                      {uploadStatus.message && (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                          animate={{ opacity: 1, scale: 1, y: 0 }}
-                          exit={{ opacity: 0, scale: 0.9 }}
-                          className={`absolute top-full left-0 right-0 mt-6 text-[8px] font-black uppercase tracking-[0.2em] text-center p-3 rounded-xl border-2 shadow-sm ${uploadStatus.type === "success" ? "text-emerald-700 bg-emerald-50 border-emerald-100" :
-                            uploadStatus.type === "error" ? "text-red-700 bg-red-50 border-red-100" : "text-orange-700 bg-orange-50 border-orange-100"
-                            }`}
-                        >
-                          {uploadStatus.message}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                </div>
-
-                {/* SECURE LABELS - Stack on Mobile */}
-                <div className="mt-10 md:mt-16 flex flex-col md:flex-row gap-6 md:gap-8 opacity-40 items-center">
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck size={12} className="text-emerald-500" />
-                    <span className="text-[9px] font-black text-slate-800 uppercase tracking-widest leading-none text-center md:text-left">Military-Grade Encryption</span>
-                  </div>
-                  <div className="flex items-center gap-2 border-t md:border-t-0 md:border-l border-slate-200 pt-4 md:pt-0 md:pl-8">
-                    <Database size={12} className="text-blue-500" />
-                    <span className="text-[9px] font-black text-slate-800 uppercase tracking-widest leading-none text-center md:text-left">Cloud Persistent</span>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-          </div>
-        </section>
-                    </div>
                 </div>
             </div>
 

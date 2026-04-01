@@ -183,7 +183,7 @@ export default function Navbar() {
                         </div>
                         */}
 
-                        <Link href="/about" className={`px-3 py-2 text-xs font-bold transition-all duration-300 ${pathname === "/about" ? "text-orange-600" : `${textColor} ${hoverTextColor}`}`}>About</Link>
+                        {/* <Link href="/about" className={`px-3 py-2 text-xs font-bold transition-all duration-300 ${pathname === "/about" ? "text-orange-600" : `${textColor} ${hoverTextColor}`}`}>About</Link> */}
                         <Link href="/booking" className={`px-3 py-2 text-xs font-bold transition-all duration-300 ${pathname === "/booking" ? "text-orange-600" : `${textColor} ${hoverTextColor}`}`}>Bookings</Link>
                         <Link href="/contact" className={`px-3 py-2 text-xs font-bold transition-all duration-300 ${pathname === "/contact" ? "text-orange-600" : `${textColor} ${hoverTextColor}`}`}>Contact</Link>
                     </div>
@@ -280,7 +280,7 @@ export default function Navbar() {
                         )}
                         */}
 
-                        <Link href="/about" className="block px-4 py-3 text-base font-bold text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl" onClick={() => setIsMenuOpen(false)}>About</Link>
+                        {/* <Link href="/about" className="block px-4 py-3 text-base font-bold text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl" onClick={() => setIsMenuOpen(false)}>About</Link> */}
                         <Link href="/booking" className="block px-4 py-3 text-base font-bold text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl" onClick={() => setIsMenuOpen(false)}>Bookings</Link>
                         <Link href="/contact" className="block px-4 py-3 text-base font-bold text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl" onClick={() => setIsMenuOpen(false)}>Contact</Link>
 
