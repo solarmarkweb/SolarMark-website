@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Camera, Upload, Trash2, CheckCircle, AlertCircle, 
-  Loader2, Image as ImageIcon, Plus, X, Layout, 
+import {
+  Camera, Upload, Trash2, CheckCircle, AlertCircle,
+  Loader2, Image as ImageIcon, Plus, X, Layout,
   FileImage, Sliders, Save, ChevronDown
 } from 'lucide-react';
 
@@ -14,17 +14,17 @@ export default function SitePhotosPage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [status, setStatus] = useState({ type: '', message: '' });
-  
+
   // Form State
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    category: 'homepage'
+    category: 'anomaly-hotspot'
   });
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://admin-backend-591983072009.asia-south1.run.app/api';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8002/api';
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -108,7 +108,7 @@ export default function SitePhotosPage() {
       });
 
       if (!response.ok) throw new Error('Delete failed');
-      
+
       setPhotos(photos.filter(p => p.id !== id));
       setStatus({ type: 'success', message: 'Photo deleted' });
     } catch (err) {
@@ -135,15 +135,14 @@ export default function SitePhotosPage() {
 
         {/* Status Alert */}
         {status.message && (
-          <div className={`mb-6 p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 ${
-            status.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
-            status.type === 'error' ? 'bg-rose-50 text-rose-700 border border-rose-100' :
-            'bg-blue-50 text-blue-700 border border-blue-100'
-          }`}>
-            {status.type === 'success' ? <CheckCircle size={20} /> : 
-             status.type === 'error' ? <AlertCircle size={20} /> : <Loader2 className="animate-spin" size={20} />}
+          <div className={`mb-6 p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 ${status.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
+              status.type === 'error' ? 'bg-rose-50 text-rose-700 border border-rose-100' :
+                'bg-blue-50 text-blue-700 border border-blue-100'
+            }`}>
+            {status.type === 'success' ? <CheckCircle size={20} /> :
+              status.type === 'error' ? <AlertCircle size={20} /> : <Loader2 className="animate-spin" size={20} />}
             <p className="text-sm font-bold uppercase tracking-wider">{status.message}</p>
-            <button onClick={() => setStatus({type:'', message:''})} className="ml-auto">
+            <button onClick={() => setStatus({ type: '', message: '' })} className="ml-auto">
               <X size={16} />
             </button>
           </div>
@@ -163,60 +162,69 @@ export default function SitePhotosPage() {
               <form onSubmit={handleUpload} className="space-y-5">
                 <div className="space-y-2">
                   <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Title</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={formData.title}
-                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     placeholder="e.g. Hero Banner"
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all font-medium"
                   />
                 </div>
 
-                  <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Category / Section</label>
-                    <div className="relative">
-                      <select 
-                        value={formData.category}
-                        onChange={(e) => setFormData({...formData, category: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all font-medium appearance-none"
-                      >
-                        <optgroup label="General Sections">
-                          <option value="Main Hero">Main Hero Image</option>
-                          <option value="Spectral View">Spectral View Widget</option>
-                          <option value="Site Survey">Site Survey Widget</option>
-                          <option value="Precision Intelligence">Precision Intelligence Section</option>
-                          <option value="Global Deployment">Global Deployment Section</option>
-                          <option value="About - Hero Banner">About - Hero Banner</option>
-                          <option value="About - Our Mission">About - Our Mission Section</option>
-                          <option value="About - Tech Showcase">About - Technology Showcase</option>
-                          <option value="Main Gallery">Main Gallery</option>
-                          <option value="homepage">Other Homepage Asset</option>
-                        </optgroup>
-                        <optgroup label="Service Sections">
-                          <option value="Thermography">Thermography</option>
-                          <option value="Work Management">Work Management</option>
-                          <option value="Asset Management">Asset Management</option>
-                          <option value="Progress Tracking">Progress Tracking</option>
-                          <option value="Quality Control">Quality Control</option>
-                          <option value="Commissioning">Commissioning</option>
-                          <option value="Site Assessment">Site Assessment</option>
-                          <option value="Drones & Robotics">Drones & Robotics</option>
-                          <option value="AI & Analytics">AI & Analytics</option>
-                          <option value="Forms & Ticketing">Forms & Ticketing</option>
-                          <option value="Integrations">Integrations</option>
-                        </optgroup>
-                      </select>
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                        <ChevronDown size={16} />
-                      </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Category / Section</label>
+                  <div className="relative">
+                    <select
+                      value={formData.category}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all font-medium appearance-none"
+                    >
+                      <optgroup label="General Sections">
+                        <option value="Main Hero">Main Hero Image</option>
+                        <option value="Spectral View">Spectral View Widget</option>
+                        <option value="Site Survey">Site Survey Widget</option>
+                        <option value="Precision Intelligence">Precision Intelligence Section</option>
+                        <option value="Global Deployment">Global Deployment Section</option>
+                        <option value="Main Gallery">Main Gallery</option>
+                        <option value="homepage">Other Homepage Asset</option>
+                      </optgroup>
+                      <optgroup label="Anomaly Types">
+                        <option value="anomaly-hotspot">Anomaly: Hotspot</option>
+                        <option value="anomaly-multi-hotspot">Anomaly: Multi Hotspot</option>
+                        <option value="anomaly-bypassed">Anomaly: Bypassed Substring</option>
+                        <option value="anomaly-diode">Anomaly: Diode Failure</option>
+                        <option value="anomaly-pid">Anomaly: PID Effect</option>
+                        <option value="anomaly-soiling">Anomaly: Soiling</option>
+                        <option value="anomaly-broken-glass">Anomaly: Broken Glass</option>
+                        <option value="anomaly-delamination">Anomaly: Delamination</option>
+                        <option value="anomaly-vegetation">Anomaly: Vegetation</option>
+                        <option value="anomaly-shadowing">Anomaly: Shadowing</option>
+                      </optgroup>
+                      <optgroup label="Service Sections">
+                        <option value="Thermography">Thermography</option>
+                        <option value="Work Management">Work Management</option>
+                        <option value="Asset Management">Asset Management</option>
+                        <option value="Progress Tracking">Progress Tracking</option>
+                        <option value="Quality Control">Quality Control</option>
+                        <option value="Commissioning">Commissioning</option>
+                        <option value="Site Assessment">Site Assessment</option>
+                        <option value="Drones & Robotics">Drones & Robotics</option>
+                        <option value="AI & Analytics">AI & Analytics</option>
+                        <option value="Forms & Ticketing">Forms & Ticketing</option>
+                        <option value="Integrations">Integrations</option>
+                      </optgroup>
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                      <ChevronDown size={16} />
                     </div>
                   </div>
+                </div>
 
                 <div className="space-y-2">
                   <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Description</label>
-                  <textarea 
+                  <textarea
                     value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     rows="3"
                     placeholder="Brief description..."
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all font-medium resize-none"
@@ -226,15 +234,14 @@ export default function SitePhotosPage() {
                 <div className="space-y-2">
                   <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Photo</label>
                   <div className="relative group/upload">
-                    <input 
-                      type="file" 
+                    <input
+                      type="file"
                       accept="image/*"
                       onChange={handleFileChange}
                       className="absolute inset-0 opacity-0 cursor-pointer z-10"
                     />
-                    <div className={`w-full py-8 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center transition-all ${
-                      preview ? 'border-emerald-200 bg-emerald-50/30' : 'border-slate-200 bg-slate-50 group-hover/upload:border-orange-300 group-hover/upload:bg-orange-50/30'
-                    }`}>
+                    <div className={`w-full py-8 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center transition-all ${preview ? 'border-emerald-200 bg-emerald-50/30' : 'border-slate-200 bg-slate-50 group-hover/upload:border-orange-300 group-hover/upload:bg-orange-50/30'
+                      }`}>
                       {preview ? (
                         <img src={preview} alt="Preview" className="h-32 w-auto rounded-lg shadow-md mb-2" />
                       ) : (
@@ -280,13 +287,13 @@ export default function SitePhotosPage() {
                 {photos.map((photo) => (
                   <div key={photo.id} className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-200 group hover:shadow-xl hover:scale-[1.02] transition-all duration-500">
                     <div className="relative aspect-video overflow-hidden bg-slate-100">
-                      <img 
-                        src={API_URL.replace('/api', '') + photo.url} 
-                        alt={photo.title} 
+                      <img
+                        src={API_URL.replace('/api', '') + photo.url}
+                        alt={photo.title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                       />
                       <div className="absolute top-4 right-4">
-                        <button 
+                        <button
                           onClick={() => handleDelete(photo.id)}
                           className="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-lg"
                         >

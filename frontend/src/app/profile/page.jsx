@@ -844,8 +844,8 @@ export default function ProfilePage() {
                 )}
 
 
-                {/* Stats Grid - 4 Containers System */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                {/* Stats Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -901,59 +901,6 @@ export default function ProfilePage() {
                             <span>Success Rate</span>
                             <span className="text-emerald-600">{stats.total_bookings > 0 ? Math.round((bookings.filter(b => b.status === 'completed').length / stats.total_bookings) * 100) : 0}%</span>
                         </div>
-                    </motion.div>
-
-                    {/* NEW 4th CONTAINER: DIGITAL TWIN UPLINK - White Palette matched */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4 }}
-                        className="p-6 bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 flex flex-col relative overflow-hidden group hover:border-blue-200 transition-all duration-500"
-                    >
-                        {/* Background Ornament - Subtle */}
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-blue-100/50 transition-colors duration-700"></div>
-                        
-                        <div className="relative z-10 flex-1">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 shadow-lg shadow-blue-50">
-                                    <CloudUpload size={20} />
-                                </div>
-                                <div>
-                                    <h4 className="text-slate-900 text-sm font-black uppercase tracking-tight">Data Uplink</h4>
-                                    <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest">Secure Cloud Sync</p>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3 mb-4">
-                                <div className="relative group/node">
-                                    <input type="file" multiple accept="image/*" onChange={(e) => handleFileChange(e, 'rgb')} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                                    <div className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-1 ${rgbFiles.length > 0 ? 'bg-orange-600 border-orange-400 text-white shadow-lg shadow-orange-500/20' : 'bg-slate-50 border-slate-100 text-slate-400 group-hover:border-orange-500 group-hover:text-orange-500 hover:bg-white'}`}>
-                                        <Camera size={14} />
-                                        <span className="text-[8px] font-black uppercase tracking-tight leading-none text-center">RGB <br/> {rgbFiles.length > 0 ? `${rgbFiles.length}` : 'DATA'}</span>
-                                    </div>
-                                </div>
-                                <div className="relative group/node">
-                                    <input type="file" multiple accept=".kml" onChange={(e) => handleFileChange(e, 'thermal')} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                                    <div className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-1 ${thermalFiles.length > 0 ? 'bg-blue-700 border-blue-400 text-white shadow-lg shadow-blue-600/20' : 'bg-slate-50 border-slate-100 text-slate-400 group-hover:border-blue-500 group-hover:text-blue-500 hover:bg-white'}`}>
-                                        <Globe size={14} />
-                                        <span className="text-[8px] font-black uppercase tracking-tight leading-none text-center">KMZ <br/> {thermalFiles.length > 0 ? `${thermalFiles.length}` : 'SITE'}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <button 
-                            onClick={handleImageUpload}
-                            disabled={uploading || (rgbFiles.length === 0 && thermalFiles.length === 0)}
-                            className={`w-full py-3.5 rounded-2xl text-[9px] font-black uppercase tracking-[0.2em] transition-all relative overflow-hidden flex items-center justify-center gap-2 ${
-                                uploading || (rgbFiles.length === 0 && thermalFiles.length === 0)
-                                    ? 'bg-slate-50 text-slate-300 border border-slate-100 cursor-not-allowed'
-                                    : 'bg-slate-900 text-white shadow-xl hover:bg-blue-600 active:scale-95'
-                            }`}
-                        >
-                            {uploading ? <Loader2 className="animate-spin w-3 h-3" /> : (uploadStatus.type === 'success' ? <CheckCircle2 className="w-3 h-3" /> : <ArrowRight className="w-3 h-3" />)}
-                            <span>{uploading ? 'Uplinking' : (uploadStatus.type === 'success' ? 'Success' : 'Start Uplink')}</span>
-                        </button>
                     </motion.div>
                 </div>
 

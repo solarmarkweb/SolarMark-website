@@ -5,7 +5,7 @@ import React, { useState, useEffect } from "react";
 import {
   ArrowRight, Zap, Shield, Globe, Sun, FileUp, Database, Cloud,
   HardDrive, CheckCircle, User, Mail, Phone, MapPin,
-  Settings, MessageSquare, Send, CloudUpload, Activity, Loader2, ShieldCheck, Star, ChevronDown, ChevronLeft, ChevronRight, RefreshCw,
+  Settings, MessageSquare, Send, CloudUpload, Activity, Loader2, ShieldCheck, Star, ChevronDown, ChevronLeft, ChevronRight, RefreshCw, Wind, BarChart3,
   Thermometer, ClipboardList, TrendingUp, Eye, Brain, FileText, Calendar, Image, Camera, Upload, X, Grid, List, ExternalLink, Cpu, Layers, Search, FileCheck, Sparkles, Leaf, Award
 } from "lucide-react";
 import Link from "next/link";
@@ -28,19 +28,23 @@ export default function HomePage() {
   const [uploadedImages, setUploadedImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [anomalyTab, setAnomalyTab] = useState('thermal');
   const [status, setStatus] = useState({ type: '', message: '' });
   const [viewMode, setViewMode] = useState('grid');
   const [selectedImage, setSelectedImage] = useState(null);
   const [dragActive, setDragActive] = useState({ rgb: false, thermal: false });
   const [uploadProgress, setUploadProgress] = useState({ rgb: 0, thermal: 0 });
   const [sitePhotos, setSitePhotos] = useState([]);
-  const [loadingPhotos, setLoadingPhotos] = useState(false);
+  const [loadingPhotos, setLoadingPhotos] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
 
   // Proposal and Offers Modal State
   const [showProposalModal, setShowProposalModal] = useState(false);
   const [showOffersModal, setShowOffersModal] = useState(false);
-  const [proposalForm, setProposalForm] = useState({ name: "", email: "", role: "", acres: "", mw: "" });
+  const [proposalForm, setProposalForm] = useState({
+    name: "", email: "", role: "", acres: "", mw: "",
+    pmax: "", total_panels: "", cuf: "", tariff: "", specific_yield: ""
+  });
   const [offerForm, setOfferForm] = useState({ name: "", email: "", offer_type: "" });
   const [submitStatus, setSubmitStatus] = useState({ type: "", message: "" });
 
@@ -233,7 +237,9 @@ export default function HomePage() {
 
   const getDynamicPhoto = (category, defaultImage) => {
     const photo = sitePhotos.find(p => p.category === category);
-    return photo ? `${API_URL.replace('/api', '')}${photo.url}` : defaultImage;
+    if (!photo) return defaultImage;
+    const baseUrl = API_URL.split('/api')[0];
+    return `${baseUrl}${photo.url}`;
   };
 
   const fetchUserImages = async () => {
@@ -702,14 +708,17 @@ export default function HomePage() {
         first_name: first_name,
         last_name: last_name,
         email: proposalForm.email,
-        message: `📢 PROPOSAL REQUEST\n\n- Role: ${proposalForm.role}\n- Area: ${proposalForm.acres} Acres\n- Capacity: ${proposalForm.mw} MW`
+        message: `📢 PROPOSAL REQUEST\n\n- Role: ${proposalForm.role}\n- Area: ${proposalForm.acres} Acres\n- Capacity: ${proposalForm.mw} MW\n- Pmax: ${proposalForm.pmax} W\n- Total Panels: ${proposalForm.total_panels}\n- CUF: ${proposalForm.cuf}%\n- Tariff: ${proposalForm.tariff} /KWh\n- Specific Yield: ${proposalForm.specific_yield} kWh/kWp`
       });
 
       if (response.status === 200 || response.status === 201) {
         setSubmitStatus({ type: "success", message: "Proposal request sent successfully!" });
         setTimeout(() => {
           setShowProposalModal(false);
-          setProposalForm({ name: "", email: "", role: "", acres: "", mw: "" });
+          setProposalForm({
+            name: "", email: "", role: "", acres: "", mw: "",
+            pmax: "", total_panels: "", cuf: "", tariff: "", specific_yield: ""
+          });
           setSubmitStatus({ type: "", message: "" });
         }, 2000);
       } else {
@@ -758,756 +767,352 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Refined Professional Hero - Strategic Narrative Scale */}
-      <section className="relative pt-28 md:pt-36 pb-20 md:pb-32 flex items-center justify-center overflow-hidden bg-white">
-        <div className="absolute inset-0 -z-10 overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-full bg-slate-50/10"></div>
-          <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
-            style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '60px 60px' }}></div>
+      {/* NEW DESIGN: SILENT FAILURE (HERO SECTION) */}
+      <section className="bg-slate-50 py-24 md:py-32 px-6 md:px-12 relative overflow-hidden flex items-center justify-center">
+        {/* Clean minimal background */}
+        <div className="absolute top-0 left-0 w-full h-full bg-slate-50"></div>
 
-          <motion.div
-            animate={{
-              scale: [1, 1.1, 1],
-              opacity: [0.3, 0.4, 0.3],
-            }}
-            transition={{ duration: 15, repeat: Infinity }}
-            className="absolute -top-1/4 -right-1/4 w-[600px] h-[600px] bg-orange-100/30 rounded-full blur-[140px]"
-          />
-          <div className="absolute -bottom-1/4 -left-1/4 w-[600px] h-[600px] bg-blue-50/20 rounded-full blur-[140px]" />
+        <div className="max-w-5xl mx-auto w-full relative z-10 text-center flex flex-col items-center mt-12">
+          <div className="flex flex-col items-center max-w-4xl">
+            {/* Heading */}
+            <div className="mb-8 flex flex-col items-center">
+              <div className="flex items-center gap-3 text-orange-600 font-mono text-[10px] md:text-xs uppercase tracking-[0.2em] mb-6 font-bold">
+                <div className="w-8 h-px bg-orange-500"></div> DRONE THERMOGRAPHY • SOLAR INSPECTION <div className="w-8 h-px bg-orange-500"></div>
+              </div>
+
+              <h1 className="font-extrabold text-4xl md:text-5xl lg:text-6xl text-slate-900 uppercase leading-[1.1] tracking-tight drop-shadow-sm">
+                YOUR PANELS ARE <span className="text-orange-500">FAILING</span><br />
+                <span className="text-transparent text-5xl md:text-6xl lg:text-[5rem]" style={{ WebkitTextStroke: '1.5px rgba(15,23,42,0.8)' }}>SILENTLY</span>
+              </h1>
+            </div>
+
+            {/* Contents & Buttons */}
+            <div className="flex flex-col items-center">
+              <p className="text-slate-600 text-sm md:text-base lg:text-lg leading-relaxed mb-8 max-w-2xl font-medium">
+                <strong className="text-slate-900 font-bold">Hidden faults cost solar operators 5–20% of annual yield —</strong> invisibly, every day. We fly thermal drones over your entire site and pinpoint every anomaly: exactly where it is, what it is, and why it's happening.
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
+                <button onClick={() => setShowProposalModal(true)} className="w-full sm:w-auto px-8 py-4 bg-orange-500 text-white font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-orange-600 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-[0_15px_30px_-10px_rgba(249,115,22,0.4)]">
+                  REQUEST PROPOSAL <ArrowRight size={16} />
+                </button>
+                <button onClick={() => {
+                  const processSection = document.getElementById('process-section');
+                  if (processSection) processSection.scrollIntoView({ behavior: 'smooth' });
+                }} className="w-full sm:w-auto px-8 py-4 bg-white border-2 border-slate-200 text-slate-900 font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-slate-50 hover:border-orange-200 hover:scale-105 active:scale-95 transition-all flex items-center justify-center shadow-sm">
+                  SEE HOW IT WORKS
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
+      </section>
 
-        <div className="max-w-5xl mx-auto px-4 text-center relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center space-x-2 text-orange-600 px-4 py-1.5 rounded-full font-black text-[10px] uppercase tracking-[0.4em] mb-10"
-          >
-          </motion.div>
+      {/* NEW DESIGN: STATS BAR */}
+      <div className="bg-[#f8fafc] border-y border-slate-200 flex flex-wrap lg:flex-nowrap">
+        {[
+          { num: "5-20%", label: "Avg. energy loss from undetected faults in typical solar sites" },
+          { num: "17+", label: "Distinct fault types detected — thermal and visual — in one pass" },
+          { num: "100x", label: "Faster than manual walkdown inspection, with far higher accuracy" },
+          { num: "48hr", label: "From flight to a full GPS-tagged, actionable report per module" }
+        ].map((stat, i) => (
+          <div key={i} className="flex-1 min-w-[250px] p-8 md:p-10 border-b lg:border-b-0 lg:border-r border-slate-200 last:border-none relative overflow-hidden group">
+            <div className="font-black text-4xl text-orange-500 mb-2 leading-none">{stat.num}</div>
+            <div className="text-xs text-slate-500 font-medium leading-relaxed max-w-[200px]">{stat.label}</div>
+            <motion.div initial={{ scaleX: 0 }} whileHover={{ scaleX: 1 }} className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600 origin-left transition-transform duration-500" />
+          </div>
+        ))}
+      </div>
 
-          <motion.h1
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8 }}
-            className="text-4xl md:text-7xl font-black text-slate-900 tracking-tighter mb-4 uppercase leading-[0.9] drop-shadow-sm"
-          >
-            Solar <span className="text-orange-600">Mark</span> <br />
+      {/* NEW DESIGN: PROBLEM SECTION */}
+      <section className="bg-[#fff9f2] py-24 md:py-32 px-4 md:px-8 border-b border-orange-100 overflow-hidden relative">
+        <div className="max-w-[85rem] mx-auto relative">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-8 lg:gap-16 xl:gap-24 items-center">
 
-          </motion.h1>
+            {/* LEFT COLUMN: 2 Cards */}
+            <div className="order-2 lg:order-1 space-y-6 lg:space-y-12 relative z-10 w-full">
+              {[
+                {
+                  icon: Thermometer, title: <>Hidden<br />Hotspots</>, desc: "Cell-level heating defects degrade panels and create fire risks — completely invisible from the ground or with visual inspection alone.",
+                  gradient: "from-orange-400 to-orange-500", shadow: "shadow-orange-500/20"
+                },
+                {
+                  icon: Zap, title: <>Diode & String<br />Failures</>, desc: "Bypassed substrings and failed bypass diodes silently kill string output. You see the dip in SCADA, but you cannot locate the source.",
+                  gradient: "from-cyan-400 to-blue-500", shadow: "shadow-blue-500/20"
+                }
+              ].map((item, i) => {
+                const Icon = item.icon;
+                return (
+                  <motion.div key={i} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
+                    className="bg-white px-6 py-8 md:p-8 rounded-[1.5rem] shadow-[0_20px_50px_-20px_rgba(0,0,0,0.08)] border border-orange-100 relative lg:ml-auto w-full lg:max-w-[340px] flex flex-col items-end text-right z-20 hover:-translate-y-1 transition-transform">
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-base md:text-xl text-slate-500 mb-8 leading-relaxed font-bold max-w-3xl mx-auto opacity-70"
-          >
-            Our platform doesn't just show you pictures. We provide geolocated defect coordinates, thermal grading, and estimated power loss for every anomaly detected across your entire field.
-          </motion.p>
+                    {/* DASHED CONNECTOR LINE TO CENTER */}
+                    <div className="hidden lg:block absolute top-[50%] -right-8 xl:-right-16 w-8 xl:w-16 border-t-[1.5px] border-dashed border-orange-300 -z-10">
+                      <div className="w-1.5 h-1.5 rounded-full bg-orange-400 absolute -right-0.5 top-1/2 -translate-y-1/2"></div>
+                      <div className="w-1 h-1 rounded-full bg-orange-300 absolute -left-0.5 top-1/2 -translate-y-1/2"></div>
+                    </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileActive={{ scale: 0.95 }}
-              onClick={() => setShowProposalModal(true)}
-              className="w-full sm:w-auto px-10 py-5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.2)] hover:bg-orange-600 transition-all flex items-center justify-center gap-4"
-            >
-              Request Proposal <ArrowRight size={18} />
-            </motion.button>
-            <Link
-              href="/about"
-              className="w-full sm:w-auto px-10 py-5 bg-white text-slate-900 border border-slate-200 rounded-2xl font-black text-xs uppercase tracking-[0.4em] hover:bg-slate-50 hover:border-orange-200 transition-all shadow-sm"
-            >
-              Tech Specs
+                    <div className="flex items-center justify-end gap-4 mb-4 flex-row-reverse">
+                      <div className={`w-16 h-16 rounded-full bg-gradient-to-tr ${item.gradient} flex items-center justify-center text-white shrink-0 shadow-[0_10px_20px_-5px_rgba(0,0,0,0.2)] ${item.shadow} ring-4 ring-white relative z-10`}>
+                        <Icon size={28} strokeWidth={2} />
+                      </div>
+                      <h3 className="font-extrabold text-[15px] text-slate-900 tracking-tight uppercase leading-tight">{item.title}</h3>
+                    </div>
+                    <p className="text-slate-600 text-[13px] leading-relaxed max-w-[280px]">{item.desc}</p>
+                  </motion.div>
+                )
+              })}
+            </div>
+
+            {/* MIDDLE COLUMN: Text Content */}
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="order-1 lg:order-2 flex flex-col items-center text-center z-10 px-4 lg:px-8 xl:px-12 relative py-12 shrink-0">
+
+              <div className="w-12 h-12 bg-white rounded-full border border-orange-200 flex items-center justify-center mb-6 shadow-xl relative pointer-events-none">
+                <div className="absolute inset-0 rounded-full ring-4 ring-orange-200/50 -z-10"></div>
+                <Eye className="text-orange-500" size={20} strokeWidth={2.5} />
+              </div>
+
+              <div className="text-orange-600 text-[9px] uppercase tracking-[0.2em] font-bold mb-4 font-mono">
+                The Problem:
+              </div>
+
+              <h2 className="font-black text-4xl lg:text-[3.5rem] xl:text-[4rem] text-slate-900 uppercase leading-[1.0] tracking-tighter drop-shadow-sm">
+                The <br />
+                <span className="text-orange-500 block py-1">Danger</span>
+                You Can't See
+              </h2>
+
+            </motion.div>
+
+            {/* RIGHT COLUMN: 2 Cards */}
+            <div className="order-3 lg:order-3 space-y-6 lg:space-y-12 relative z-10 w-full">
+              {[
+                {
+                  icon: Layers, title: <>Soiling,<br />Shading & Damage</>, desc: "Soiling gradients, vegetation encroachment, broken glass — these compound daily. Without data, maintenance becomes costly guesswork.",
+                  gradient: "from-green-400 to-green-500", shadow: "shadow-green-500/20"
+                },
+                {
+                  icon: MapPin, title: <>No Actionable<br />Location Data</>, desc: "Without GPS-tagged module-level reports, your maintenance team spends hours searching — or skips the problem until its a major fault.",
+                  gradient: "from-amber-400 to-yellow-500", shadow: "shadow-yellow-500/20"
+                }
+              ].map((item, i) => {
+                const Icon = item.icon;
+                return (
+                  <motion.div key={i} initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
+                    className="bg-white px-6 py-8 md:p-8 rounded-[1.5rem] shadow-[0_20px_50px_-20px_rgba(0,0,0,0.08)] border border-orange-100 relative lg:mr-auto w-full lg:max-w-[340px] flex flex-col items-start text-left z-20 hover:-translate-y-1 transition-transform">
+
+                    {/* DASHED CONNECTOR LINE FROM CENTER */}
+                    <div className="hidden lg:block absolute top-[50%] -left-8 xl:-left-16 w-8 xl:w-16 border-t-[1.5px] border-dashed border-orange-300 -z-10">
+                      <div className="w-1 h-1 rounded-full bg-orange-300 absolute -right-0.5 top-1/2 -translate-y-1/2"></div>
+                      <div className="w-1.5 h-1.5 rounded-full bg-orange-400 absolute -left-0.5 top-1/2 -translate-y-1/2"></div>
+                    </div>
+
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className={`w-16 h-16 rounded-full bg-gradient-to-tr ${item.gradient} flex items-center justify-center text-white shrink-0 shadow-[0_10px_20px_-5px_rgba(0,0,0,0.2)] ${item.shadow} ring-4 ring-white relative z-10`}>
+                        <Icon size={28} strokeWidth={2} />
+                      </div>
+                      <h3 className="font-extrabold text-[15px] text-slate-900 tracking-tight uppercase leading-tight">{item.title}</h3>
+                    </div>
+                    <p className="text-slate-600 text-[13px] leading-relaxed max-w-[280px]">{item.desc}</p>
+                  </motion.div>
+                )
+              })}
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* NEW DESIGN: ANOMALIES DETECTION */}
+      <section className="bg-[#f8fafc] py-24 px-6 md:px-12 border-y border-slate-200">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-wrap justify-between items-end gap-8 mb-16">
+            <div>
+              <div className="flex items-center gap-3 text-cyan-500 font-mono text-xs uppercase tracking-widest mb-4">
+                <div className="w-6 h-px bg-cyan-500"></div> What We Detect
+              </div>
+              <h2 className="font-black text-3xl md:text-5xl text-slate-900 uppercase leading-none tracking-tight">
+                Nothing Missed. <span className="text-orange-500">Everything</span> Mapped.
+              </h2>
+            </div>
+            <div className="flex bg-white p-1 rounded-lg border border-slate-200">
+              <button onClick={() => setAnomalyTab("thermal")}
+                className={`font-mono text-xs uppercase tracking-wider px-6 py-2 rounded transition-all ${anomalyTab === "thermal" ? "bg-orange-600 text-white font-bold" : "text-slate-500 hover:text-slate-900"}`}>
+                Thermal
+              </button>
+              <button onClick={() => setAnomalyTab("visual")}
+                className={`font-mono text-xs uppercase tracking-wider px-6 py-2 rounded transition-all ${anomalyTab === "visual" ? "bg-orange-600 text-white font-bold" : "text-slate-500 hover:text-slate-900"}`}>
+                Visual (RGB)
+              </button>
+            </div>
+          </div>
+          <AnimatePresence mode="wait">
+            <motion.div key={anomalyTab} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
+              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {(anomalyTab === "thermal" ? [
+                { name: "Hotspot", category: "anomaly-hotspot", sev: "h", style: "radial-gradient(circle at 32% 42%, #fffde0 0%, #FFD700 12%, #FF4500 26%, #8B1500 48%, #2d0a00 72%, #120308 100%)" },
+                { name: "Multi Hotspot", category: "anomaly-multi-hotspot", sev: "h", style: "radial-gradient(circle at 30% 28%, #FFD700 9%, #FF6B1A 18%, transparent 30%), radial-gradient(circle at 67% 62%, #FFD700 9%, #FF6B1A 18%, transparent 28%), linear-gradient(135deg, #1a0900 0%, #3d1200 50%, #1a0900 100%)" },
+                { name: "Bypassed Substring", category: "anomaly-bypassed", sev: "m", style: "linear-gradient(0deg, #a03000 0%, #FF6B1A 28%, #FFAA00 33%, #ffffff 50%, #FF6B1A 72%, #a03000 100%)" },
+                { name: "Diode Failure", category: "anomaly-diode", sev: "m", style: "linear-gradient(160deg, #FF8C00 0%, #FF4500 25%, #8B1500 50%, #200600 75%, #080108 100%)" },
+                { name: "PID Effect", category: "anomaly-pid", sev: "h", style: "linear-gradient(135deg, #0a0012 0%, #3d0060 45%, #7a00a0 60%, #bb33cc 78%, #ff80ff 100%)" }
+              ] : [
+                { name: "Soiling", category: "anomaly-soiling", sev: "l", style: "radial-gradient(ellipse at 35% 50%, rgba(200,170,90,0.6) 0%, transparent 55%), linear-gradient(135deg, #1a2035 0%, #4a5580 100%)" },
+                { name: "Broken Glass", category: "anomaly-broken-glass", sev: "h", style: "repeating-linear-gradient(-48deg, transparent 0px, transparent 7px, rgba(255,255,255,0.15) 7px, rgba(255,255,255,0.15) 8px), linear-gradient(135deg, #1e2d4a 0%, #2e4a7a 100%)" },
+                { name: "Delamination", category: "anomaly-delamination", sev: "m", style: "radial-gradient(ellipse at 38% 40%, rgba(255,255,255,0.2) 0%, transparent 28%), linear-gradient(135deg, #1e2f60 0%, #2a4080 100%)" },
+                { name: "Vegetation", category: "anomaly-vegetation", sev: "l", style: "linear-gradient(135deg, #0f2010 0%, #1a4020 40%, #0e5010 65%, #0d2a0a 100%)" },
+                { name: "Shadowing", category: "anomaly-shadowing", sev: "m", style: "linear-gradient(135deg, #2a3550 0%, #1a2535 35%, #090f1a 55%, #2a3550 100%)" }
+              ]).map((card, i) => {
+                const imgUrl = getDynamicPhoto(card.category, null);
+                return (
+                  <div key={i} className="bg-white border border-slate-200 rounded-lg overflow-hidden group hover:border-orange-500/50 transition-all cursor-pointer shadow-sm">
+                    <div className="aspect-square relative overflow-hidden bg-slate-100">
+                      {loadingPhotos ? (
+                        <div className="absolute inset-0 bg-slate-200 animate-pulse"></div>
+                      ) : imgUrl ? (
+                        <img src={imgUrl} alt={card.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      ) : (
+                        <div className="absolute inset-0 group-hover:scale-105 transition-transform duration-500" style={{ background: card.style }}></div>
+                      )}
+                    </div>
+                    <div className="p-3 flex justify-between items-center text-xs font-mono uppercase tracking-widest text-slate-700 bg-white">
+                      {card.name}
+                      <div className={`w-1.5 h-1.5 rounded-full ${card.sev === "h" ? "bg-red-500" : card.sev === "m" ? "bg-orange-500" : "bg-yellow-400"}`}></div>
+                    </div>
+                  </div>
+                )
+              })}
+            </motion.div>
+          </AnimatePresence>
+          <div className="mt-8 flex flex-wrap items-center gap-x-10 gap-y-4 text-xs font-mono uppercase tracking-widest text-slate-500">
+            <span>Severity:</span>
+            <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-red-500"></div> Critical</div>
+            <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-orange-500"></div> Moderate</div>
+            <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-yellow-400"></div> Minor</div>
+          </div>
+        </div>
+      </section>
+
+      {/* NEW DESIGN: THE PROCESS */}
+      <section className="bg-[#fff9f2] py-32 px-6 md:px-12 relative overflow-hidden border-b border-orange-100">
+        {/* Subtle background decoration */}
+        <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-white/40 to-transparent"></div>
+        <div className="absolute bottom-0 left-0 w-1/4 h-1/2 bg-cyan-50/30 blur-3xl rounded-full"></div>
+        
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="flex flex-col items-center text-center mb-20">
+            <div className="flex items-center gap-3 text-cyan-500 font-mono text-xs uppercase tracking-[0.3em] mb-4">
+              <div className="w-12 h-px bg-cyan-500"></div> The Process <div className="w-12 h-px bg-cyan-500"></div>
+            </div>
+            <h2 className="font-black text-4xl md:text-5xl text-slate-900 uppercase tracking-tight max-w-2xl leading-[1.1]">
+              Find. <span className="text-orange-500">Fix.</span> Forget.
+            </h2>
+          </div>
+
+          <div className="relative">
+            {/* TIMELINE CONNECTOR LINE (Desktop) */}
+            <div className="hidden md:block absolute top-10 left-[15%] right-[15%] h-px border-t border-dashed border-slate-300 -z-0"></div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+              {[
+                { icon: Wind, num: "01", title: "Drone Survey", desc: "Automated thermal and RGB aerial coverage — scanning thousands of modules per hour with calibrated precision across any terrain." },
+                { icon: Brain, num: "02", title: "AI Analysis", desc: "Proprietary algorithms cross-reference datasets to classify faults and rank severity with automated root-cause attribution." },
+                { icon: BarChart3, num: "03", title: "Actionable Intelligence", desc: "Individual fault location on your site map with probable cause and recommended action — delivered within 48 hours." }
+              ].map((step, i) => {
+                const Icon = step.icon;
+                return (
+                <motion.div key={i} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.2 }}
+                  className="relative flex flex-col items-center text-center group">
+                  
+                  {/* ICON CIRCLE */}
+                  <div className="w-20 h-20 rounded-full bg-white shadow-[0_15px_35px_-12px_rgba(0,0,0,0.1)] border border-slate-100 flex items-center justify-center text-orange-500 mb-8 relative z-10 group-hover:bg-orange-500 group-hover:text-white group-hover:scale-110 transition-all duration-500">
+                    <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-slate-900 text-white text-[10px] font-black flex items-center justify-center shadow-lg border-2 border-white group-hover:bg-cyan-500 transition-colors">
+                      {step.num}
+                    </div>
+                    <Icon size={32} strokeWidth={1.5} />
+                  </div>
+
+                  <div className="bg-white/60 backdrop-blur-sm px-8 py-10 rounded-[2rem] border border-white shadow-[0_20px_50px_-20px_rgba(0,0,0,0.05)] hover:bg-white hover:shadow-[0_40px_70px_-25px_rgba(0,0,0,0.08)] transition-all duration-500 flex-grow w-full">
+                    <h3 className="font-extrabold text-xl text-slate-900 uppercase tracking-wider mb-4 leading-tight">{step.title}</h3>
+                    <p className="text-slate-500 text-[13px] leading-relaxed font-medium max-w-[280px] mx-auto">{step.desc}</p>
+                  </div>
+                </motion.div>
+              )})}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* NEW DESIGN: BENEFITS */}
+      <section className="bg-white py-32 px-6 md:px-12 border-t border-slate-100">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col mb-16">
+            <div className="flex items-center gap-3 text-cyan-500 font-mono text-xs uppercase tracking-[0.3em] mb-4">
+              <div className="w-12 h-px bg-cyan-500"></div> Why SolarMark
+            </div>
+            <h2 className="font-black text-3xl md:text-5xl text-slate-900 uppercase tracking-tight leading-[1.1]">
+              Because <span className="text-orange-500">Guessing</span> Costs More
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+            {[
+              { icon: Cpu, title: "Dual-Sensor Diagnosis", desc: "Thermal shows heat. RGB shows cracks. Combined, you know the root cause — not just the symptom. No other inspection delivers this precision." },
+              { icon: MapPin, title: "Module-Level Location", desc: "Every fault GPS-tagged and overlaid on your site layout. Your maintenance team walks directly to the right module — no searching, no hours wasted." },
+              { icon: TrendingUp, title: "Recover Lost Revenue", desc: "Clients routinely recover 8-15% yield post-inspection. One inspection pays for itself many times over in recovered generation within 12 months." },
+              { icon: FileCheck, title: "Warranty and Insurance Ready", desc: "IEC 62446-3 compliant thermal reports for panel warranty claims and insurance documentation. Evidence-grade data to protect your asset." }
+            ].map((benefit, i) => {
+              const Icon = benefit.icon;
+              return (
+              <motion.div key={i} initial={{ opacity: 0, x: i % 2 === 0 ? -20 : 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
+                className="group p-10 bg-slate-50/50 rounded-[2rem] border border-transparent hover:border-slate-100 hover:bg-white hover:shadow-[0_40px_80px_-30px_rgba(0,0,0,0.06)] transition-all duration-500">
+                
+                <div className="flex items-start gap-6">
+                  <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-orange-500 shrink-0 border border-slate-100 group-hover:bg-orange-500 group-hover:text-white transition-all duration-500 rotate-3 group-hover:rotate-0">
+                    <Icon size={24} strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-xl text-slate-900 uppercase tracking-widest mb-4 leading-tight">{benefit.title}</h3>
+                    <p className="text-slate-500 text-sm md:text-[15px] leading-relaxed font-medium">{benefit.desc}</p>
+                  </div>
+                </div>
+              </motion.div>
+            )})}
+          </div>
+        </div>
+      </section>
+
+      {/* NEW DESIGN: CTA */}
+      <section className="bg-white py-32 px-6 md:px-12 text-center relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-orange-600/10 rounded-full blur-[140px] pointer-events-none"></div>
+        <div className="max-w-4xl mx-auto relative z-10">
+          <div className="flex items-center justify-center gap-3 text-cyan-500 font-mono text-xs uppercase tracking-widest mb-8">
+            <div className="w-6 h-px bg-cyan-500"></div> Get Started
+          </div>
+          <h2 className="font-black text-4xl md:text-7xl text-slate-900 uppercase leading-none tracking-tight mb-8">
+            Stop Losing Yield.<br /><span className="text-orange-500">See Your Site Clearly.</span>
+          </h2>
+          <p className="text-slate-600 text-base md:text-lg max-w-lg mx-auto mb-12 leading-relaxed">
+            Book a free 15-minute assessment. We will tell you exactly what your site needs and what you can expect to find.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-16">
+            <button onClick={() => setShowProposalModal(true)}
+              className="w-full sm:w-auto px-12 py-5 bg-orange-600 text-white font-black text-lg uppercase tracking-wider rounded-lg shadow-lg shadow-orange-500/30 hover:scale-105 transition-all flex items-center justify-center gap-4">
+              Book Free Assessment <ArrowRight size={20} />
+            </button>
+            <Link href="/contact"
+              className="w-full sm:w-auto px-10 py-5 bg-white border border-slate-300 text-slate-900 font-bold rounded-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-3 shadow-sm">
+              Talk to an Expert
             </Link>
           </div>
-        </div>
-      </section>
-
-      {/* Global Scale - Immersive Command Background UI */}
-      <section className="relative py-20 min-h-[600px] flex items-center overflow-hidden">
-        {/* Full-Width Immersive Background Site Photo */}
-        <div className="absolute inset-0 z-0">
-          <img
-            src={getDynamicPhoto('Global Deployment', '/premium-solar-farm.png')}
-            alt="Global Solar Asset"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px]"></div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="max-w-3xl mx-auto mb-16"
-          >
-            <h2 className="text-5xl md:text-7xl font-black text-white mb-8 uppercase tracking-tighter leading-none">
-              Solar Scans <br />
-              <span className="text-orange-500">Across the World</span>
-            </h2>
-            <p className="text-slate-200 text-lg md:text-xl font-bold uppercase tracking-widest leading-relaxed opacity-90">
-              Our team helps you keep your solar panels working well. <br />
-              We scan large farms and give you easy reports.
-            </p>
-          </motion.div>
-
-          {/* Centered Glassmorphic Feature Strip */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
-            {[
-              { title: "Global Care", desc: "Many countries" },
-              { title: "Fast Scans", desc: "Save your time" },
-              { title: "Easy Reports", desc: "Simple to read" },
-              { title: "Expert Help", desc: "Solve problems" }
-            ].map((item, idx) => (
-              <motion.div
-                key={idx}
-                whileHover={{ y: -5 }}
-                className="bg-white/10 backdrop-blur-xl border border-white/10 p-6 rounded-[2.5rem] group hover:bg-white/20 transition-all duration-500"
-              >
-                <h4 className="text-[11px] font-black text-orange-500 uppercase tracking-[0.4em] mb-2">{item.title}</h4>
-                <p className="text-[10px] text-white font-bold uppercase tracking-wider opacity-80">{item.desc}</p>
-              </motion.div>
+          <div className="flex flex-wrap justify-center gap-x-10 gap-y-4">
+            {["IEC 62446-3 Compliant", "Same-week availability", "No site too large", "48-hr turnaround"].map((text, i) => (
+              <div key={i} className="flex items-center gap-3 text-slate-500 font-mono text-xs uppercase tracking-widest font-medium">
+                <div className="w-[3px] h-[3px] rounded-full bg-orange-500"></div> {text}
+              </div>
             ))}
           </div>
         </div>
       </section>
-
-      {/* OUR SERVICES - Minimalist Performance Matrix Redesign */}
-      {/* OUR SERVICES - Exact Image UI Style Match */}
-      <section className="py-24 bg-white relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-24">
-            <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-2 tracking-tighter">
-              Our <span className="text-orange-600">Services</span>
-            </h2>
-            <div className="w-10 h-[2px] bg-orange-600 mx-auto opacity-20"></div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              {
-                icon: Cpu,
-                title: "Live Scans",
-                desc: "We use smart drones to scan your site while it works. You get fast results that show every problem in real-time.",
-                color: "bg-orange-50 text-orange-600"
-              },
-              {
-                icon: Database,
-                title: "Safety Backups",
-                desc: "All your panel data is kept safe in our secure cloud. You can track your health for many years and see changes.",
-                color: "bg-orange-50 text-orange-600"
-              },
-              {
-                icon: ShieldCheck,
-                title: "Easy Reports",
-                desc: "Our platform makes professional reports that are easy to read. These are great for insurance and bank checks.",
-                color: "bg-orange-600 text-white"
-              },
-              {
-                icon: Globe,
-                title: "Expert Help",
-                desc: "If you find a problem, our team is here to help you fix it. We give expert advice to keep you saving money.",
-                color: "bg-orange-50 text-orange-600"
-              }
-            ].map((item, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: idx * 0.1 }}
-                whileHover={{ y: -8, scale: 1.02 }}
-                className="flex flex-col items-start text-left p-8 md:p-12 rounded-[2.5rem] bg-white border border-slate-100/50 group cursor-default transition-all duration-500 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.04)] hover:shadow-[0_40px_120px_-20px_rgba(249,115,22,0.12)] hover:border-orange-600/10"
-              >
-                {/* Catchy Top Accent Icon */}
-                <div className={`w-14 h-14 rounded-2xl ${item.color} flex items-center justify-center mb-10 transition-all duration-500 group-hover:scale-110 group-hover:shadow-lg`}>
-                  <item.icon size={26} strokeWidth={1.5} />
-                </div>
-
-                <h3 className="text-xl md:text-2xl font-bold text-slate-900 mb-4 tracking-tight group-hover:text-orange-600 transition-colors">{item.title}</h3>
-                <p className="text-slate-500 text-[14px] font-medium leading-relaxed opacity-80">
-                  {item.desc}
-                </p>
-
-                {/* Catchy Bottom Micro-Interactive Line */}
-                <div className="w-0 h-[2px] bg-orange-600 mt-8 group-hover:w-8 transition-all duration-500"></div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Main Gallery Section - Dynamic */}
-      {sitePhotos.filter(p => p.category === 'Main Gallery').length > 0 && (
-        <section className="py-24 bg-slate-50 relative overflow-hidden">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="text-center mb-16">
-              <span className="text-orange-600 font-black text-[10px] uppercase tracking-[0.4em] mb-4 block">Project Showcase</span>
-              <h2 className="text-4xl md:text-6xl font-black text-slate-900 uppercase tracking-tighter">Site <span className="text-orange-600 uppercase">Gallery</span></h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {sitePhotos.filter(p => p.category === 'Main Gallery').map((photo, i) => (
-                <motion.div
-                  key={photo.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                  className="group relative aspect-video rounded-[2.5rem] overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-700"
-                >
-                  <img
-                    src={getDynamicPhoto('Main Gallery', '')} // This doesn't make sense with the filter, let's fix it
-                    className="hidden" // Just a dummy to keep the logic if I used getDynamicPhoto wrongly
-                  />
-                  <img
-                    src={`${API_URL.replace('/api', '')}${photo.url}`}
-                    alt={photo.title}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                    <div className="absolute bottom-8 left-8">
-                      <h4 className="text-white font-black uppercase tracking-widest text-sm mb-1">{photo.title}</h4>
-                      <p className="text-slate-300 text-[10px] font-bold uppercase tracking-widest">{photo.description}</p>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Dynamic Main Gallery Section */}
-
-      {/* Solutions & Platforms Grid Section */}
-      {/* 
-      <section className="py-16 md:py-24 bg-slate-50 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-          <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-orange-100/30 rounded-full blur-[120px]"></div>
-          <div className="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] bg-blue-100/30 rounded-full blur-[120px]"></div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-16 md:mb-20">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-200 shadow-sm mb-6"
-            >
-              <div className="w-2 h-2 rounded-full bg-orange-600 animate-pulse"></div>
-              <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Advanced Ecosystem</span>
-            </motion.div>
-            <h2 className="text-5xl md:text-7xl font-black text-slate-900 mb-8 uppercase tracking-tighter">
-              The <span className="text-orange-600 italic">Future</span> of Solar
-            </h2>
-            <p className="text-slate-500 font-medium text-lg max-w-2xl mx-auto leading-relaxed">
-              Explore our full suite of digital twins, automated diagnostics, and infrastructure management tools designed for peak asset performance.
-            </p>
-          </div>
-          
-          <div className="relative group">
-            <div className="absolute top-1/2 -left-4 md:-left-8 -translate-y-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button
-                onClick={() => {
-                  const container = document.getElementById('solar-future-scroll');
-                  container.scrollBy({ left: -400, behavior: 'smooth' });
-                }}
-                className="w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center text-slate-900 hover:bg-orange-600 hover:text-white transition-all border border-slate-100"
-              >
-                <ChevronLeft size={24} />
-              </button>
-            </div>
-
-            <div className="absolute top-1/2 -right-4 md:-right-8 -translate-y-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button
-                onClick={() => {
-                  const container = document.getElementById('solar-future-scroll');
-                  container.scrollBy({ left: 400, behavior: 'smooth' });
-                }}
-                className="w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center text-slate-900 hover:bg-orange-600 hover:text-white transition-all border border-slate-100"
-              >
-                <ChevronRight size={24} />
-              </button>
-            </div>
-
-            <div
-              id="solar-future-scroll"
-              className="flex overflow-x-auto gap-6 pb-12 pt-4 snap-x snap-mandatory scrollbar-hide px-4 -mx-4 scroll-smooth"
-            >
-              {allServices.map((service, idx) => (
-                <motion.div
-                  key={service.name}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{
-                    delay: idx * 0.1,
-                    type: "spring",
-                    stiffness: 80
-                  }}
-                  onClick={() => {
-                    router.push(service.href);
-                  }}
-                  onMouseMove={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
-                    e.currentTarget.style.setProperty("--mouse-x", `${x}px`);
-                    e.currentTarget.style.setProperty("--mouse-y", `${y}px`);
-                  }}
-                  className="group relative h-[400px] w-[300px] md:w-[380px] flex-shrink-0 rounded-[2.5rem] overflow-hidden cursor-pointer shadow-xl shadow-slate-200 hover:shadow-orange-200/50 transition-all duration-700 snap-center"
-                >
-                  {(() => {
-                    const dynamicPhoto = sitePhotos.find(p => p.category === service.name);
-                    const bgImageUrl = dynamicPhoto ? `${API_URL.replace('/api', '')}${dynamicPhoto.url}` : service.image;
-                    return (
-                      <div
-                        className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-110"
-                        style={{ backgroundImage: `url(${bgImageUrl})` }}
-                      ></div>
-                    );
-                  })()}
-
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent group-hover:via-slate-900/60 transition-all duration-500"></div>
-
-                  <div className="absolute inset-0 p-8 flex flex-col justify-end text-white">
-                    <div className="mb-auto">
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center backdrop-blur-xl border border-white/20 shadow-2xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 ${service.color === 'orange' ? 'bg-orange-600/60' :
-                        service.color === 'blue' ? 'bg-blue-600/60' :
-                          'bg-emerald-600/60'
-                        }`}>
-                        <service.icon size={24} />
-                      </div>
-                    </div>
-
-                    <div className="space-y-4 transform translate-y-4 group-hover:translate-y-0 transition-all duration-500">
-                      <div className="flex items-center gap-3">
-                        <span className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-[10px] font-black uppercase tracking-[0.2em]">
-                          {service.category}
-                        </span>
-                      </div>
-
-                      <h3 className="text-2xl font-black uppercase tracking-tight leading-tight group-hover:text-orange-400 transition-colors">
-                        {service.name}
-                      </h3>
-
-                      <p className="text-sm text-slate-300 font-medium opacity-0 group-hover:opacity-100 transition-all duration-700 line-clamp-3">
-                        {service.desc}
-                      </p>
-
-                      <div className="flex items-center gap-2 pt-2 text-orange-400 font-black text-xs uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 transition-all duration-700">
-                        Explore <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-700 bg-[radial-gradient(circle_at_var(--mouse-x)_var(--mouse-y),#ffffff_0%,transparent_100%)]"></div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-      */}
-
-      {/* Dynamic Services Grid */}
-      {/* Inspection Form Section */}
-      {user && (
-        <section id="inspection-form" className="py-12 md:py-16 bg-slate-50 relative overflow-hidden">
-          <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-orange-200/20 rounded-full blur-[100px]" />
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
-              <motion.div
-                initial={{ opacity: 0, x: -40 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-              >
-                <span className="text-orange-600 font-bold tracking-widest uppercase text-sm mb-4 block">Get Help</span>
-                <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-8 leading-tight uppercase tracking-tighter">
-                  Book Your <br />
-                  <span className="text-orange-600">Scan Today</span>
-                </h2>
-                <p className="text-slate-600 text-lg mb-8 leading-relaxed">
-                  Fill out the form to schedule a professional solar scan. Our team will get back to you within 24 hours with a simple plan and price.
-                </p>
-
-                <div className="space-y-6">
-                  {[
-                    { icon: CheckCircle, text: "High-Quality Heat Images" },
-                    { icon: CheckCircle, text: "Smart Fault Finding" },
-                    { icon: CheckCircle, text: "Reports that show your savings" }
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-center space-x-3 text-slate-700 font-medium">
-                      <item.icon className="text-orange-500 w-5 h-5" />
-                      <span>{item.text}</span>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="w-full"
-              >
-                {status.message && (
-                  <div className={`mb-6 p-4 rounded-xl text-center shadow-sm ${status.type === 'success'
-                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-                    : 'bg-red-50 text-red-700 border border-red-100'
-                    }`}>
-                    <p className="font-bold text-sm tracking-tight flex items-center justify-center gap-2">
-                      {status.type === 'success' && <CheckCircle size={18} />}
-                      {status.message}
-                    </p>
-                  </div>
-                )}
-                <form onSubmit={handleFormSubmit} className="space-y-4">
-                  {/* First Name & Last Name */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2 group">
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                        First Name*
-                      </label>
-                      <input
-                        type="text"
-                        name="firstName"
-                        required
-                        placeholder="Jane"
-                        value={formData.firstName}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
-                      />
-                    </div>
-                    <div className="space-y-2 group">
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                        Last Name*
-                      </label>
-                      <input
-                        type="text"
-                        name="lastName"
-                        required
-                        placeholder="Doe"
-                        value={formData.lastName}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Work Email & Job Title */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2 group">
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                        Work Email*
-                      </label>
-                      <input
-                        type="email"
-                        name="workEmail"
-                        required
-                        placeholder="jane@company.com"
-                        value={formData.workEmail}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
-                      />
-                    </div>
-                    <div className="space-y-2 group">
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                        Job Title*
-                      </label>
-                      <input
-                        type="text"
-                        name="jobTitle"
-                        required
-                        placeholder="Operations Manager"
-                        value={formData.jobTitle}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Phone Number & Country */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2 group">
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                        Phone Number*
-                      </label>
-                      <input
-                        type="tel"
-                        name="phone"
-                        required
-                        placeholder="+1 (555) 000-0000"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
-                      />
-                    </div>
-                    <div className="space-y-2 group">
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                        Country*
-                      </label>
-                      <div className="relative">
-                        <select
-                          name="country"
-                          required
-                          value={formData.country}
-                          onChange={handleChange}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
-                        >
-                          <option value="">Please Select</option>
-                          {countries.map((country) => (
-                            <option key={country} value={country}>{country}</option>
-                          ))}
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Company Name & Company Type */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2 group">
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                        Company Name*
-                      </label>
-                      <input
-                        type="text"
-                        name="companyName"
-                        required
-                        placeholder="SolarMark"
-                        value={formData.companyName}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
-                      />
-                    </div>
-
-                    <div className="space-y-2 group">
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                        Company Type*
-                      </label>
-                      <div className="relative">
-                        <select
-                          name="companyType"
-                          required
-                          value={formData.companyType}
-                          onChange={handleChange}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
-                        >
-                          <option value="">Please Select</option>
-                          {companyTypes.map((type) => (
-                            <option key={type} value={type}>{type}</option>
-                          ))}
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Solar Capacity & Referral Source */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2 group">
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                        Solar Capacity*
-                      </label>
-                      <div className="relative">
-                        <select
-                          name="solarCapacity"
-                          required
-                          value={formData.solarCapacity}
-                          onChange={handleChange}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
-                        >
-                          <option value="">Please Select</option>
-                          {solarCapacities.map((capacity) => (
-                            <option key={capacity} value={capacity}>{capacity}</option>
-                          ))}
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2 group">
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                        Referral Source*
-                      </label>
-                      <div className="relative">
-                        <select
-                          name="referralSource"
-                          required
-                          value={formData.referralSource}
-                          onChange={handleChange}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
-                        >
-                          <option value="">Please Select</option>
-                          {referralSources.map((source) => (
-                            <option key={source} value={source}>{source}</option>
-                          ))}
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Additional Information */}
-                  <div className="space-y-2 group">
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                      Additional Information you want to share with us
-                    </label>
-                    <textarea
-                      name="additionalInfo"
-                      rows="4"
-                      placeholder=""
-                      value={formData.additionalInfo}
-                      onChange={handleChange}
-                      className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none resize-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white"
-                    ></textarea>
-                  </div>
-
-                  <div className="pt-2">
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="w-full py-3.5 md:py-5 bg-orange-600 text-white rounded-2xl font-bold text-sm md:text-lg shadow-xl shadow-orange-200 hover:bg-orange-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest"
-                    >
-                      {submitting ? (
-                        <>
-                          <Loader2 className="animate-spin w-6 h-6" />
-                          Processing Request...
-                        </>
-                      ) : (
-                        <>
-                          Submit Inspection Request
-                          <Send size={24} />
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </form>
-              </motion.div>
-            </div>
-          </div>
-        </section >
-      )}
-
-      {/* The Inspection Algorithm Section */}
-      < section className="py-20 md:py-24 bg-[#06080c] relative overflow-hidden text-white border-y border-white/5" >
-        {/* Deep Field Glows */}
-        < div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px] -translate-y-1/2 opacity-50" ></div >
-        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-orange-600/10 rounded-full blur-[120px] translate-y-1/2 opacity-50"></div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-12 md:mb-20">
-            <motion.h2
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              className="text-4xl md:text-6xl font-black tracking-tight mb-6 uppercase"
-            >
-              THE INSPECTION <span className="text-orange-500">ALGORITHM</span>
-            </motion.h2>
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-              className="text-slate-500 text-sm md:text-base font-bold max-w-xl mx-auto leading-relaxed tracking-wide uppercase"
-            >
-              Four simple steps to turn solar photos into clear jobs for your team.
-            </motion.p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
-            {[
-              {
-                num: "01",
-                title: "DRONE CONTROL",
-                desc: "Our drones fly by themselves to scan your site.",
-                icon: Globe
-              },
-              {
-                num: "02",
-                title: "HEAT PHOTOS",
-                desc: "We take high-quality heat photos of every panel.",
-                icon: Camera
-              },
-              {
-                num: "03",
-                title: "AI FINDING",
-                desc: "Our smart AI finds every fault and crack automatically.",
-                icon: Brain
-              },
-              {
-                num: "04",
-                title: "SIMPLE REPORTS",
-                desc: "Easy reports that show exactly where the problems are.",
-                icon: FileText
-              }
-            ].map((step, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: idx * 0.1 }}
-                className="relative group pr-4"
-              >
-                {/* Visual Number Label */}
-                <div className="absolute top-0 right-0 text-[120px] font-black text-white/[0.04] leading-none select-none -z-0 translate-x-4 -translate-y-4 group-hover:text-orange-500/[0.06] transition-colors">
-                  {step.num}
-                </div>
-
-                <div className="relative z-10">
-                  <div className="w-16 h-16 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-center mb-8 border-l-orange-500/50 group-hover:bg-slate-800 transition-all cursor-default">
-                    <step.icon className="w-6 h-6 text-orange-500" />
-                  </div>
-
-                  <h3 className="text-base font-black tracking-wider text-slate-100 mb-4 uppercase group-hover:text-orange-500 transition-colors">
-                    {step.title}
-                  </h3>
-
-                  <p className="text-xs text-slate-500 font-bold leading-relaxed tracking-tight group-hover:text-slate-400 transition-colors">
-                    {step.desc}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section >
-
-      {/* CTA Section */}
-      {
-        !user && (
-          <section className="py-16 md:py-20 bg-orange-600 relative overflow-hidden">
-            <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
-              <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-8 uppercase tracking-tight">
-                Ready to switch to cleaner, cheaper energy?
-              </h2>
-              <p className="text-orange-100 text-xl mb-10 font-medium italic">
-                Join thousands of satisfied homeowners who have already made the switch.
-              </p>
-              <Link
-                href="/register"
-                className="inline-flex items-center px-6 py-3.5 md:px-10 md:py-5 bg-white text-orange-600 rounded-2xl font-bold text-sm md:text-lg shadow-xl hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
-              >
-                Start Your Journey <ArrowRight className="ml-2" />
-              </Link>
-            </div>
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full -translate-x-1/2 translate-y-1/3"></div>
-          </section>
-        )
-      }
       {/* Proposal Modal */}
       <AnimatePresence>
         {showProposalModal && (
@@ -1602,6 +1207,62 @@ export default function HomePage() {
                         onChange={(e) => setProposalForm({ ...proposalForm, mw: e.target.value })}
                         placeholder="e.g. 10"
                         className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Module Pmax (W)</label>
+                      <input
+                        type="number"
+                        value={proposalForm.pmax}
+                        onChange={(e) => setProposalForm({ ...proposalForm, pmax: e.target.value })}
+                        placeholder="e.g. 540"
+                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Total Panels</label>
+                      <input
+                        type="number"
+                        value={proposalForm.total_panels}
+                        onChange={(e) => setProposalForm({ ...proposalForm, total_panels: e.target.value })}
+                        placeholder="e.g. 20000"
+                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">CUF (%)</label>
+                      <input
+                        type="text"
+                        value={proposalForm.cuf}
+                        onChange={(e) => setProposalForm({ ...proposalForm, cuf: e.target.value })}
+                        placeholder="18.5"
+                        className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300 font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Tariff</label>
+                      <input
+                        type="text"
+                        value={proposalForm.tariff}
+                        onChange={(e) => setProposalForm({ ...proposalForm, tariff: e.target.value })}
+                        placeholder="4.5"
+                        className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300 font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">S. Yield</label>
+                      <input
+                        type="text"
+                        value={proposalForm.specific_yield}
+                        onChange={(e) => setProposalForm({ ...proposalForm, specific_yield: e.target.value })}
+                        placeholder="1650"
+                        className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300 font-mono"
                       />
                     </div>
                   </div>
