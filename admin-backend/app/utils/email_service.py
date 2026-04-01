@@ -3,6 +3,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
 import logging
+from datetime import datetime
 from dotenv import load_dotenv
 
 # Configure logging
@@ -77,4 +78,58 @@ class EmailService:
             print(f"EMAIL_DEBUG: CRITICAL ERROR SENDING EMAIL: {str(e)}")
             return False
 
+    def send_review_update_notification(self, recipient_email, user_name, filename, status, admin_remarks=""):
+        """Send notification when a report review is updated by admin"""
+        subject = f"Update on your Report Review: {filename}"
+        
+        status_text = status.upper()
+        
+        body = f"""
+        Hello {user_name},
+
+        Your report review for "{filename}" has been updated by our admin team.
+
+        New Status: {status_text}
+        Admin Remarks: {admin_remarks if admin_remarks else 'No specific remarks.'}
+
+        You can check the full details in your profile dashboard.
+        """
+        
+        return self.send_notification(
+            subject=subject,
+            body=body,
+            recipient=recipient_email,
+            title="Review Status Update"
+        )
+
 email_service = EmailService()
+
+def send_file_upload_notification(recipient_email, user_name, filename, file_size, sender_name="SolarMark"):
+    """Standalone helper function to send file upload notifications"""
+    subject = f"New Document Available: {filename}"
+    
+    # Format file size
+    if file_size > 1024 * 1024:
+        size_str = f"{file_size / (1024 * 1024):.2f} MB"
+    else:
+        size_str = f"{file_size / 1024:.2f} KB"
+        
+    body = f"""
+    Hello {user_name},
+
+    A new document has been uploaded for you by {sender_name}.
+
+    Document Name: {filename}
+    File Size: {size_str}
+    Date: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC
+
+    You can view and download this document from your profile dashboard under the "Reports" section.
+    """
+    
+    return email_service.send_notification(
+        subject=subject,
+        body=body,
+        recipient=recipient_email,
+        title="New Document Notification"
+    )
+

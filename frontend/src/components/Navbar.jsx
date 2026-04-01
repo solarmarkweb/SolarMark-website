@@ -9,6 +9,7 @@ import {
     ChevronLeft, ChevronRight
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Navbar() {
     const router = useRouter();
@@ -89,210 +90,128 @@ export default function Navbar() {
     const hoverTextColor = (isScrolled || !isDarkHeroPage) ? "hover:text-orange-600" : "hover:text-white";
 
     return (
-        <nav className={`fixed w-full z-50 transition-all duration-500 ${navBg}`}>
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center">
-                    {/* Logo */}
-                    <Link href="/" className="flex items-center group">
-                        <img
-                            src="/solar_mark_logo.svg"
-                            alt="SolarMark Logo"
-                            className={`h-7 w-auto transition-all duration-300 ${(isScrolled || !isDarkHeroPage) ? "" : "brightness-0 invert"}`}
-                        />
-                    </Link>
-
-                    {/* Desktop Navigation */}
-                    <div className="hidden lg:flex items-center gap-2">
-                        <Link
-                            href="/"
-                            className={`px-3 py-2 text-xs font-bold transition-all duration-300 ${pathname === "/" ? "text-orange-600" : `${textColor} ${hoverTextColor}`}`}
-                        >
-                            Home
+        <nav className="fixed w-full top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-100 transition-all duration-300">
+            <div className="max-w-full px-6 md:px-12">
+                <div className="flex justify-between items-center h-16 md:h-20">
+                    {/* Logo - Top Left Corner */}
+                    <div className="flex items-center">
+                        <Link href="/" className="flex items-center group">
+                            <img
+                                src="/solar_mark_logo.svg"
+                                alt="SolarMark Logo"
+                                className={`h-10 w-auto transition-all duration-300 ${(isScrolled || !isDarkHeroPage) ? "" : "brightness-0 invert"}`}
+                            />
                         </Link>
-
-                        {/*  
-                        <div
-                            className="relative group h-full flex items-center"
-                            onMouseEnter={() => setOpenDropdown('solutions')}
-                            onMouseLeave={() => setOpenDropdown(null)}
-                        >
-                            <button
-                                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold transition-all duration-300 ${openDropdown === 'solutions' ? 'text-orange-600' : `${textColor} ${hoverTextColor}`}`}
-                            >
-                                Solutions
-                                <ChevronDown size={14} className={`transition-transform duration-300 ${openDropdown === 'solutions' ? 'rotate-180' : ''}`} />
-                            </button>
-
-                            <div
-                                className={`absolute top-full left-1/2 -translate-x-1/2 mt-0 pt-2 w-[720px] transition-all duration-500 z-50 ${openDropdown === 'solutions' ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible translate-y-2'}`}
-                            >
-                                <div className="bg-white rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] border border-slate-100 p-10">
-                                    <div className="grid grid-cols-3 gap-12 text-left">
-                                        {solutionsMenu.map((phase) => (
-                                            <div key={phase.phase}>
-                                                <div className="text-base font-extrabold text-slate-900 mb-6 border-b border-slate-50 pb-2">
-                                                    {phase.phase}
-                                                </div>
-                                                <div className="space-y-4">
-                                                    {phase.items.map((item) => (
-                                                        <Link
-                                                            key={item.name}
-                                                            href={item.href}
-                                                            className="block text-base font-medium text-slate-600 hover:text-orange-600 transition-colors"
-                                                        >
-                                                            {item.name}
-                                                        </Link>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div
-                            className="relative group h-full flex items-center"
-                            onMouseEnter={() => setOpenDropdown('platform')}
-                            onMouseLeave={() => setOpenDropdown(null)}
-                        >
-                            <button
-                                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold transition-all duration-300 ${openDropdown === 'platform' ? 'text-orange-600' : `${textColor} ${hoverTextColor}`}`}
-                            >
-                                Platform
-                                <ChevronDown size={14} className={`transition-transform duration-300 ${openDropdown === 'platform' ? 'rotate-180' : ''}`} />
-                            </button>
-
-                            <div
-                                className={`absolute top-full left-0 mt-0 pt-2 w-64 transition-all duration-500 z-50 ${openDropdown === 'platform' ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible translate-y-2'}`}
-                            >
-                                <div className="bg-white rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] border border-slate-100 p-6 text-left">
-                                    <div className="space-y-4">
-                                        {platformMenu.map((item) => (
-                                            <Link
-                                                key={item.name}
-                                                href={item.href}
-                                                className="block text-base font-medium text-slate-600 hover:text-orange-600 transition-colors"
-                                            >
-                                                {item.name}
-                                            </Link>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        */}
-
-                        <Link href="/about" className={`px-3 py-2 text-xs font-bold transition-all duration-300 ${pathname === "/about" ? "text-orange-600" : `${textColor} ${hoverTextColor}`}`}>About</Link>
-                        <Link href="/booking" className={`px-3 py-2 text-xs font-bold transition-all duration-300 ${pathname === "/booking" ? "text-orange-600" : `${textColor} ${hoverTextColor}`}`}>Bookings</Link>
-                        <Link href="/contact" className={`px-3 py-2 text-xs font-bold transition-all duration-300 ${pathname === "/contact" ? "text-orange-600" : `${textColor} ${hoverTextColor}`}`}>Contact</Link>
                     </div>
 
-                    {/* Desktop Actions */}
-                    <div className="hidden lg:flex items-center gap-6">
+
+
+                    {/* Desktop Navigation & Actions - Far Right */}
+                    <div className="hidden lg:flex items-center justify-end">
+                        <div className="flex items-center gap-1">
+                            {[
+                                { name: "Home", href: "/" },
+                                { name: "About", href: "/about" },
+                                { name: "Bookings", href: "/booking" },
+                                { name: "Contact", href: "/contact" },
+                                ...(isLoggedIn ? [{ name: "Profile", href: "/profile" }] : [])
+                            ].map((link) => (
+                                <Link
+                                    key={link.name}
+                                    href={link.href}
+                                    className={`px-4 py-2 text-sm font-bold transition-all duration-300 rounded-lg ${pathname === link.href ? "text-orange-600 bg-orange-50/50" : "text-slate-600 hover:text-orange-600 hover:bg-slate-50/50"}`}
+                                >
+                                    {link.name}
+                                </Link>
+                            ))}
+                        </div>
+
+                        <div className="h-6 w-[1px] bg-slate-200 mx-4"></div>
+
                         {isLoggedIn ? (
-                            <>
+                            <div className="flex items-center gap-4">
                                 <Link
                                     href="/profile"
-                                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${(isScrolled || !isDarkHeroPage) ? "bg-slate-100 text-slate-700 hover:bg-slate-200" : "bg-white/10 text-white hover:bg-white/20"}`}
+                                    className="w-9 h-9 rounded-full flex items-center justify-center transition-all bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200/50"
                                 >
-                                    <UserIcon size={20} />
+                                    <UserIcon size={16} />
                                 </Link>
                                 <button
                                     onClick={handleLogout}
-                                    className={`flex items-center gap-2 text-sm font-bold transition-colors ${(isScrolled || !isDarkHeroPage) ? "text-slate-600 hover:text-red-600" : "text-white/80 hover:text-red-400"}`}
+                                    className="text-sm font-bold text-slate-400 hover:text-red-500 transition-colors"
                                 >
-                                    <LogOut size={18} />
-                                    <span>Logout</span>
+                                    Logout
                                 </button>
-                            </>
+                            </div>
                         ) : (
-                            <>
+                            <div className="flex items-center gap-6">
                                 <Link
                                     href="/login"
-                                    className={`text-xs font-bold transition-colors ${(isScrolled || !isDarkHeroPage) ? "text-slate-600 hover:text-orange-600" : "text-white hover:text-orange-400"}`}
+                                    className="text-sm font-bold text-slate-400 hover:text-slate-900 transition-colors"
                                 >
-                                    Log In
+                                    Sign In
                                 </Link>
                                 <Link
-                                    href="/register"
-                                    className={`px-6 py-2.5 text-xs font-bold rounded-xl transition-all duration-300 shadow-xl ${(isScrolled || !isDarkHeroPage) ? "bg-slate-900 text-white hover:bg-slate-800 shadow-slate-200" : "bg-orange-600 text-white hover:bg-orange-700 shadow-orange-900/20"}`}
+                                    href="/booking"
+                                    className="px-8 py-3 text-sm font-bold bg-slate-900 text-white rounded-xl hover:bg-orange-600 transition-all shadow-lg shadow-slate-200/50"
                                 >
-                                    Register
+                                    Request Scan
                                 </Link>
-                            </>
+                            </div>
                         )}
                     </div>
+
 
                     {/* Mobile Menu Button */}
                     <button
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className={`lg:hidden p-2 transition-colors ${(isScrolled || !isDarkHeroPage) ? "text-slate-700 hover:text-orange-600" : "text-white hover:text-orange-400"}`}
+                        className={`lg:hidden p-2 transition-all duration-500 ${(isScrolled || !isDarkHeroPage) ? "text-slate-700 hover:text-orange-600" : "text-white hover:text-orange-400"}`}
                     >
-                        {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
+                        {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
                     </button>
                 </div>
 
-                {/* Mobile Menu */}
-                {isMenuOpen && (
-                    <div className="lg:hidden mt-6 pb-8 border-t border-slate-100 pt-6 space-y-2 bg-white rounded-3xl p-6 shadow-2xl absolute top-full left-4 right-4 text-slate-900 max-h-[80vh] overflow-y-auto">
-                        <Link href="/" className="block px-4 py-3 text-base font-bold text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl" onClick={() => setIsMenuOpen(false)}>Home</Link>
-                        {isLoggedIn && (
-                            <Link href="/profile" className="block px-4 py-3 text-base font-bold text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl" onClick={() => setIsMenuOpen(false)}>Profile</Link>
-                        )}
-
-                        {/*  
-                        <button
-                            onClick={() => toggleDropdown('solutions-mobile')}
-                            className="flex items-center justify-between w-full px-4 py-3 text-base font-bold text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl"
+                {/* Mobile Menu - Professional Deep Drawer */}
+                <AnimatePresence>
+                    {isMenuOpen && (
+                        <motion.div 
+                            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                            className="lg:hidden mt-4 pb-8 border border-slate-100 p-8 bg-white/95 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl absolute top-full left-4 right-4 text-slate-900"
                         >
-                            Solutions
-                            <ChevronDown size={18} className={`transition-transform duration-300 ${openDropdown === 'solutions-mobile' ? 'rotate-180' : ''}`} />
-                        </button>
-                        {openDropdown === 'solutions-mobile' && (
-                            <div className="pl-6 space-y-4 py-2 border-l-2 border-orange-100 ml-4 mt-1">
-                                {solutionsMenu.map((phase) => (
-                                    <div key={phase.phase}>
-                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">{phase.phase}</div>
-                                        <div className="space-y-3">
-                                            {phase.items.map((item) => (
-                                                <Link key={item.name} href={item.href} className="block text-sm font-bold text-slate-600 hover:text-orange-600" onClick={() => setIsMenuOpen(false)}>{item.name}</Link>
-                                            ))}
-                                        </div>
-                                    </div>
+                            <div className="space-y-2">
+                                {[
+                                    { name: "Home", href: "/" },
+                                    { name: "About", href: "/about" },
+                                    { name: "Bookings", href: "/booking" },
+                                    { name: "Contact", href: "/contact" },
+                                    ...(isLoggedIn ? [{ name: "Profile", href: "/profile" }] : [])
+                                ].map((link) => (
+                                    <Link 
+                                        key={link.name}
+                                        href={link.href} 
+                                        className="block px-6 py-4 text-sm font-bold text-slate-600 hover:bg-orange-50 hover:text-orange-600 rounded-2xl transition-all" 
+                                        onClick={() => setIsMenuOpen(false)}
+                                    >
+                                        {link.name}
+                                    </Link>
                                 ))}
                             </div>
-                        )}
 
-                        <button
-                            onClick={() => toggleDropdown('platform-mobile')}
-                            className="flex items-center justify-between w-full px-4 py-3 text-base font-bold text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl"
-                        >
-                            Platform
-                            <ChevronDown size={18} className={`transition-transform duration-300 ${openDropdown === 'platform-mobile' ? 'rotate-180' : ''}`} />
-                        </button>
-                        {openDropdown === 'platform-mobile' && (
-                            <div className="pl-6 py-2 border-l-2 border-orange-100 ml-4 mt-1 space-y-3">
-                                {platformMenu.map((item) => (
-                                    <Link key={item.name} href={item.href} className="block text-sm font-bold text-slate-600 hover:text-orange-600" onClick={() => setIsMenuOpen(false)}>{item.name}</Link>
-                                ))}
+                            <div className="mt-10 pt-8 border-t border-slate-50 space-y-4">
+                                {isLoggedIn ? (
+                                    <button onClick={() => { handleLogout(); setIsMenuOpen(false); }} className="block w-full py-5 text-center text-red-500 text-sm font-bold">Logout</button>
+                                ) : (
+                                    <>
+                                        <Link href="/login" className="block w-full py-5 text-center text-slate-400 text-sm font-bold" onClick={() => setIsMenuOpen(false)}>Sign In</Link>
+                                        <Link href="/booking" className="block w-full py-5 text-center bg-slate-900 text-white rounded-2xl text-sm font-bold shadow-xl shadow-slate-200" onClick={() => setIsMenuOpen(false)}>Request Scan</Link>
+                                    </>
+                                )}
                             </div>
-                        )}
-                        */}
-
-                        <Link href="/about" className="block px-4 py-3 text-base font-bold text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl" onClick={() => setIsMenuOpen(false)}>About</Link>
-                        <Link href="/booking" className="block px-4 py-3 text-base font-bold text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl" onClick={() => setIsMenuOpen(false)}>Bookings</Link>
-                        <Link href="/contact" className="block px-4 py-3 text-base font-bold text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl" onClick={() => setIsMenuOpen(false)}>Contact</Link>
-
-                        <div className="mt-8 px-4 space-y-3 border-t border-slate-50 pt-6">
-                            {isLoggedIn ? (
-                                <button onClick={() => { handleLogout(); setIsMenuOpen(false); }} className="block w-full py-4 text-center text-red-600 font-bold">Logout</button>
-                            ) : (
-                                <Link href="/login" className="block w-full py-4 text-center bg-slate-900 text-white rounded-xl font-bold transition-all" onClick={() => setIsMenuOpen(false)}>Log In</Link>
-                            )}
-                        </div>
-                    </div>
-                )}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
         </nav>
     );

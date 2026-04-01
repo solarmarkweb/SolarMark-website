@@ -2,7 +2,7 @@ import requests
 import json
 
 try:
-    response = requests.get("http://localhost:8001/api/site-photos")
+    response = requests.get("http://localhost:8002/api/site-photos")
     if response.status_code == 200:
         photos = response.json()
         print(f"Total photos: {len(photos)}")

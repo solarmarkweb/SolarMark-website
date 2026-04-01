@@ -15,7 +15,8 @@ import {
     Sun,
     Link as LinkIcon,
     Camera,
-    MessageSquarePlus
+    MessageSquarePlus,
+    FileText
 } from 'lucide-react';
 
 const Sidebar = () => {
@@ -28,8 +29,8 @@ const Sidebar = () => {
             path: '/dashboard',
         },
         {
-            title: 'Drive Links',
-            icon: <LinkIcon size={20} />,
+            title: 'Reports',
+            icon: <FileText size={20} />,
             path: '/drivelinks',
         },
         {
