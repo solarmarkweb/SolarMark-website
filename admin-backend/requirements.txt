@@ -26,7 +26,10 @@ reportlab==4.0.7
 python-multipart
 
 # Payment Gateway
-razorpay==1.4.1
+razorpay==2.0.1
+
+# System Utils
+setuptools>=70.0.0
 
 # Google Drive API
 google-api-python-client==2.108.0

@@ -111,7 +111,6 @@ export default function Navbar() {
                         <div className="flex items-center gap-1">
                             {[
                                 { name: "Home", href: "/" },
-                                { name: "About", href: "/about" },
                                 { name: "Bookings", href: "/booking" },
                                 { name: "Contact", href: "/contact" },
                                 ...(isLoggedIn ? [{ name: "Profile", href: "/profile" }] : [])
@@ -183,7 +182,6 @@ export default function Navbar() {
                             <div className="space-y-2">
                                 {[
                                     { name: "Home", href: "/" },
-                                    { name: "About", href: "/about" },
                                     { name: "Bookings", href: "/booking" },
                                     { name: "Contact", href: "/contact" },
                                     ...(isLoggedIn ? [{ name: "Profile", href: "/profile" }] : [])
