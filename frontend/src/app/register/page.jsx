@@ -37,7 +37,7 @@ export default function RegisterPage() {
         setOtpLoading(true);
         setError("");
         try {
-            await api.post("/otp/request", { email: formData.email });
+            await api.post("/otp/send", { email: formData.email });
             setStep(2);
         } catch (err) {
             setError(err.response?.data?.detail || "Failed to send verification code");

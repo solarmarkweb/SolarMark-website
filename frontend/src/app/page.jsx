@@ -15,11 +15,12 @@ import { authAPI } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import ContentProtection from "@/components/ContentProtection";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8002/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001/api';
 
 export default function HomePage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
+  const [userRole, setUserRole] = useState(null);
   const [userName, setUserName] = useState('');
   const [rgbFiles, setRgbFiles] = useState([]);
   const [thermalFiles, setThermalFiles] = useState([]);
@@ -207,7 +208,9 @@ export default function HomePage() {
   useEffect(() => {
     const name = localStorage.getItem("user_name");
     const token = localStorage.getItem("auth_token");
+    const role = localStorage.getItem("user_role");
     setUserName(name || '');
+    setUserRole(role || null);
     if (token && name) {
       setUser({ name, token });
       fetchUserImages();
@@ -871,6 +874,142 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Elegant Formal Upload Section - Precision Intelligence Hub (Exclusive for Drone Service Providers) */}
+      {user && userRole === "Drone Service Provider" && (
+        <section id="image-upload-section" className="py-12 md:py-20 bg-[#f1f3f5] relative overflow-hidden shadow-sm rounded-[3rem] mx-4 md:mx-8 mb-12">
+          {/* Top Transition Blur Glow */}
+          <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-white to-transparent opacity-50 backdrop-blur-3xl -z-10" />
+
+          {/* Theme Inset: Sophisticated Ash Atmosphere */}
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none -z-0"></div>
+          <div className="absolute -bottom-1/4 -right-1/4 w-[500px] h-[500px] bg-orange-100/20 rounded-full blur-[120px] -z-10" />
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+
+              {/* Left Column: Interactive Direct Flow Hub - Professional Ash Theme */}
+              <div className="lg:col-span-6 xl:col-span-12 flex items-center justify-center">
+                <div className="w-full max-w-7xl grid grid-cols-1 xl:grid-cols-12 gap-8 items-center bg-white p-12 rounded-[4rem] shadow-2xl border border-slate-100">
+                  
+                  {/* Branding Piece (Left) */}
+                  <div className="xl:col-span-4 p-10 md:p-12 bg-slate-100/60 rounded-[3rem] shadow-sm relative overflow-hidden group hover:bg-slate-100/80 transition-all duration-500 border border-slate-200/50">
+                    <div className="relative z-10">
+                      <h2 className="text-4xl md:text-5xl font-black text-slate-900 leading-tight tracking-tighter uppercase">
+                        UPLOAD TO <br />
+                        <span className="text-orange-600 drop-shadow-sm transition-all duration-500">GOOGLE DRIVE</span>
+                      </h2>
+                      <p className="mt-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
+                        Easy cloud upload <br />
+                        for your solar projects.
+                      </p>
+                    </div>
+                    {/* Subtle Background Accent */}
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/40 rounded-full blur-2xl -z-0" />
+                  </div>
+
+                  {/* Perfectly Centered Solid Arrow */}
+                  <div className="hidden xl:flex xl:col-span-2 items-center justify-center">
+                    <motion.div 
+                      animate={{ x: [0, 10, 0] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="text-slate-950 flex-shrink-0 drop-shadow-sm"
+                    >
+                      <svg width="70" height="40" viewBox="0 0 70 40" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M0 13H45V27H0V13Z" />
+                        <path d="M40 5L65 20L40 35V5Z" />
+                      </svg>
+                    </motion.div>
+                  </div>
+
+                  {/* Interactive Upload Terminal (Right) */}
+                  <div className="xl:col-span-6 flex justify-center">
+                    <div className="w-full max-w-xl space-y-8">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-[11px] font-black text-slate-800 uppercase tracking-[0.3em]">Upload hub</h3>
+                        {uploadStatus.message && (
+                          <span className={`text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest ${
+                            uploadStatus.type === 'success' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
+                          }`}>
+                            {uploadStatus.message}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+                        {/* Zone A: Drone Image */}
+                        <div className="relative group cursor-pointer">
+                          <input
+                            type="file" multiple accept="image/*"
+                            onChange={(e) => handleFileChange(e, 'rgb')}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                          />
+                          <div className={`p-8 rounded-[2.5rem] border-2 transition-all duration-300 flex flex-col items-center justify-center gap-4 ${rgbFiles.length > 0
+                            ? 'border-orange-600 bg-orange-100/30'
+                            : 'border-slate-100 bg-slate-50 hover:border-orange-200 hover:bg-white'
+                          }`}>
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${rgbFiles.length > 0 ? 'bg-orange-600 text-white shadow-lg' : 'bg-white text-orange-600 shadow-sm'
+                            }`}>
+                              <Camera size={22} />
+                            </div>
+                            <div className="text-center">
+                              <h4 className="text-sm font-bold text-slate-900 mb-0.5 uppercase tracking-tight">Drone Image</h4>
+                              <span className={`text-[10px] font-black tracking-widest transition-colors uppercase ${rgbFiles.length > 0 ? 'text-orange-600' : 'text-slate-400 opacity-60'}`}>
+                                {rgbFiles.length > 0 ? `${rgbFiles.length} Selected` : "Scan Hub"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Zone B: Site Plan */}
+                        <div className="relative group cursor-pointer">
+                          <input
+                            type="file" multiple accept=".kml"
+                            onChange={(e) => handleFileChange(e, 'thermal')}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                          />
+                          <div className={`p-8 rounded-[2.5rem] border-2 transition-all duration-300 flex flex-col items-center justify-center gap-4 ${thermalFiles.length > 0
+                            ? 'border-blue-600 bg-blue-100/30'
+                            : 'border-slate-100 bg-slate-50 hover:border-blue-200 hover:bg-white'
+                          }`}>
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${thermalFiles.length > 0 ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-blue-600 shadow-sm'
+                            }`}>
+                              <Globe size={22} />
+                            </div>
+                            <div className="text-center">
+                              <h4 className="text-sm font-bold text-slate-900 mb-0.5 uppercase tracking-tight">Site Plan</h4>
+                              <span className={`text-[10px] font-black tracking-widest transition-colors uppercase ${thermalFiles.length > 0 ? 'text-blue-600' : 'text-slate-400 opacity-60'}`}>
+                                {thermalFiles.length > 0 ? `${thermalFiles.length} Vectors` : "KML Import"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (rgbFiles.length === 0 && thermalFiles.length === 0) return;
+                          setShowUploadModal(true);
+                        }}
+                        disabled={uploading || (rgbFiles.length === 0 && thermalFiles.length === 0)}
+                        className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.4em] transition-all hover:bg-orange-600 active:scale-[0.98] disabled:opacity-40 flex items-center justify-center gap-3 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1)] mb-4"
+                      >
+                        {uploading ? (
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : (
+                          <CloudUpload size={22} />
+                        )}
+                        <span>{uploading ? 'Processing' : 'Finalize Upload'}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* OUR SERVICES - Minimalist Performance Matrix Redesign */}
       {/* OUR SERVICES - Exact Image UI Style Match */}
@@ -1694,6 +1833,93 @@ export default function HomePage() {
                     className="w-full py-5 bg-orange-600 text-white rounded-[1.25rem] font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:bg-orange-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50 mt-4 shadow-orange-900/20"
                   >
                     {submitting ? <Loader2 size={16} className="animate-spin" /> : "Grab My Offer"}
+                  </button>
+                </form>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Additional Upload Project Details Modal */}
+      <AnimatePresence>
+        {showUploadModal && userRole === "Drone Service Provider" && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => !uploading && setShowUploadModal(false)}
+              className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100"
+            >
+              <div className="p-8 md:p-12">
+                <button
+                  onClick={() => !uploading && setShowUploadModal(false)}
+                  className="absolute top-6 right-6 p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-colors disabled:opacity-50"
+                  disabled={uploading}
+                >
+                  <X size={20} />
+                </button>
+
+                <div className="text-center mb-8">
+                  <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+                    <CloudUpload size={32} />
+                  </div>
+                  <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">Project Details</h3>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Structure your cloud storage efficiently</p>
+                </div>
+
+                <form onSubmit={handleImageUpload} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Nevada Solar Array 1"
+                      value={uploadForm.projectName}
+                      onChange={(e) => setUploadForm({ ...uploadForm, projectName: e.target.value })}
+                      disabled={uploading}
+                      className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 disabled:opacity-50"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Area Size (Acres/MW) <span className="text-slate-300">- Optional</span></label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 50 MW or 120 Acres"
+                      value={uploadForm.areaSize}
+                      onChange={(e) => setUploadForm({ ...uploadForm, areaSize: e.target.value })}
+                      disabled={uploading}
+                      className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 disabled:opacity-50"
+                    />
+                  </div>
+
+                  {uploadStatus.message && (
+                    <div className={`p-4 rounded-xl text-[10px] font-black uppercase tracking-widest text-center ${uploadStatus.type === 'error' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
+                      {uploadStatus.message}
+                    </div>
+                  )}
+
+                  <button
+                    disabled={uploading}
+                    type="submit"
+                    className="w-full py-5 bg-orange-600 text-white rounded-[1.25rem] font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:bg-orange-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50 mt-4 shadow-orange-900/20"
+                  >
+                    {uploading ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        <span>Processing Upload...</span>
+                      </>
+                    ) : (
+                      "Upload to Google Drive"
+                    )}
                   </button>
                 </form>
               </div>

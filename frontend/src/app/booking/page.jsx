@@ -1,11 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Send, Loader2, CheckCircle, ShieldCheck, Zap, Lock, MapPin, Plane, User, Calendar, FileText, Activity } from "lucide-react";
+import { Send, Loader2, ShieldCheck, Zap, Lock, MapPin, Plane, User, Calendar, FileText, Activity } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { authAPI } from "@/lib/api";
 
 export default function BookingPage() {
     const router = useRouter();
@@ -16,51 +15,42 @@ export default function BookingPage() {
         firstName: "",
         lastName: "",
         workEmail: "",
-        jobTitle: "",
         phone: "",
-        country: "",
         companyName: "",
         companyType: "",
-        solarCapacity: "",
-        referralSource: "",
 
         // Project Details
         projectName: "",
         inspectionPurpose: "",
+        solarCapacity: "",
+        otherSolarCapacity: "",
 
         // Location Info
         siteAddress: "",
         latitude: "",
         longitude: "",
-        areaSize: "",
         airspaceType: "",
-
-        // Drone & Equipment
-        droneModel: "",
-        droneUIN: "",
-        payloadType: "",
-
-        // Pilot Information
-        pilotName: "",
-        rpcNumber: "",
-        pilotOrg: "",
 
         // Flight Schedule
         flightDate: "",
         flightTime: "",
         altitude: "",
 
-        // Compliance & Safety
-        npntRequired: "No",
-        weatherConditions: "",
-        emergencyPlan: "",
-
         // Deliverables
         outputType: "",
         resolution: "",
 
         // Additional
-        additionalInfo: ""
+        additionalInfo: "",
+
+        // NEW FIELDS (Thermal/Drone Specific)
+        flightAltitude: "",
+        humidity: "",
+        emissivity: "",
+        ambientTemperature: "",
+        reflectedTemperature: "",
+        droneType: "",
+        irradiance: "",
     });
 
     const [submitting, setSubmitting] = useState(false);
@@ -94,18 +84,37 @@ export default function BookingPage() {
                 console.error("Error parsing pending booking data", e);
             }
         }
-
-        return () => {};
     }, []);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
+
+        // Reset thermal fields if company type changes from Drone Service Provider
+        if (name === "companyType" && value !== "Drone Service Provider") {
+            setFormData(prev => ({
+                ...prev,
+                companyType: value,
+                flightAltitude: "",
+                humidity: "",
+                emissivity: "",
+                ambientTemperature: "",
+                reflectedTemperature: "",
+                droneType: "",
+                irradiance: ""
+            }));
+            return;
+        }
+
         setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSolarCapacityReset = () => {
+        setFormData(prev => ({ ...prev, solarCapacity: "", otherSolarCapacity: "" }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (submitting) return; // Prevent double submission
+        if (submitting) return;
 
         setSubmitting(true);
         setStatus({ type: 'info', message: 'Initializing your deployment request...' });
@@ -123,31 +132,17 @@ export default function BookingPage() {
                 name: `${formData.firstName} ${formData.lastName}`,
                 email: formData.workEmail,
                 contact_phone: formData.phone,
-                location: formData.siteAddress || formData.country,
+                location: formData.siteAddress,
 
                 service_type: formData.companyType,
-                system_size: formData.solarCapacity,
+                system_size: formData.solarCapacity === "Other" ? formData.otherSolarCapacity : formData.solarCapacity,
 
                 project_name: formData.projectName,
                 inspection_purpose: formData.inspectionPurpose,
-                date: formData.flightDate, // Root level date
-                time: formData.flightTime, // Root level time
 
                 coordinates: {
                     lat: formData.latitude,
                     lng: formData.longitude
-                },
-
-                drone: {
-                    model: formData.droneModel,
-                    uin: formData.droneUIN,
-                    payload: formData.payloadType
-                },
-
-                pilot: {
-                    name: formData.pilotName,
-                    rpc: formData.rpcNumber,
-                    org: formData.pilotOrg
                 },
 
                 flight: {
@@ -156,23 +151,23 @@ export default function BookingPage() {
                     altitude: formData.altitude
                 },
 
-                compliance: {
-                    npnt: formData.npntRequired,
-                    airspace: formData.airspaceType
-                },
-
                 output: {
                     type: formData.outputType,
                     resolution: formData.resolution
                 },
 
-                notes: `Job Title: ${formData.jobTitle}
-Company: ${formData.companyName}
-Referral Source: ${formData.referralSource}
-Weather Conditions: ${formData.weatherConditions}
-Emergency Plan: ${formData.emergencyPlan}
+                // Include thermal data only for Drone Service Provider
+                thermal: formData.companyType === "Drone Service Provider" ? {
+                    flight_altitude: formData.flightAltitude,
+                    humidity: formData.humidity,
+                    emissivity: formData.emissivity,
+                    ambient_temperature: formData.ambientTemperature,
+                    reflected_temperature: formData.reflectedTemperature,
+                    drone_type: formData.droneType,
+                    irradiance: formData.irradiance
+                } : null,
 
-Additional Info: ${formData.additionalInfo}`
+                notes: formData.additionalInfo
             };
 
             const response = await fetch(`${API_URL}/bookings/guest`, {
@@ -189,7 +184,6 @@ Additional Info: ${formData.additionalInfo}`
                 throw new Error(errorData.detail || 'Booking failed. Please check your data.');
             }
 
-            // Booking succeeded
             setStatus({
                 type: 'success',
                 message: 'Success! Your booking request has been received. Our team will contact you to finalize the deployment.'
@@ -208,12 +202,9 @@ Additional Info: ${formData.additionalInfo}`
     // Dropdown Options
     const inspectionPurposes = ["Thermal Imaging", "Visual Inspection", "Maintenance Audit", "System Performance Analysis", "Fault Detection", "Construction Progress"];
     const airspaceTypes = ["Green (Open)", "Yellow (Controlled)", "Red (Restricted)"];
-    const payloadTypes = ["Standard RGB", "Thermal (IR)", "Multispectral", "Lidar", "Combined RGB + Thermal"];
     const outputTypes = ["High-Res Orthomosaic", "Level 1 Thermal Report", "AI Defect Identification (PDF)", "3D Digital Twin", "CAD / DXF Layout"];
     const companyTypes = ["Asset Owner", "EPC Contractor", "O&M Team", "Operation & Management", "Drone Service Provider", "Other"];
-    const solarCapacities = ["Less than 1 MW", "1-10 MW", "10-50 MW", "50-100 MW", "100-500 MW", "500+ MW"];
-    const referralSources = ["Google Search", "LinkedIn", "Industry Event", "Referral", "Social Media", "Other"];
-    const countries = ["United States", "Canada", "United Kingdom", "Germany", "France", "Spain", "Italy", "Australia", "India", "Other"];
+    const solarCapacities = ["Less than 1 MW", "1-10 MW", "10-50 MW", "50-100 MW", "100-500 MW", "500+ MW", "Other"];
 
     const inputClass = "w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-900 placeholder:text-slate-400 group-hover:bg-white";
     const labelClass = "block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 mb-2 group-focus-within:text-orange-600 transition-colors";
@@ -298,6 +289,25 @@ Additional Info: ${formData.additionalInfo}`
                                     </div>
                                 </div>
 
+                                {/* Drone Service Provider Specific Section */}
+                                {formData.companyType === "Drone Service Provider" && (
+                                    <div className="space-y-6 pt-6 border-t border-slate-50">
+                                        <div className="flex items-center gap-3 text-orange-600 mb-6 font-bold">
+                                            <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center"><Zap size={20} /></div>
+                                            <h3 className="text-xl text-slate-900 uppercase tracking-wider">Technical Flight Parameters</h3>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            <div className="group"><label className={labelClass}>Flight Altitude (m)*</label><input name="flightAltitude" required value={formData.flightAltitude} onChange={handleChange} className={inputClass} placeholder="e.g. 50" /></div>
+                                            <div className="group"><label className={labelClass}>Humidity (%)*</label><input name="humidity" required value={formData.humidity} onChange={handleChange} className={inputClass} placeholder="e.g. 45" /></div>
+                                            <div className="group"><label className={labelClass}>Emissivity (0-1)*</label><input name="emissivity" required value={formData.emissivity} onChange={handleChange} className={inputClass} placeholder="e.g. 0.95" /></div>
+                                            <div className="group"><label className={labelClass}>Ambient Temp (°C)*</label><input name="ambientTemperature" required value={formData.ambientTemperature} onChange={handleChange} className={inputClass} placeholder="e.g. 25" /></div>
+                                            <div className="group"><label className={labelClass}>Reflected Temp (°C)*</label><input name="reflectedTemperature" required value={formData.reflectedTemperature} onChange={handleChange} className={inputClass} placeholder="e.g. 25" /></div>
+                                            <div className="group"><label className={labelClass}>Drone Model*</label><input name="droneType" required value={formData.droneType} onChange={handleChange} className={inputClass} placeholder="e.g. DJI M30T" /></div>
+                                            <div className="group md:col-span-2 lg:col-span-1"><label className={labelClass}>Irradiance (W/m²)*</label><input name="irradiance" required value={formData.irradiance} onChange={handleChange} className={inputClass} placeholder="e.g. 600" /></div>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Section 2: Project Details */}
                                 <div className="space-y-6 pt-6 border-t border-slate-50">
                                     <div className="flex items-center gap-3 text-orange-600 mb-6 font-bold">
@@ -315,12 +325,34 @@ Additional Info: ${formData.additionalInfo}`
                                         </div>
                                         <div className="group">
                                             <label className={labelClass}>Solar Capacity*</label>
-                                            <select name="solarCapacity" required value={formData.solarCapacity} onChange={handleChange} className={inputClass}>
-                                                <option value="">Select Capacity</option>
-                                                {solarCapacities.map(c => <option key={c} value={c}>{c}</option>)}
-                                            </select>
+                                            {formData.solarCapacity === "Other" ? (
+                                                <div className="relative flex items-center">
+                                                    <input 
+                                                        name="otherSolarCapacity" 
+                                                        required 
+                                                        value={formData.otherSolarCapacity} 
+                                                        onChange={handleChange} 
+                                                        className={inputClass + " pr-12"} 
+                                                        placeholder="Enter capacity (e.g. 750 MW)" 
+                                                        autoFocus
+                                                    />
+                                                    <button 
+                                                        type="button" 
+                                                        onClick={handleSolarCapacityReset}
+                                                        className="absolute right-4 text-slate-400 hover:text-orange-500 transition-colors"
+                                                        title="Back to options"
+                                                    >
+                                                        <Zap size={18} />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <select name="solarCapacity" required value={formData.solarCapacity} onChange={handleChange} className={inputClass}>
+                                                    <option value="">Select Capacity</option>
+                                                    {solarCapacities.map(c => <option key={c} value={c}>{c}</option>)}
+                                                </select>
+                                            )}
                                         </div>
-                                        <div className="group"><label className={labelClass}>Area Size (Acres/MW)*</label><input name="areaSize" required value={formData.areaSize} onChange={handleChange} className={inputClass} placeholder="e.g. 50 Acres" /></div>
+                                        <div className="group"><label className={labelClass}>Area Size (Acres/MW)*</label><input name="areaSize" placeholder="e.g. 50 Acres" className={inputClass} /></div>
                                     </div>
                                 </div>
 
@@ -331,16 +363,9 @@ Additional Info: ${formData.additionalInfo}`
                                         <h3 className="text-xl text-slate-900 uppercase tracking-wider">Site Location & Geodata</h3>
                                     </div>
                                     <div className="group"><label className={labelClass}>Street Address / Access Points*</label><input name="siteAddress" required value={formData.siteAddress} onChange={handleChange} className={inputClass} placeholder="Entry point coordinates or physical address" /></div>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="group"><label className={labelClass}>Latitude*</label><input name="latitude" required value={formData.latitude} onChange={handleChange} className={inputClass} placeholder="28.7041" /></div>
                                         <div className="group"><label className={labelClass}>Longitude*</label><input name="longitude" required value={formData.longitude} onChange={handleChange} className={inputClass} placeholder="77.1025" /></div>
-                                        <div className="group">
-                                            <label className={labelClass}>Airspace Classification*</label>
-                                            <select name="airspaceType" required value={formData.airspaceType} onChange={handleChange} className={inputClass}>
-                                                <option value="">Select Class</option>
-                                                {airspaceTypes.map(a => <option key={a} value={a}>{a}</option>)}
-                                            </select>
-                                        </div>
                                     </div>
                                 </div>
 

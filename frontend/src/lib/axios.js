@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // Access environment variables
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8002/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8001/api";
 const LOGIN_REDIRECT = process.env.NEXT_PUBLIC_LOGIN_REDIRECT || "/login";
 
 const api = axios.create({
