@@ -1431,3 +1431,15 @@ async def upload_replacement_pdf(
         return {"message": "Replacement document uploaded and status updated to completed"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/report/shared-with-me")
+async def get_shared_with_me(current_user = Depends(get_current_user)):
+    """
+    Get all reports shared with the current user.
+    Placeholder implementation returning an empty list.
+    """
+    try:
+        # Implementation can be expanded later to query a 'shares' collection
+        return []
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

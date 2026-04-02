@@ -63,6 +63,7 @@ export default function HomePage() {
     companyName: "",
     companyType: "",
     solarCapacity: "",
+    otherSolarCapacity: "",
     referralSource: "",
     additionalInfo: ""
   });
@@ -184,7 +185,8 @@ export default function HomePage() {
     "10-50 MW",
     "50-100 MW",
     "100-500 MW",
-    "500+ MW"
+    "500+ MW",
+    "Other"
   ];
 
   const referralSources = [
@@ -625,6 +627,10 @@ export default function HomePage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleSolarCapacityReset = () => {
+    setFormData(prev => ({ ...prev, solarCapacity: "", otherSolarCapacity: "" }));
+  };
+
   const handleFormSubmit = async (e) => {
     e.preventDefault();
 
@@ -643,7 +649,7 @@ export default function HomePage() {
         contact_phone: formData.phone,
         location: formData.country,
         service_type: formData.companyType,
-        system_size: formData.solarCapacity,
+        system_size: formData.solarCapacity === "Other" ? formData.otherSolarCapacity : formData.solarCapacity,
         notes: `Job Title: ${formData.jobTitle}\nCompany: ${formData.companyName}\nReferral Source: ${formData.referralSource}\n\nAdditional Info: ${formData.additionalInfo}`,
         date: new Date().toISOString().split('T')[0],
         time: new Date().toLocaleTimeString('en-US', { hour12: false })
@@ -796,9 +802,11 @@ export default function HomePage() {
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
-                <button onClick={() => setShowProposalModal(true)} className="w-full sm:w-auto px-8 py-4 bg-orange-500 text-white font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-orange-600 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-[0_15px_30px_-10px_rgba(249,115,22,0.4)]">
-                  REQUEST PROPOSAL <ArrowRight size={16} />
-                </button>
+                {user && (
+                  <button onClick={() => setShowProposalModal(true)} className="w-full sm:w-auto px-8 py-4 bg-orange-500 text-white font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-orange-600 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-[0_15px_30px_-10px_rgba(249,115,22,0.4)]">
+                    REQUEST PROPOSAL <ArrowRight size={16} />
+                  </button>
+                )}
                 <button onClick={() => {
                   const processSection = document.getElementById('process-section');
                   if (processSection) processSection.scrollIntoView({ behavior: 'smooth' });
@@ -996,11 +1004,11 @@ export default function HomePage() {
       </section>
 
       {/* NEW DESIGN: THE PROCESS */}
-      <section className="bg-[#fff9f2] py-32 px-6 md:px-12 relative overflow-hidden border-b border-orange-100">
+      <section id="process-section" className="bg-[#fff9f2] py-32 px-6 md:px-12 relative overflow-hidden border-b border-orange-100">
         {/* Subtle background decoration */}
         <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-white/40 to-transparent"></div>
         <div className="absolute bottom-0 left-0 w-1/4 h-1/2 bg-cyan-50/30 blur-3xl rounded-full"></div>
-        
+
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="flex flex-col items-center text-center mb-20">
             <div className="flex items-center gap-3 text-cyan-500 font-mono text-xs uppercase tracking-[0.3em] mb-4">
@@ -1023,23 +1031,24 @@ export default function HomePage() {
               ].map((step, i) => {
                 const Icon = step.icon;
                 return (
-                <motion.div key={i} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.2 }}
-                  className="relative flex flex-col items-center text-center group">
-                  
-                  {/* ICON CIRCLE */}
-                  <div className="w-20 h-20 rounded-full bg-white shadow-[0_15px_35px_-12px_rgba(0,0,0,0.1)] border border-slate-100 flex items-center justify-center text-orange-500 mb-8 relative z-10 group-hover:bg-orange-500 group-hover:text-white group-hover:scale-110 transition-all duration-500">
-                    <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-slate-900 text-white text-[10px] font-black flex items-center justify-center shadow-lg border-2 border-white group-hover:bg-cyan-500 transition-colors">
-                      {step.num}
-                    </div>
-                    <Icon size={32} strokeWidth={1.5} />
-                  </div>
+                  <motion.div key={i} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.2 }}
+                    className="relative flex flex-col items-center text-center group">
 
-                  <div className="bg-white/60 backdrop-blur-sm px-8 py-10 rounded-[2rem] border border-white shadow-[0_20px_50px_-20px_rgba(0,0,0,0.05)] hover:bg-white hover:shadow-[0_40px_70px_-25px_rgba(0,0,0,0.08)] transition-all duration-500 flex-grow w-full">
-                    <h3 className="font-extrabold text-xl text-slate-900 uppercase tracking-wider mb-4 leading-tight">{step.title}</h3>
-                    <p className="text-slate-500 text-[13px] leading-relaxed font-medium max-w-[280px] mx-auto">{step.desc}</p>
-                  </div>
-                </motion.div>
-              )})}
+                    {/* ICON CIRCLE */}
+                    <div className="w-20 h-20 rounded-full bg-white shadow-[0_15px_35px_-12px_rgba(0,0,0,0.1)] border border-slate-100 flex items-center justify-center text-orange-500 mb-8 relative z-10 group-hover:bg-orange-500 group-hover:text-white group-hover:scale-110 transition-all duration-500">
+                      <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-slate-900 text-white text-[10px] font-black flex items-center justify-center shadow-lg border-2 border-white group-hover:bg-cyan-500 transition-colors">
+                        {step.num}
+                      </div>
+                      <Icon size={32} strokeWidth={1.5} />
+                    </div>
+
+                    <div className="bg-white/60 backdrop-blur-sm px-8 py-10 rounded-[2rem] border border-white shadow-[0_20px_50px_-20px_rgba(0,0,0,0.05)] hover:bg-white hover:shadow-[0_40px_70px_-25px_rgba(0,0,0,0.08)] transition-all duration-500 flex-grow w-full">
+                      <h3 className="font-extrabold text-xl text-slate-900 uppercase tracking-wider mb-4 leading-tight">{step.title}</h3>
+                      <p className="text-slate-500 text-[13px] leading-relaxed font-medium max-w-[280px] mx-auto">{step.desc}</p>
+                    </div>
+                  </motion.div>
+                )
+              })}
             </div>
           </div>
         </div>
@@ -1066,20 +1075,21 @@ export default function HomePage() {
             ].map((benefit, i) => {
               const Icon = benefit.icon;
               return (
-              <motion.div key={i} initial={{ opacity: 0, x: i % 2 === 0 ? -20 : 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-                className="group p-10 bg-slate-50/50 rounded-[2rem] border border-transparent hover:border-slate-100 hover:bg-white hover:shadow-[0_40px_80px_-30px_rgba(0,0,0,0.06)] transition-all duration-500">
-                
-                <div className="flex items-start gap-6">
-                  <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-orange-500 shrink-0 border border-slate-100 group-hover:bg-orange-500 group-hover:text-white transition-all duration-500 rotate-3 group-hover:rotate-0">
-                    <Icon size={24} strokeWidth={1.5} />
+                <motion.div key={i} initial={{ opacity: 0, x: i % 2 === 0 ? -20 : 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
+                  className="group p-10 bg-slate-50/50 rounded-[2rem] border border-transparent hover:border-slate-100 hover:bg-white hover:shadow-[0_40px_80px_-30px_rgba(0,0,0,0.06)] transition-all duration-500">
+
+                  <div className="flex items-start gap-6">
+                    <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-orange-500 shrink-0 border border-slate-100 group-hover:bg-orange-500 group-hover:text-white transition-all duration-500 rotate-3 group-hover:rotate-0">
+                      <Icon size={24} strokeWidth={1.5} />
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-xl text-slate-900 uppercase tracking-widest mb-4 leading-tight">{benefit.title}</h3>
+                      <p className="text-slate-500 text-sm md:text-[15px] leading-relaxed font-medium">{benefit.desc}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-extrabold text-xl text-slate-900 uppercase tracking-widest mb-4 leading-tight">{benefit.title}</h3>
-                    <p className="text-slate-500 text-sm md:text-[15px] leading-relaxed font-medium">{benefit.desc}</p>
-                  </div>
-                </div>
-              </motion.div>
-            )})}
+                </motion.div>
+              )
+            })}
           </div>
         </div>
       </section>
@@ -1117,207 +1127,6 @@ export default function HomePage() {
         </div>
       </section>
 
-
-      {/* Elegant Formal Upload Section - Precision Intelligence Hub (Exclusive for Drone Service Providers) */}
-      {user && userRole === "Drone Service Provider" && (
-        <section id="image-upload-section" className="py-12 md:py-20 bg-[#f1f3f5] relative overflow-hidden shadow-sm rounded-[3rem] mx-4 md:mx-8 mb-12">
-          {/* Top Transition Blur Glow */}
-          <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-white to-transparent opacity-50 backdrop-blur-3xl -z-10" />
-
-          {/* Theme Inset: Sophisticated Ash Atmosphere */}
-          <div className="absolute inset-0 opacity-[0.03] pointer-events-none -z-0"></div>
-          <div className="absolute -bottom-1/4 -right-1/4 w-[500px] h-[500px] bg-orange-100/20 rounded-full blur-[120px] -z-10" />
-
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-
-              {/* Left Column: Interactive Direct Flow Hub - Professional Ash Theme */}
-              <div className="lg:col-span-6 xl:col-span-12 flex items-center justify-center">
-                <div className="w-full max-w-7xl grid grid-cols-1 xl:grid-cols-12 gap-8 items-center bg-white p-12 rounded-[4rem] shadow-2xl border border-slate-100">
-                  
-                  {/* Branding Piece (Left) */}
-                  <div className="xl:col-span-4 p-10 md:p-12 bg-slate-100/60 rounded-[3rem] shadow-sm relative overflow-hidden group hover:bg-slate-100/80 transition-all duration-500 border border-slate-200/50">
-                    <div className="relative z-10">
-                      <h2 className="text-4xl md:text-5xl font-black text-slate-900 leading-tight tracking-tighter uppercase">
-                        UPLOAD TO <br />
-                        <span className="text-orange-600 drop-shadow-sm transition-all duration-500">GOOGLE DRIVE</span>
-                      </h2>
-                      <p className="mt-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
-                        Easy cloud upload <br />
-                        for your solar projects.
-                      </p>
-                    </div>
-                    {/* Subtle Background Accent */}
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/40 rounded-full blur-2xl -z-0" />
-                  </div>
-
-                  {/* Perfectly Centered Solid Arrow */}
-                  <div className="hidden xl:flex xl:col-span-2 items-center justify-center">
-                    <motion.div 
-                      animate={{ x: [0, 10, 0] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      className="text-slate-950 flex-shrink-0 drop-shadow-sm"
-                    >
-                      <svg width="70" height="40" viewBox="0 0 70 40" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M0 13H45V27H0V13Z" />
-                        <path d="M40 5L65 20L40 35V5Z" />
-                      </svg>
-                    </motion.div>
-                  </div>
-
-                  {/* Interactive Upload Terminal (Right) */}
-                  <div className="xl:col-span-6 flex justify-center">
-                    <div className="w-full max-w-xl space-y-8">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-[11px] font-black text-slate-800 uppercase tracking-[0.3em]">Upload hub</h3>
-                        {uploadStatus.message && (
-                          <span className={`text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest ${
-                            uploadStatus.type === 'success' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
-                          }`}>
-                            {uploadStatus.message}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
-                        {/* Zone A: Drone Image */}
-                        <div className="relative group cursor-pointer">
-                          <input
-                            type="file" multiple accept="image/*"
-                            onChange={(e) => handleFileChange(e, 'rgb')}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                          />
-                          <div className={`p-8 rounded-[2.5rem] border-2 transition-all duration-300 flex flex-col items-center justify-center gap-4 ${rgbFiles.length > 0
-                            ? 'border-orange-600 bg-orange-100/30'
-                            : 'border-slate-100 bg-slate-50 hover:border-orange-200 hover:bg-white'
-                          }`}>
-                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${rgbFiles.length > 0 ? 'bg-orange-600 text-white shadow-lg' : 'bg-white text-orange-600 shadow-sm'
-                            }`}>
-                              <Camera size={22} />
-                            </div>
-                            <div className="text-center">
-                              <h4 className="text-sm font-bold text-slate-900 mb-0.5 uppercase tracking-tight">Drone Image</h4>
-                              <span className={`text-[10px] font-black tracking-widest transition-colors uppercase ${rgbFiles.length > 0 ? 'text-orange-600' : 'text-slate-400 opacity-60'}`}>
-                                {rgbFiles.length > 0 ? `${rgbFiles.length} Selected` : "Scan Hub"}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Zone B: Site Plan */}
-                        <div className="relative group cursor-pointer">
-                          <input
-                            type="file" multiple accept=".kml"
-                            onChange={(e) => handleFileChange(e, 'thermal')}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                          />
-                          <div className={`p-8 rounded-[2.5rem] border-2 transition-all duration-300 flex flex-col items-center justify-center gap-4 ${thermalFiles.length > 0
-                            ? 'border-blue-600 bg-blue-100/30'
-                            : 'border-slate-100 bg-slate-50 hover:border-blue-200 hover:bg-white'
-                          }`}>
-                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${thermalFiles.length > 0 ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-blue-600 shadow-sm'
-                            }`}>
-                              <Globe size={22} />
-                            </div>
-                            <div className="text-center">
-                              <h4 className="text-sm font-bold text-slate-900 mb-0.5 uppercase tracking-tight">Site Plan</h4>
-                              <span className={`text-[10px] font-black tracking-widest transition-colors uppercase ${thermalFiles.length > 0 ? 'text-blue-600' : 'text-slate-400 opacity-60'}`}>
-                                {thermalFiles.length > 0 ? `${thermalFiles.length} Vectors` : "KML Import"}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (rgbFiles.length === 0 && thermalFiles.length === 0) return;
-                          setShowUploadModal(true);
-                        }}
-                        disabled={uploading || (rgbFiles.length === 0 && thermalFiles.length === 0)}
-                        className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.4em] transition-all hover:bg-orange-600 active:scale-[0.98] disabled:opacity-40 flex items-center justify-center gap-3 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1)] mb-4"
-                      >
-                        {uploading ? (
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                        ) : (
-                          <CloudUpload size={22} />
-                        )}
-                        <span>{uploading ? 'Processing' : 'Finalize Upload'}</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* OUR SERVICES - Minimalist Performance Matrix Redesign */}
-      {/* OUR SERVICES - Exact Image UI Style Match */}
-      <section className="py-24 bg-white relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-24">
-            <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-2 tracking-tighter">
-              Our <span className="text-orange-600">Services</span>
-            </h2>
-            <div className="w-10 h-[2px] bg-orange-600 mx-auto opacity-20"></div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              {
-                icon: Cpu,
-                title: "Live Scans",
-                desc: "We use smart drones to scan your site while it works. You get fast results that show every problem in real-time.",
-                color: "bg-orange-50 text-orange-600"
-              },
-              {
-                icon: Database,
-                title: "Safety Backups",
-                desc: "All your panel data is kept safe in our secure cloud. You can track your health for many years and see changes.",
-                color: "bg-orange-50 text-orange-600"
-              },
-              {
-                icon: ShieldCheck,
-                title: "Easy Reports",
-                desc: "Our platform makes professional reports that are easy to read. These are great for insurance and bank checks.",
-                color: "bg-orange-600 text-white"
-              },
-              {
-                icon: Globe,
-                title: "Expert Help",
-                desc: "If you find a problem, our team is here to help you fix it. We give expert advice to keep you saving money.",
-                color: "bg-orange-50 text-orange-600"
-              }
-            ].map((item, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: idx * 0.1 }}
-                whileHover={{ y: -8, scale: 1.02 }}
-                className="flex flex-col items-start text-left p-8 md:p-12 rounded-[2.5rem] bg-white border border-slate-100/50 group cursor-default transition-all duration-500 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.04)] hover:shadow-[0_40px_120px_-20px_rgba(249,115,22,0.12)] hover:border-orange-600/10"
-              >
-                {/* Catchy Top Accent Icon */}
-                <div className={`w-14 h-14 rounded-2xl ${item.color} flex items-center justify-center mb-10 transition-all duration-500 group-hover:scale-110 group-hover:shadow-lg`}>
-                  <item.icon size={26} strokeWidth={1.5} />
-                </div>
-
-                <h3 className="text-xl md:text-2xl font-bold text-slate-900 mb-4 tracking-tight group-hover:text-orange-600 transition-colors">{item.title}</h3>
-                <p className="text-slate-500 text-[14px] font-medium leading-relaxed opacity-80">
-                  {item.desc}
-                </p>
-
-                {/* Catchy Bottom Micro-Interactive Line */}
-                <div className="w-0 h-[2px] bg-orange-600 mt-8 group-hover:w-8 transition-all duration-500"></div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Main Gallery Section - Dynamic */}
       {sitePhotos.filter(p => p.category === 'Main Gallery').length > 0 && (
@@ -1699,21 +1508,46 @@ export default function HomePage() {
                         Solar Capacity*
                       </label>
                       <div className="relative">
-                        <select
-                          name="solarCapacity"
-                          required
-                          value={formData.solarCapacity}
-                          onChange={handleChange}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
-                        >
-                          <option value="">Please Select</option>
-                          {solarCapacities.map((capacity) => (
-                            <option key={capacity} value={capacity}>{capacity}</option>
-                          ))}
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                        </div>
+                        {formData.solarCapacity === "Other" ? (
+                          <div className="relative flex items-center">
+                            <input
+                              type="text"
+                              name="otherSolarCapacity"
+                              required
+                              value={formData.otherSolarCapacity}
+                              onChange={handleChange}
+                              placeholder="Enter capacity (e.g. 750 MW)"
+                              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-700 group-hover:bg-white pr-12"
+                              autoFocus
+                            />
+                            <button
+                              type="button"
+                              onClick={handleSolarCapacityReset}
+                              className="absolute right-4 text-slate-400 hover:text-orange-500 transition-colors"
+                              title="Back to options"
+                            >
+                              <Zap size={18} />
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <select
+                              name="solarCapacity"
+                              required
+                              value={formData.solarCapacity}
+                              onChange={handleChange}
+                              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
+                            >
+                              <option value="">Please Select</option>
+                              {solarCapacities.map((capacity) => (
+                                <option key={capacity} value={capacity}>{capacity}</option>
+                              ))}
+                            </select>
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
 
@@ -1782,10 +1616,10 @@ export default function HomePage() {
         </section >
       )}
 
-      {/* The Inspection Algorithm Section */}
-      < section className="py-20 md:py-24 bg-[#06080c] relative overflow-hidden text-white border-y border-white/5" >
-        {/* Deep Field Glows */}
-        < div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px] -translate-y-1/2 opacity-50" ></div >
+      {/* The Inspection Algorithm Section - Commented out as requested */}
+      {/* 
+      <section className="py-20 md:py-24 bg-[#06080c] relative overflow-hidden text-white border-y border-white/5">
+        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px] -translate-y-1/2 opacity-50"></div>
         <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-orange-600/10 rounded-full blur-[120px] translate-y-1/2 opacity-50"></div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -1844,7 +1678,6 @@ export default function HomePage() {
                 transition={{ delay: idx * 0.1 }}
                 className="relative group pr-4"
               >
-                {/* Visual Number Label */}
                 <div className="absolute top-0 right-0 text-[120px] font-black text-white/[0.04] leading-none select-none -z-0 translate-x-4 -translate-y-4 group-hover:text-orange-500/[0.06] transition-colors">
                   {step.num}
                 </div>
@@ -1866,367 +1699,344 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-      </section >
+      </section>
+      */}
 
-      {/* CTA Section */}
-      {
-        !user && (
-          <section className="py-16 md:py-20 bg-orange-600 relative overflow-hidden">
-            <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
-              <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-8 uppercase tracking-tight">
-                Ready to switch to cleaner, cheaper energy?
-              </h2>
-              <p className="text-orange-100 text-xl mb-10 font-medium italic">
-                Join thousands of satisfied homeowners who have already made the switch.
-              </p>
-              <Link
-                href="/register"
-                className="inline-flex items-center px-6 py-3.5 md:px-10 md:py-5 bg-white text-orange-600 rounded-2xl font-bold text-sm md:text-lg shadow-xl hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
-              >
-                Start Your Journey <ArrowRight className="ml-2" />
-              </Link>
+<AnimatePresence>
+  {showProposalModal && (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
+        onClick={() => setShowProposalModal(false)}
+      />
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100"
+      >
+        <div className="p-8 md:p-12">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 border border-orange-100 text-orange-600 text-[8px] font-black uppercase tracking-widest mb-4">
+              <Sparkles size={10} />
+              Custom Project Assessment
             </div>
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full -translate-x-1/2 translate-y-1/3"></div>
-          </section>
-        )
-      }
-
-      {/* Proposal Modal */}
-      <AnimatePresence>
-        {showProposalModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
-              onClick={() => setShowProposalModal(false)}
-            />
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100"
-            >
-              <div className="p-8 md:p-12">
-                <div className="text-center mb-8">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 border border-orange-100 text-orange-600 text-[8px] font-black uppercase tracking-widest mb-4">
-                    <Sparkles size={10} />
-                    Custom Project Assessment
-                  </div>
-                  <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tight mb-2">Request Proposal</h3>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Detailed Analytics for your solar assets</p>
-                </div>
-
-                {submitStatus.message && (
-                  <div className={`mb-6 p-4 rounded-xl text-center text-[10px] font-black uppercase tracking-widest ${submitStatus.type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
-                    }`}>
-                    {submitStatus.message}
-                  </div>
-                )}
-
-                <form onSubmit={handleProposalSubmit} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
-                    <input
-                      required
-                      type="text"
-                      value={proposalForm.name}
-                      onChange={(e) => setProposalForm({ ...proposalForm, name: e.target.value })}
-                      placeholder="e.g. John Doe"
-                      className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Professional Email</label>
-                    <input
-                      required
-                      type="email"
-                      value={proposalForm.email}
-                      onChange={(e) => setProposalForm({ ...proposalForm, email: e.target.value })}
-                      placeholder="john@company.com"
-                      className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Asset Role</label>
-                    <select
-                      required
-                      value={proposalForm.role}
-                      onChange={(e) => setProposalForm({ ...proposalForm, role: e.target.value })}
-                      className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-700 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22currentColor%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%20%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25em_1.25em] bg-[right_1.25rem_center] bg-no-repeat"
-                    >
-                      <option value="">Select Role</option>
-                      <option value="Asset Owner">Asset Owner</option>
-                      <option value="Drone Service Provider">Drone Service Provider</option>
-                      <option value="Operation & Management">Operation & Management</option>
-                      <option value="Others">Others</option>
-                    </select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Total Acres</label>
-                      <input
-                        required
-                        type="number"
-                        value={proposalForm.acres}
-                        onChange={(e) => setProposalForm({ ...proposalForm, acres: e.target.value })}
-                        placeholder="e.g. 50"
-                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Capacity (MW)</label>
-                      <input
-                        required
-                        type="number"
-                        value={proposalForm.mw}
-                        onChange={(e) => setProposalForm({ ...proposalForm, mw: e.target.value })}
-                        placeholder="e.g. 10"
-                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Module Pmax (W)</label>
-                      <input
-                        type="number"
-                        value={proposalForm.pmax}
-                        onChange={(e) => setProposalForm({ ...proposalForm, pmax: e.target.value })}
-                        placeholder="e.g. 540"
-                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Total Panels</label>
-                      <input
-                        type="number"
-                        value={proposalForm.total_panels}
-                        onChange={(e) => setProposalForm({ ...proposalForm, total_panels: e.target.value })}
-                        placeholder="e.g. 20000"
-                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">CUF (%)</label>
-                      <input
-                        type="text"
-                        value={proposalForm.cuf}
-                        onChange={(e) => setProposalForm({ ...proposalForm, cuf: e.target.value })}
-                        placeholder="18.5"
-                        className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300 font-mono"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Tariff</label>
-                      <input
-                        type="text"
-                        value={proposalForm.tariff}
-                        onChange={(e) => setProposalForm({ ...proposalForm, tariff: e.target.value })}
-                        placeholder="4.5"
-                        className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300 font-mono"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">S. Yield</label>
-                      <input
-                        type="text"
-                        value={proposalForm.specific_yield}
-                        onChange={(e) => setProposalForm({ ...proposalForm, specific_yield: e.target.value })}
-                        placeholder="1650"
-                        className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300 font-mono"
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    disabled={submitting}
-                    type="submit"
-                    className="w-full py-5 bg-slate-900 text-white rounded-[1.25rem] font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:bg-black transition-all flex items-center justify-center gap-3 disabled:opacity-50 mt-4 shadow-slate-200"
-                  >
-                    {submitting ? <Loader2 size={16} className="animate-spin" /> : "Submit Request"}
-                  </button>
-                </form>
-              </div>
-            </motion.div>
+            <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tight mb-2">Request Proposal</h3>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Detailed Analytics for your solar assets</p>
           </div>
-        )}
-      </AnimatePresence>
 
-      {/* Offers Modal */}
-      <AnimatePresence>
-        {showOffersModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
-              onClick={() => setShowOffersModal(false)}
-            />
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100"
-            >
-              <div className="p-8 md:p-12">
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">Claim Your Offer</h3>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Exclusive deals for high-scale solar inspections</p>
-                </div>
+          {submitStatus.message && (
+            <div className={`mb-6 p-4 rounded-xl text-center text-[10px] font-black uppercase tracking-widest ${submitStatus.type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
+              }`}>
+              {submitStatus.message}
+            </div>
+          )}
 
-                {submitStatus.message && (
-                  <div className={`mb-6 p-4 rounded-xl text-center text-[10px] font-black uppercase tracking-widest ${submitStatus.type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
-                    }`}>
-                    {submitStatus.message}
-                  </div>
-                )}
+          <form onSubmit={handleProposalSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+              <input
+                required
+                type="text"
+                value={proposalForm.name}
+                onChange={(e) => setProposalForm({ ...proposalForm, name: e.target.value })}
+                placeholder="e.g. John Doe"
+                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Professional Email</label>
+              <input
+                required
+                type="email"
+                value={proposalForm.email}
+                onChange={(e) => setProposalForm({ ...proposalForm, email: e.target.value })}
+                placeholder="john@company.com"
+                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Asset Role</label>
+              <select
+                required
+                value={proposalForm.role}
+                onChange={(e) => setProposalForm({ ...proposalForm, role: e.target.value })}
+                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-700 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22currentColor%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%20%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25em_1.25em] bg-[right_1.25rem_center] bg-no-repeat"
+              >
+                <option value="">Select Role</option>
+                <option value="Asset Owner">Asset Owner</option>
+                <option value="Drone Service Provider">Drone Service Provider</option>
+                <option value="Operation & Management">Operation & Management</option>
+                <option value="Others">Others</option>
+              </select>
+            </div>
 
-                <form onSubmit={handleOfferSubmit} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
-                    <input
-                      required
-                      type="text"
-                      value={offerForm.name}
-                      onChange={(e) => setOfferForm({ ...offerForm, name: e.target.value })}
-                      placeholder="John Doe"
-                      className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
-                    <input
-                      required
-                      type="email"
-                      value={offerForm.email}
-                      onChange={(e) => setOfferForm({ ...offerForm, email: e.target.value })}
-                      placeholder="john@company.com"
-                      className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Choose Offer</label>
-                    <select
-                      required
-                      value={offerForm.offer_type}
-                      onChange={(e) => setOfferForm({ ...offerForm, offer_type: e.target.value })}
-                      className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-700 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22currentColor%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%20%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25em_1.25em] bg-[right_1.25rem_center] bg-no-repeat"
-                    >
-                      <option value="">Select an Offer</option>
-                      <option value="First-Time Audit Discount (25%)">First-Time Audit Discount (25%)</option>
-                      <option value="Free BESS Health Check">Free BESS Health Check</option>
-                      <option value="Multi-Site Bundle (15% OFF)">Multi-Site Bundle (15% OFF)</option>
-                    </select>
-                  </div>
-
-                  <button
-                    disabled={submitting}
-                    type="submit"
-                    className="w-full py-5 bg-orange-600 text-white rounded-[1.25rem] font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:bg-orange-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50 mt-4 shadow-orange-900/20"
-                  >
-                    {submitting ? <Loader2 size={16} className="animate-spin" /> : "Grab My Offer"}
-                  </button>
-                </form>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Total Acres</label>
+                <input
+                  required
+                  type="number"
+                  value={proposalForm.acres}
+                  onChange={(e) => setProposalForm({ ...proposalForm, acres: e.target.value })}
+                  placeholder="e.g. 50"
+                  className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
+                />
               </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Additional Upload Project Details Modal */}
-      <AnimatePresence>
-        {showUploadModal && userRole === "Drone Service Provider" && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => !uploading && setShowUploadModal(false)}
-              className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100"
-            >
-              <div className="p-8 md:p-12">
-                <button
-                  onClick={() => !uploading && setShowUploadModal(false)}
-                  className="absolute top-6 right-6 p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-colors disabled:opacity-50"
-                  disabled={uploading}
-                >
-                  <X size={20} />
-                </button>
-
-                <div className="text-center mb-8">
-                  <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
-                    <CloudUpload size={32} />
-                  </div>
-                  <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">Project Details</h3>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Structure your cloud storage efficiently</p>
-                </div>
-
-                <form onSubmit={handleImageUpload} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Name *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Nevada Solar Array 1"
-                      value={uploadForm.projectName}
-                      onChange={(e) => setUploadForm({ ...uploadForm, projectName: e.target.value })}
-                      disabled={uploading}
-                      className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 disabled:opacity-50"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Area Size (Acres/MW) <span className="text-slate-300">- Optional</span></label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 50 MW or 120 Acres"
-                      value={uploadForm.areaSize}
-                      onChange={(e) => setUploadForm({ ...uploadForm, areaSize: e.target.value })}
-                      disabled={uploading}
-                      className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 disabled:opacity-50"
-                    />
-                  </div>
-
-                  {uploadStatus.message && (
-                    <div className={`p-4 rounded-xl text-[10px] font-black uppercase tracking-widest text-center ${uploadStatus.type === 'error' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
-                      {uploadStatus.message}
-                    </div>
-                  )}
-
-                  <button
-                    disabled={uploading}
-                    type="submit"
-                    className="w-full py-5 bg-orange-600 text-white rounded-[1.25rem] font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:bg-orange-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50 mt-4 shadow-orange-900/20"
-                  >
-                    {uploading ? (
-                      <>
-                        <Loader2 size={16} className="animate-spin" />
-                        <span>Processing Upload...</span>
-                      </>
-                    ) : (
-                      "Upload to Google Drive"
-                    )}
-                  </button>
-                </form>
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Capacity (MW)</label>
+                <input
+                  required
+                  type="number"
+                  value={proposalForm.mw}
+                  onChange={(e) => setProposalForm({ ...proposalForm, mw: e.target.value })}
+                  placeholder="e.g. 10"
+                  className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
+                />
               </div>
-            </motion.div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Module Pmax (W)</label>
+                <input
+                  type="number"
+                  value={proposalForm.pmax}
+                  onChange={(e) => setProposalForm({ ...proposalForm, pmax: e.target.value })}
+                  placeholder="e.g. 540"
+                  className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Total Panels</label>
+                <input
+                  type="number"
+                  value={proposalForm.total_panels}
+                  onChange={(e) => setProposalForm({ ...proposalForm, total_panels: e.target.value })}
+                  placeholder="e.g. 20000"
+                  className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">CUF (%)</label>
+                <input
+                  type="text"
+                  value={proposalForm.cuf}
+                  onChange={(e) => setProposalForm({ ...proposalForm, cuf: e.target.value })}
+                  placeholder="18.5"
+                  className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300 font-mono"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Tariff</label>
+                <input
+                  type="text"
+                  value={proposalForm.tariff}
+                  onChange={(e) => setProposalForm({ ...proposalForm, tariff: e.target.value })}
+                  placeholder="4.5"
+                  className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300 font-mono"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">S. Yield</label>
+                <input
+                  type="text"
+                  value={proposalForm.specific_yield}
+                  onChange={(e) => setProposalForm({ ...proposalForm, specific_yield: e.target.value })}
+                  placeholder="1650"
+                  className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300 font-mono"
+                />
+              </div>
+            </div>
+
+            <button
+              disabled={submitting}
+              type="submit"
+              className="w-full py-5 bg-slate-900 text-white rounded-[1.25rem] font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:bg-black transition-all flex items-center justify-center gap-3 disabled:opacity-50 mt-4 shadow-slate-200"
+            >
+              {submitting ? <Loader2 size={16} className="animate-spin" /> : "Submit Request"}
+            </button>
+          </form>
+        </div>
+      </motion.div>
+    </div>
+  )}
+</AnimatePresence>
+
+{/* Offers Modal */ }
+<AnimatePresence>
+  {showOffersModal && (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
+        onClick={() => setShowOffersModal(false)}
+      />
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100"
+      >
+        <div className="p-8 md:p-12">
+          <div className="text-center mb-8">
+            <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">Claim Your Offer</h3>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Exclusive deals for high-scale solar inspections</p>
           </div>
-        )}
-      </AnimatePresence>
+
+          {submitStatus.message && (
+            <div className={`mb-6 p-4 rounded-xl text-center text-[10px] font-black uppercase tracking-widest ${submitStatus.type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
+              }`}>
+              {submitStatus.message}
+            </div>
+          )}
+
+          <form onSubmit={handleOfferSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+              <input
+                required
+                type="text"
+                value={offerForm.name}
+                onChange={(e) => setOfferForm({ ...offerForm, name: e.target.value })}
+                placeholder="John Doe"
+                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
+              <input
+                required
+                type="email"
+                value={offerForm.email}
+                onChange={(e) => setOfferForm({ ...offerForm, email: e.target.value })}
+                placeholder="john@company.com"
+                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Choose Offer</label>
+              <select
+                required
+                value={offerForm.offer_type}
+                onChange={(e) => setOfferForm({ ...offerForm, offer_type: e.target.value })}
+                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-700 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22currentColor%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%20%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25em_1.25em] bg-[right_1.25rem_center] bg-no-repeat"
+              >
+                <option value="">Select an Offer</option>
+                <option value="First-Time Audit Discount (25%)">First-Time Audit Discount (25%)</option>
+                <option value="Free BESS Health Check">Free BESS Health Check</option>
+                <option value="Multi-Site Bundle (15% OFF)">Multi-Site Bundle (15% OFF)</option>
+              </select>
+            </div>
+
+            <button
+              disabled={submitting}
+              type="submit"
+              className="w-full py-5 bg-orange-600 text-white rounded-[1.25rem] font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:bg-orange-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50 mt-4 shadow-orange-900/20"
+            >
+              {submitting ? <Loader2 size={16} className="animate-spin" /> : "Grab My Offer"}
+            </button>
+          </form>
+        </div>
+      </motion.div>
+    </div>
+  )}
+</AnimatePresence>
+
+{/* Additional Upload Project Details Modal */ }
+<AnimatePresence>
+  {showUploadModal && userRole === "Drone Service Provider" && (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={() => !uploading && setShowUploadModal(false)}
+        className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
+      />
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100"
+      >
+        <div className="p-8 md:p-12">
+          <button
+            onClick={() => !uploading && setShowUploadModal(false)}
+            className="absolute top-6 right-6 p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-colors disabled:opacity-50"
+            disabled={uploading}
+          >
+            <X size={20} />
+          </button>
+
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+              <CloudUpload size={32} />
+            </div>
+            <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">Project Details</h3>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Structure your cloud storage efficiently</p>
+          </div>
+
+          <form onSubmit={handleImageUpload} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Name *</label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Nevada Solar Array 1"
+                value={uploadForm.projectName}
+                onChange={(e) => setUploadForm({ ...uploadForm, projectName: e.target.value })}
+                disabled={uploading}
+                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 disabled:opacity-50"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Area Size (Acres/MW) <span className="text-slate-300">- Optional</span></label>
+              <input
+                type="text"
+                placeholder="e.g. 50 MW or 120 Acres"
+                value={uploadForm.areaSize}
+                onChange={(e) => setUploadForm({ ...uploadForm, areaSize: e.target.value })}
+                disabled={uploading}
+                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-900 disabled:opacity-50"
+              />
+            </div>
+
+            {uploadStatus.message && (
+              <div className={`p-4 rounded-xl text-[10px] font-black uppercase tracking-widest text-center ${uploadStatus.type === 'error' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
+                {uploadStatus.message}
+              </div>
+            )}
+
+            <button
+              disabled={uploading}
+              type="submit"
+              className="w-full py-5 bg-orange-600 text-white rounded-[1.25rem] font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:bg-orange-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50 mt-4 shadow-orange-900/20"
+            >
+              {uploading ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span>Processing Upload...</span>
+                </>
+              ) : (
+                "Upload to Google Drive"
+              )}
+            </button>
+          </form>
+        </div>
+      </motion.div>
+    </div>
+  )}
+</AnimatePresence>
 
     </div >
   );
