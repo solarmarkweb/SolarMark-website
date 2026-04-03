@@ -33,10 +33,11 @@ class UserLogin(BaseModel):
 
 class UserResponse(BaseModel):
     id: str
-    first_name: str
-    last_name: str
-    email: str
-    created_at: str
+    user_code: str = ""
+    first_name: str = ""
+    last_name: str = ""
+    email: str = ""
+    created_at: str = ""
     is_admin: bool = False
     role: str = "user"
 

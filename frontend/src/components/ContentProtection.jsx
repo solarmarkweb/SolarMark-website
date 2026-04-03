@@ -10,7 +10,17 @@ const ContentProtection = ({ children, isProtected = true }) => {
     useEffect(() => {
         if (!isProtected) return;
 
-        const blackout = () => setIsBlurred(true);
+        const blackout = () => {
+            setIsBlurred(true);
+            // Additionally clear clipboard to frustrate screenshot tools, but only if we have focus
+            if (navigator.clipboard && navigator.clipboard.writeText && document.hasFocus()) {
+                try {
+                    navigator.clipboard.writeText("Content Protected by SolarMark Privacy Shield").catch(() => {});
+                } catch (e) {
+                    // Fail silently - user focus may have shifted or permission denied
+                }
+            }
+        };
         const restore = () => setIsBlurred(false);
 
         // 1. Human Interaction Blocks (Right-click, Copy, Selection, etc.)
@@ -34,36 +44,66 @@ const ContentProtection = ({ children, isProtected = true }) => {
                 blackout();
             }
             // Disable Ctrl+U (View Source), Ctrl+S (Save), Ctrl+P (Print)
-            if (e.ctrlKey && (e.key === 'u' || e.key === 's' || e.key === 'p')) {
+            if (e.ctrlKey && (e.key === 'u' || e.key === 's' || e.key === 'p' || e.key === 'P')) {
                 e.preventDefault();
+                e.stopPropagation();
                 blackout();
             }
             // F12 (DevTools)
-            if (e.key === 'F12') {
+            if (e.key === 'F12' || e.keyCode === 123) {
                 e.preventDefault();
                 blackout();
             }
             
-            // 3. Snapshot Triggers (PrintScreen / Win / Meta / OS Keys / Snipping Tool / Mac Screenshots)
-            if (e.key === 'PrintScreen' || e.keyCode === 44 || e.key === 'Snapshot' || e.key === 'SysReq' || 
-                e.key === 'Meta' || e.key === 'OS' || e.keyCode === 91 || e.keyCode === 92 ||
-                (e.metaKey && e.shiftKey && (e.key === 's' || e.key === 'S' || e.key === '3' || e.key === '4' || e.key === '5' || e.key === '5')) ||
-                (e.altKey && e.key === 'PrintScreen') ||
-                (e.ctrlKey && e.key === 'PrintScreen')) {
+            // 3. Snapshot Triggers (PrintScreen / PrtSc / PrtScn / Win / Meta / Alt / Ctrl combinations)
+            const isPrtSc = e.key === 'PrintScreen' || e.keyCode === 44 || e.key === 'Snapshot' || 
+                           e.key === 'SysReq' || e.key === 'PrtSc' || e.key === 'PrtScn' || 
+                           e.key === 'PrntScrn' || e.keyCode === 124 || e.keyCode === 121;
+            
+            const isMetaCapture = e.key === 'Meta' || e.key === 'OS' || e.keyCode === 91 || e.keyCode === 92;
+            
+            const isMacCapture = e.metaKey && e.shiftKey && (e.key === 's' || e.key === 'S' || e.key === '3' || e.key === '4' || e.key === '5');
+
+            if (isPrtSc || isMetaCapture || isMacCapture || (e.altKey && isPrtSc) || (e.ctrlKey && isPrtSc)) {
+                e.preventDefault();
+                e.stopPropagation();
                 blackout();
             }
         };
 
-        // Extra fallback: some laptops fire `keyup` instead of `keydown` for Fn+PrintScreen
+        // Extra logic for keyup (capture delayed releases of Fn+combinations)
         const handleKeyUpSecurity = (e) => {
-            if (e.key === 'PrintScreen' || e.keyCode === 44 || e.key === 'SysReq' || e.key === 'Snapshot') {
+            const isPrtSc = e.key === 'PrintScreen' || e.keyCode === 44 || e.key === 'SysReq' || 
+                           e.key === 'Snapshot' || e.key === 'PrtSc' || e.key === 'PrtScn' || 
+                           e.key === 'PrntScrn' || e.key === 'Meta';
+            if (isPrtSc) {
                 blackout();
             }
         };
 
-        // 4. Specific Snapshot Intent Detection
+        // 4. Tab Visibility Detection (Prevents background capture)
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'hidden') {
+                blackout();
+            }
+        };
+
+        // 4. Print Event Capture (Specific to Browser Print Dialogs)
+        const handleBeforePrint = (e) => {
+            blackout();
+        };
+
+        // 5. Focus Loss detection (Standard for Screenshot tools that steal focus)
+        const handleWindowBlur = () => {
+            blackout();
+        };
+
+        // 6. Specific Snapshot Intent Detection
         document.addEventListener('keydown', handleKeyDownSecurity);
         document.addEventListener('keyup', handleKeyUpSecurity);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('beforeprint', handleBeforePrint);
+        window.addEventListener('blur', handleWindowBlur);
         window.addEventListener('focus', restore);
 
         return () => {
@@ -74,6 +114,9 @@ const ContentProtection = ({ children, isProtected = true }) => {
             document.removeEventListener('dragstart', preventDefault);
             document.removeEventListener('keydown', handleKeyDownSecurity);
             document.removeEventListener('keyup', handleKeyUpSecurity);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('beforeprint', handleBeforePrint);
+            window.removeEventListener('blur', handleWindowBlur);
             window.removeEventListener('focus', restore);
         };
     }, [isProtected]);
@@ -82,6 +125,21 @@ const ContentProtection = ({ children, isProtected = true }) => {
 
     return (
         <div className="relative overflow-hidden w-full h-full">
+            {/* Hard-Coded Print Barrier (CSS Level) */}
+            <style dangerouslySetInnerHTML={{ __html: `
+                @media print {
+                    body { display: none !important; opacity: 0; visibility: hidden; }
+                    html { display: none !important; }
+                }
+                * {
+                    -webkit-user-select: none !important;
+                    -moz-user-select: none !important;
+                    -ms-user-select: none !important;
+                    user-select: none !important;
+                    -webkit-print-color-adjust: exact !important;
+                }
+            ` }} />
+
             {/* Main Data Layer */}
             <div className={`transition-none ${isBlurred ? 'opacity-0 invisible h-0 overflow-hidden' : 'opacity-100 visible'}`}>
                 {/* Dynamic Security Watermarks */}

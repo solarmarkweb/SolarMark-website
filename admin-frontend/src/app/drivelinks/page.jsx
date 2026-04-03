@@ -117,6 +117,7 @@ export default function DriveLinksPage() {
       const sortedData = activeUsers.map(u => ({
         id: u._id,
         user_id: u._id,
+        user_code: u.user_code || '',
         user_name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email,
         user_email: u.email,
         created_at: u.created_at || new Date().toISOString()
@@ -222,18 +223,18 @@ export default function DriveLinksPage() {
 
       if (!response.ok) {
         if (response.status === 401 || response.status === 403) {
-          setError('Authentication required to view PDFs.');
+          setError('Authentication required to view files.');
           return;
         }
-        throw new Error('Failed to fetch PDFs');
+        throw new Error('Failed to fetch files');
       }
 
       const data = await response.json();
       setLinkPDFs(prev => ({ ...prev, [linkId]: data }));
 
     } catch (err) {
-      console.error('Error fetching PDFs:', err);
-      setError(`Failed to load PDFs: ${err.message}`);
+      console.error('Error fetching files:', err);
+      setError(`Failed to load files: ${err.message}`);
     } finally {
       setLoadingPDFs(prev => ({ ...prev, [linkId]: false }));
     }
@@ -351,6 +352,7 @@ export default function DriveLinksPage() {
     const matchesSearch = !searchTerm ||
       link.user_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       link.user_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      link.user_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (() => {
         const stats = imageStats[link.user_id];
         const status = (stats?.has_rgb && stats?.has_thermal) ? 'done' :
@@ -370,6 +372,7 @@ export default function DriveLinksPage() {
     if (!acc[userId]) {
       acc[userId] = {
         user_id: userId,
+        user_code: link.user_code || '',
         user_name: link.user_name,
         user_email: link.user_email,
         links: []
@@ -405,13 +408,16 @@ export default function DriveLinksPage() {
 
     if (!file) return;
 
-    if (!file.type.includes('pdf') && !file.name.toLowerCase().endsWith('.pdf')) {
-      setError('Please select a PDF file (.pdf extension required)');
+    const allowedExtensions = ['.pdf', '.html', '.htm', '.xlsx', '.xls', '.csv', '.kml', '.kmz'];
+    const fileExtension = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
+
+    if (!allowedExtensions.includes(fileExtension)) {
+      setError(`Invalid file type. Supported extensions: ${allowedExtensions.join(', ')}`);
       return;
     }
 
     if (file.size > 50 * 1024 * 1024) {
-      setError('PDF file size should be less than 50MB');
+      setError('File size should be less than 50MB');
       return;
     }
 
@@ -448,7 +454,7 @@ export default function DriveLinksPage() {
           setError('Upload requires admin authentication.');
         } else {
           const errorText = await response.text();
-          throw new Error(errorText || 'Failed to upload PDF');
+          throw new Error(errorText || 'Failed to upload file');
         }
         return;
       }
@@ -477,7 +483,7 @@ export default function DriveLinksPage() {
       // Re-fetch all submission stats to update the PDF count in the main table
       await fetchLinks();
 
-      alert(`✅ PDF uploaded successfully!\nFile: ${data.filename}`);
+      alert(`✅ File uploaded successfully!\nFile: ${data.filename}`);
       fetchAllImages(); // Refresh image list if relevant
 
       setTimeout(() => {
@@ -487,8 +493,8 @@ export default function DriveLinksPage() {
       }, 1000);
 
     } catch (err) {
-      console.error('Error uploading PDF:', err);
-      setError(`Failed to upload PDF: ${err.message}`);
+      console.error('Error uploading file:', err);
+      setError(`Failed to upload file: ${err.message}`);
       setUploadingPdf(false);
       setSelectedItemForUpload(null);
       setUploadProgress(0);
@@ -508,7 +514,7 @@ export default function DriveLinksPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to download PDF');
+        throw new Error('Failed to download file');
       }
 
       const blob = await response.blob();
@@ -522,8 +528,8 @@ export default function DriveLinksPage() {
       document.body.removeChild(a);
 
     } catch (err) {
-      console.error('Error downloading PDF:', err);
-      setError('Failed to download PDF');
+      console.error('Error downloading file:', err);
+      setError('Failed to download file');
     }
   };
 
@@ -537,15 +543,15 @@ export default function DriveLinksPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to view PDF');
+        throw new Error('Failed to view file');
       }
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       window.open(url, '_blank');
     } catch (err) {
-      console.error('Error viewing PDF:', err);
-      setError('Failed to view PDF');
+      console.error('Error viewing file:', err);
+      setError('Failed to view file');
     }
   };
 
@@ -562,7 +568,7 @@ export default function DriveLinksPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete PDF');
+        throw new Error('Failed to delete report');
       }
 
       // Refresh the PDF list for this specific user/link
@@ -576,8 +582,8 @@ export default function DriveLinksPage() {
       alert('✅ Report deleted successfully');
 
     } catch (err) {
-      console.error('Error deleting PDF:', err);
-      setError(`Failed to delete PDF: ${err.message}`);
+      console.error('Error deleting report:', err);
+      setError(`Failed to delete report: ${err.message}`);
     }
   };
 
@@ -659,7 +665,7 @@ export default function DriveLinksPage() {
                 <br />
                 <span className="font-medium block mt-2 text-xs text-gray-800 truncate">{linkToDelete.user_name}</span>
                 <span className="text-xs text-red-600 mt-2 block">
-                  ⚠️ This will also delete all associated PDF files!
+                  ⚠️ This will also delete all associated report files!
                 </span>
               </p>
 
@@ -702,7 +708,7 @@ export default function DriveLinksPage() {
           {[
             { label: 'Total Users (w/ uploads)', count: totalLinks, color: 'text-blue-600', bg: 'bg-white', icon: <LinkIcon className="w-5 h-5" /> },
             { label: 'Active Users', count: totalUsers, color: 'text-green-600', bg: 'bg-white', icon: <Users className="w-5 h-5" /> },
-            { label: 'Uploaded PDFs', count: totalPDFs, color: 'text-purple-600', bg: 'bg-white', icon: <FileText className="w-5 h-5" /> },
+            { label: 'Uploaded Reports', count: totalPDFs, color: 'text-purple-600', bg: 'bg-white', icon: <FileText className="w-5 h-5" /> },
             { label: 'Filtered Results', count: filteredLinks.length, color: 'text-orange-600', bg: 'bg-white', icon: <Hash className="w-5 h-5" /> },
           ].map((stat, i) => (
             <div key={i} className={`${stat.bg} p-5 rounded-xl border border-gray-200 shadow-sm transition-all hover:shadow-md`}>
@@ -803,8 +809,15 @@ export default function DriveLinksPage() {
                               </span>
                             </div>
                             <div className="ml-3">
-                              <div className="text-sm font-bold text-gray-900">
-                                {group.user_name || 'Anonymous User'}
+                              <div className="flex items-center gap-2">
+                                <div className="text-sm font-bold text-gray-900 truncate max-w-[150px]">
+                                  {group.user_name || 'Anonymous User'}
+                                </div>
+                                {group.user_code && (
+                                  <span className="px-1.5 py-0.5 bg-orange-100 text-orange-700 text-[9px] font-black rounded border border-orange-200">
+                                    {group.user_code}
+                                  </span>
+                                )}
                               </div>
                               <div className="flex items-center text-xs text-gray-400 mt-0.5">
                                 <Mail className="w-3 h-3 mr-1" />
@@ -1117,7 +1130,7 @@ export default function DriveLinksPage() {
         type="file"
         ref={fileInputRef}
         onChange={(e) => handlePdfUpload(e, selectedItemForUpload)}
-        accept="application/pdf"
+        accept=".pdf,.html,.htm,.xlsx,.xls,.csv,.kml,.kmz"
         style={{ display: 'none' }}
       />
     </div>

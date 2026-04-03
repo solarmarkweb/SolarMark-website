@@ -146,6 +146,7 @@ export default function UserManagementPage() {
             (user.first_name && user.first_name.toLowerCase().includes(searchLower)) ||
             (user.last_name && user.last_name.toLowerCase().includes(searchLower)) ||
             (user.email && user.email.toLowerCase().includes(searchLower)) ||
+            (user.user_code && user.user_code.toLowerCase().includes(searchLower)) ||
             (roleStr.toLowerCase().includes(searchLower))
         );
     });
@@ -236,7 +237,7 @@ export default function UserManagementPage() {
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                         <input
                             type="text"
-                            placeholder="Search users by name, email, or role..."
+                            placeholder="Search by name, ID (e.g. SM-00001), or email..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full pl-12 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all text-sm"
@@ -275,6 +276,7 @@ export default function UserManagementPage() {
                             <thead className="bg-gray-50/50">
                                 <tr>
                                     <th className="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">User</th>
+                                    <th className="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">User ID</th>
                                     <th className="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Email</th>
                                     <th className="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Role</th>
                                     <th className="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Joined Date</th>
@@ -294,9 +296,17 @@ export default function UserManagementPage() {
                                                     <p className="text-sm font-bold text-gray-900">
                                                         {user.first_name} {user.last_name}
                                                     </p>
-                                                    <p className="text-xs text-gray-500">ID: {user._id?.substring(0, 8)}...</p>
                                                 </div>
                                             </div>
+                                        </td>
+                                        <td className="px-8 py-5">
+                                            {user.user_code ? (
+                                                <span className="px-2 py-1 bg-orange-50 text-orange-700 text-[11px] font-black rounded-lg border border-orange-100 shadow-sm">
+                                                    {user.user_code}
+                                                </span>
+                                            ) : (
+                                                <span className="text-xs text-gray-300 italic">No assigned ID</span>
+                                            )}
                                         </td>
                                         <td className="px-8 py-5">
                                             <div className="flex items-center gap-2">

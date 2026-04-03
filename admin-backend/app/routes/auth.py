@@ -1,4 +1,8 @@
 from fastapi import APIRouter, HTTPException, status, Depends
+import logging
+
+# Configure logger
+logger = logging.getLogger(__name__)
 from fastapi.security import OAuth2PasswordBearer
 from datetime import timedelta, datetime
 from app.models.auth import UserRegister, UserLogin, Token, UserResponse 
@@ -117,6 +121,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
             "last_name": user.get("last_name", ""),
             "is_admin": user.get("is_admin", False),
         }
+    except HTTPException:
+        raise
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -124,7 +130,9 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
             headers={"WWW-Authenticate": "Bearer"},
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # Provide more detail for debugging
+        logger.error(f"Error in get_current_user: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Authentication error: {str(e)}")
 
 @router.get("/profile", response_model=UserResponse)
 async def get_profile(current_user = Depends(get_current_user)):
@@ -190,28 +198,45 @@ async def refresh_token(data: dict):
 @router.get("/users/all")
 async def get_all_users(current_user = Depends(get_current_user)):
     """Get all users for admin management"""
-    users = list(db.users.find())
-    formatted_users = []
-    for user in users:
-        created_at = user.get("created_at")
-        if isinstance(created_at, datetime):
-            created_at_str = created_at.isoformat()
-        elif isinstance(created_at, str):
-            created_at_str = created_at
-        else:
-            created_at_str = datetime.utcnow().isoformat()
+    try:
+        # Security: Only admins can view all users
+        if not current_user.get("is_admin"):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Forbidden: Admin access required"
+            )
 
-        formatted_users.append({
-            "_id": str(user["_id"]),
-            "first_name": user.get("first_name", ""),
-            "last_name": user.get("last_name", ""),
-            "email": user.get("email", ""),
-            "role": user.get("role", "user"),
-            "is_admin": user.get("is_admin", False),
-            "status": user.get("status", "active"),
-            "created_at": created_at_str
-        })
-    return formatted_users
+        # Fetch users, excluding the system admin
+        users = list(db.users.find({"email": {"$ne": "admin@gmail.com"}}))
+        formatted_users = []
+        for user in users:
+            # Handle created_at safely
+            created_at = user.get("created_at")
+            if isinstance(created_at, datetime):
+                created_at_str = created_at.isoformat()
+            elif isinstance(created_at, str) and created_at:
+                created_at_str = created_at
+            else:
+                # Default to current time if missing or invalid
+                created_at_str = datetime.utcnow().isoformat()
+
+            formatted_users.append({
+                "_id": str(user.get("_id")),
+                "user_code": str(user.get("user_code", "")),
+                "first_name": str(user.get("first_name", "")),
+                "last_name": str(user.get("last_name", "")),
+                "email": str(user.get("email", "")),
+                "role": str(user.get("role", "user")),
+                "is_admin": bool(user.get("is_admin", False)),
+                "status": str(user.get("status", "active")),
+                "created_at": created_at_str
+            })
+        return formatted_users
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Critical error in get_all_users: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 @router.delete("/users/{user_id}")
 async def delete_user(user_id: str, current_user = Depends(get_current_user)):
@@ -227,12 +252,19 @@ async def delete_user(user_id: str, current_user = Depends(get_current_user)):
         if not ObjectId.is_valid(user_id):
             raise HTTPException(status_code=400, detail="Invalid user ID format")
 
-        # 1. Get user info before deletion (for email-based cleanup if needed)
+        # 1. Get user info before deletion
         user = db.users.find_one({"_id": ObjectId(user_id)})
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
         user_email = user.get("email")
+        
+        # Protected Admin Check
+        if user_email == "admin@gmail.com":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="System Protection: This primary administrator account cannot be deleted."
+            )
 
         # 2. Delete Drive PDFs and GridFS files
         fs = gridfs.GridFS(db)
