@@ -19,7 +19,7 @@ export default function UserManagementPage() {
     const [uploadingUserId, setUploadingUserId] = useState(null);
 
     // API configuration
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://admin-backend-591983072009.asia-south1.run.app/api';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8002/api';
 
     // Fetch all registered users from backend
     const fetchUsers = async () => {
@@ -37,7 +37,14 @@ export default function UserManagementPage() {
             });
 
             if (response.data && Array.isArray(response.data)) {
-                setUsers(response.data);
+                // Sort users by LIFO (Most recent first)
+                const sortedUsers = [...response.data].sort((a, b) => {
+                    const dateA = new Date(a.created_at || a.joined_date || 0);
+                    const dateB = new Date(b.created_at || b.joined_date || 0);
+                    return dateB - dateA;
+                });
+                
+                setUsers(sortedUsers);
 
                 // Calculate statistics
                 const total = response.data.length;
@@ -115,8 +122,7 @@ export default function UserManagementPage() {
             const token = localStorage.getItem('token');
             const response = await axios.post(`${API_URL}/drive-links/upload-pdf`, formData, {
                 headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data'
+                    'Authorization': `Bearer ${token}`
                 }
             });
 

@@ -14,13 +14,20 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="Solar Inspection API")
 
 # CORS configuration
-origins = ["*"]  # In production, replace with specific origins
+origins = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://localhost:3002",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+    "http://127.0.0.1:3002"
+]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -59,6 +66,12 @@ app.include_router(payments_router, prefix="/api", tags=["payments"])
 
 from app.routes.about import router as about_router
 app.include_router(about_router, prefix="/api", tags=["about"])
+
+from app.routes.home_stats import router as home_stats_router
+app.include_router(home_stats_router, prefix="/api", tags=["home-stats"])
+
+from app.routes.footer_social import router as footer_social_router
+app.include_router(footer_social_router, prefix="/api", tags=["footer-social"])
 
 @app.get("/")
 def root():

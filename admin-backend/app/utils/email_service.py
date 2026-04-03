@@ -222,5 +222,27 @@ class EmailService:
     def send_review_update_notification(self, *args, **kwargs):
         return send_review_update_notification(*args, **kwargs)
 
+    def send_report_shared_notification(self, recipient_email: str, recipient_name: str, sender_name: str, filename: str) -> tuple[bool, str]:
+        subject = f"Report Shared with You: {filename}"
+        html_body = f"""
+        <html>
+        <body style="font-family: sans-serif; padding: 20px;">
+            <h2 style="color: #0f172a; border-bottom: 2px solid #f97316; padding-bottom: 10px;">New Shared Report</h2>
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <p>Hello <strong>{recipient_name}</strong>,</p>
+                <p><strong>{sender_name}</strong> has shared a new report with you: "<strong>{filename}</strong>".</p>
+                <p style="margin-top: 20px;">You can view this report directly from your SolarMark profile dashboard under the "Shared with Me" tab.</p>
+            </div>
+            <div style="text-align: left; margin-bottom: 32px;">
+                <a href="https://solarmark.in/profile" 
+                   style="display: inline-block; padding: 14px 36px; background: linear-gradient(135deg, #f97316, #ea580c); color: #ffffff; font-size: 14px; font-weight: 800; letter-spacing: 0.5px; text-decoration: none; border-radius: 12px; box-shadow: 0 4px 14px rgba(249, 115, 22, 0.4);">
+                    View Shared Report →
+                </a>
+            </div>
+        </body>
+        </html>
+        """
+        return _send_email(recipient_email, subject, html_body)
+
 # Singleton instance for easy import
 email_service = EmailService()

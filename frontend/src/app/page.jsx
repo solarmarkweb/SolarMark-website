@@ -6,6 +6,7 @@ import {
   ArrowRight, Zap, Shield, Globe, Sun, FileUp, Database, Cloud,
   HardDrive, CheckCircle, User, Mail, Phone, MapPin,
   Settings, MessageSquare, Send, CloudUpload, Activity, Loader2, ShieldCheck, Star, ChevronDown, ChevronLeft, ChevronRight, RefreshCw, Wind, BarChart3,
+  Plane, Clock,
   Thermometer, ClipboardList, TrendingUp, Eye, Brain, FileText, Calendar, Image, Camera, Upload, X, Grid, List, ExternalLink, Cpu, Layers, Search, FileCheck, Sparkles, Leaf, Award
 } from "lucide-react";
 import Link from "next/link";
@@ -15,7 +16,7 @@ import { authAPI } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import ContentProtection from "@/components/ContentProtection";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8002/api';
 
 export default function HomePage() {
   const router = useRouter();
@@ -38,6 +39,12 @@ export default function HomePage() {
   const [sitePhotos, setSitePhotos] = useState([]);
   const [loadingPhotos, setLoadingPhotos] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
+  const [homeStats, setHomeStats] = useState([
+    { num: "5-20%", label: "Avg. energy loss from undetected faults in typical solar sites" },
+    { num: "17+", label: "Distinct fault types detected — thermal and visual — in one pass" },
+    { num: "100x", label: "Faster than manual walkdown inspection, with far higher accuracy" },
+    { num: "48hr", "label": "From flight to a full GPS-tagged, actionable report per module" }
+  ]);
 
   // Proposal and Offers Modal State
   const [showProposalModal, setShowProposalModal] = useState(false);
@@ -63,6 +70,7 @@ export default function HomePage() {
     companyName: "",
     companyType: "",
     solarCapacity: "",
+    otherSolarCapacity: "",
     referralSource: "",
     additionalInfo: ""
   });
@@ -184,7 +192,8 @@ export default function HomePage() {
     "10-50 MW",
     "50-100 MW",
     "100-500 MW",
-    "500+ MW"
+    "500+ MW",
+    "Other"
   ];
 
   const referralSources = [
@@ -220,8 +229,23 @@ export default function HomePage() {
       fetchUserImages();
     }
     fetchSitePhotos();
+    fetchHomeStats();
     setIsMounted(true);
   }, []);
+
+  const fetchHomeStats = async () => {
+    try {
+      const response = await fetch(`${API_URL}/home-stats`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.length > 0) {
+          setHomeStats(data);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching home stats:', err);
+    }
+  };
 
   const fetchSitePhotos = async () => {
     try {
@@ -643,7 +667,7 @@ export default function HomePage() {
         contact_phone: formData.phone,
         location: formData.country,
         service_type: formData.companyType,
-        system_size: formData.solarCapacity,
+        system_size: formData.solarCapacity === "Other" ? formData.otherSolarCapacity : formData.solarCapacity,
         notes: `Job Title: ${formData.jobTitle}\nCompany: ${formData.companyName}\nReferral Source: ${formData.referralSource}\n\nAdditional Info: ${formData.additionalInfo}`,
         date: new Date().toISOString().split('T')[0],
         time: new Date().toLocaleTimeString('en-US', { hour12: false })
@@ -769,24 +793,25 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen overflow-x-hidden">
       {/* NEW DESIGN: SILENT FAILURE (HERO SECTION) */}
-      <section className="bg-slate-50 py-24 md:py-32 px-6 md:px-12 relative overflow-hidden flex items-center justify-center">
-        {/* Clean minimal background */}
-        <div className="absolute top-0 left-0 w-full h-full bg-slate-50"></div>
-
+      <section className="bg-white py-24 md:py-32 px-6 md:px-12 relative overflow-hidden flex items-center justify-center border-b border-slate-100">
         <div className="max-w-5xl mx-auto w-full relative z-10 text-center flex flex-col items-center mt-12">
           <div className="flex flex-col items-center max-w-4xl">
             {/* Heading */}
             <div className="mb-8 flex flex-col items-center">
-              <div className="flex items-center gap-3 text-orange-600 font-mono text-[10px] md:text-xs uppercase tracking-[0.2em] mb-6 font-bold">
-                <div className="w-8 h-px bg-orange-500"></div> DRONE THERMOGRAPHY • SOLAR INSPECTION <div className="w-8 h-px bg-orange-500"></div>
+              <div className="flex items-center gap-3 text-orange-600 font-mono text-[10px] md:text-xs uppercase tracking-[0.2em] mb-6 font-bold relative">
+                <div className="w-8 h-px bg-orange-500"></div> 
+                DRONE THERMOGRAPHY • SOLAR INSPECTION 
+                <div className="w-8 h-px bg-orange-500"></div>
               </div>
 
-              <h1 className="font-extrabold text-4xl md:text-5xl lg:text-6xl text-slate-900 uppercase leading-[1.1] tracking-tight drop-shadow-sm">
-                YOUR PANELS ARE <span className="text-orange-500">FAILING</span><br />
-                <span className="text-transparent text-5xl md:text-6xl lg:text-[5rem]" style={{ WebkitTextStroke: '1.5px rgba(15,23,42,0.8)' }}>SILENTLY</span>
-              </h1>
+              <div className="relative">
+                <h1 className="font-extrabold text-4xl md:text-5xl lg:text-6xl text-slate-900 uppercase leading-[1.1] tracking-tight drop-shadow-sm">
+                  YOUR PANELS ARE <span className="text-orange-500">FAILING</span><br />
+                  <span className="text-transparent text-5xl md:text-6xl lg:text-[5rem]" style={{ WebkitTextStroke: '1.5px rgba(15,23,42,0.8)' }}>SILENTLY</span>
+                </h1>
+              </div>
             </div>
 
             {/* Contents & Buttons */}
@@ -796,9 +821,15 @@ export default function HomePage() {
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
-                <button onClick={() => setShowProposalModal(true)} className="w-full sm:w-auto px-8 py-4 bg-orange-500 text-white font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-orange-600 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-[0_15px_30px_-10px_rgba(249,115,22,0.4)]">
-                  REQUEST PROPOSAL <ArrowRight size={16} />
-                </button>
+                {user ? (
+                  <button onClick={() => setShowProposalModal(true)} className="w-full sm:w-auto px-8 py-4 bg-orange-500 text-white font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-orange-600 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-[0_15px_30px_-10px_rgba(249,115,22,0.4)]">
+                    REQUEST PROPOSAL <ArrowRight size={16} />
+                  </button>
+                ) : (
+                  <Link href="/register" className="w-full sm:w-auto px-8 py-4 bg-orange-500 text-white font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-orange-600 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-[0_15px_30px_-10px_rgba(249,115,22,0.4)]">
+                    REGISTER NOW <ArrowRight size={16} />
+                  </Link>
+                )}
                 <button onClick={() => {
                   const processSection = document.getElementById('process-section');
                   if (processSection) processSection.scrollIntoView({ behavior: 'smooth' });
@@ -811,21 +842,29 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* NEW DESIGN: STATS BAR */}
-      <div className="bg-[#f8fafc] border-y border-slate-200 flex flex-wrap lg:flex-nowrap">
-        {[
-          { num: "5-20%", label: "Avg. energy loss from undetected faults in typical solar sites" },
-          { num: "17+", label: "Distinct fault types detected — thermal and visual — in one pass" },
-          { num: "100x", label: "Faster than manual walkdown inspection, with far higher accuracy" },
-          { num: "48hr", label: "From flight to a full GPS-tagged, actionable report per module" }
-        ].map((stat, i) => (
-          <div key={i} className="flex-1 min-w-[250px] p-8 md:p-10 border-b lg:border-b-0 lg:border-r border-slate-200 last:border-none relative overflow-hidden group">
-            <div className="font-black text-4xl text-orange-500 mb-2 leading-none">{stat.num}</div>
-            <div className="text-xs text-slate-500 font-medium leading-relaxed max-w-[200px]">{stat.label}</div>
-            <motion.div initial={{ scaleX: 0 }} whileHover={{ scaleX: 1 }} className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600 origin-left transition-transform duration-500" />
+      {/* ELEGANT MINIMALIST STATS */}
+      <section className="bg-white py-24 border-b border-slate-100">
+        <div className="max-w-7xl mx-auto px-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 lg:gap-12">
+            {homeStats.map((stat, i) => (
+              <div key={i} className="flex flex-col items-center md:items-start group">
+                <div className="text-[10px] font-black tracking-[0.25em] text-orange-500 uppercase mb-4 opacity-70 group-hover:opacity-100 transition-opacity">
+                  Metric {i + 1}
+                </div>
+                <div className="text-5xl font-black text-slate-950 tracking-tighter mb-4 leading-none">
+                  {stat.num}
+                </div>
+                <p className="text-sm font-medium text-slate-500 leading-relaxed max-w-[220px] text-center md:text-left">
+                  {stat.label}
+                </p>
+                
+                {/* Minimal underline accent */}
+                <div className="hidden md:block w-8 h-[1.5px] bg-slate-100 group-hover:bg-orange-500 transition-colors mt-8" />
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      </section>
 
       {/* NEW DESIGN: PROBLEM SECTION */}
       <section className="bg-[#fff9f2] py-24 md:py-32 px-4 md:px-8 border-b border-orange-100 overflow-hidden relative">
@@ -996,7 +1035,7 @@ export default function HomePage() {
       </section>
 
       {/* NEW DESIGN: THE PROCESS */}
-      <section className="bg-[#fff9f2] py-32 px-6 md:px-12 relative overflow-hidden border-b border-orange-100">
+      <section id="process-section" className="bg-[#fff9f2] py-32 px-6 md:px-12 relative overflow-hidden border-b border-orange-100">
         {/* Subtle background decoration */}
         <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-white/40 to-transparent"></div>
         <div className="absolute bottom-0 left-0 w-1/4 h-1/2 bg-cyan-50/30 blur-3xl rounded-full"></div>
@@ -1098,13 +1137,9 @@ export default function HomePage() {
             Book a free 15-minute assessment. We will tell you exactly what your site needs and what you can expect to find.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-16">
-            <button onClick={() => setShowProposalModal(true)}
-              className="w-full sm:w-auto px-12 py-5 bg-orange-600 text-white font-black text-lg uppercase tracking-wider rounded-lg shadow-lg shadow-orange-500/30 hover:scale-105 transition-all flex items-center justify-center gap-4">
-              Book Free Assessment <ArrowRight size={20} />
-            </button>
             <Link href="/contact"
-              className="w-full sm:w-auto px-10 py-5 bg-white border border-slate-300 text-slate-900 font-bold rounded-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-3 shadow-sm">
-              Talk to an Expert
+              className="w-full sm:w-auto px-12 py-5 bg-orange-600 text-white font-black text-lg uppercase tracking-wider rounded-lg shadow-lg shadow-orange-500/30 hover:scale-105 transition-all flex items-center justify-center gap-4">
+              Talk to an Expert <ArrowRight size={20} />
             </Link>
           </div>
           <div className="flex flex-wrap justify-center gap-x-10 gap-y-4">
@@ -1118,206 +1153,6 @@ export default function HomePage() {
       </section>
 
 
-      {/* Elegant Formal Upload Section - Precision Intelligence Hub (Exclusive for Drone Service Providers) */}
-      {user && userRole === "Drone Service Provider" && (
-        <section id="image-upload-section" className="py-12 md:py-20 bg-[#f1f3f5] relative overflow-hidden shadow-sm rounded-[3rem] mx-4 md:mx-8 mb-12">
-          {/* Top Transition Blur Glow */}
-          <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-white to-transparent opacity-50 backdrop-blur-3xl -z-10" />
-
-          {/* Theme Inset: Sophisticated Ash Atmosphere */}
-          <div className="absolute inset-0 opacity-[0.03] pointer-events-none -z-0"></div>
-          <div className="absolute -bottom-1/4 -right-1/4 w-[500px] h-[500px] bg-orange-100/20 rounded-full blur-[120px] -z-10" />
-
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-
-              {/* Left Column: Interactive Direct Flow Hub - Professional Ash Theme */}
-              <div className="lg:col-span-6 xl:col-span-12 flex items-center justify-center">
-                <div className="w-full max-w-7xl grid grid-cols-1 xl:grid-cols-12 gap-8 items-center bg-white p-12 rounded-[4rem] shadow-2xl border border-slate-100">
-                  
-                  {/* Branding Piece (Left) */}
-                  <div className="xl:col-span-4 p-10 md:p-12 bg-slate-100/60 rounded-[3rem] shadow-sm relative overflow-hidden group hover:bg-slate-100/80 transition-all duration-500 border border-slate-200/50">
-                    <div className="relative z-10">
-                      <h2 className="text-4xl md:text-5xl font-black text-slate-900 leading-tight tracking-tighter uppercase">
-                        UPLOAD TO <br />
-                        <span className="text-orange-600 drop-shadow-sm transition-all duration-500">GOOGLE DRIVE</span>
-                      </h2>
-                      <p className="mt-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
-                        Easy cloud upload <br />
-                        for your solar projects.
-                      </p>
-                    </div>
-                    {/* Subtle Background Accent */}
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/40 rounded-full blur-2xl -z-0" />
-                  </div>
-
-                  {/* Perfectly Centered Solid Arrow */}
-                  <div className="hidden xl:flex xl:col-span-2 items-center justify-center">
-                    <motion.div 
-                      animate={{ x: [0, 10, 0] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      className="text-slate-950 flex-shrink-0 drop-shadow-sm"
-                    >
-                      <svg width="70" height="40" viewBox="0 0 70 40" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M0 13H45V27H0V13Z" />
-                        <path d="M40 5L65 20L40 35V5Z" />
-                      </svg>
-                    </motion.div>
-                  </div>
-
-                  {/* Interactive Upload Terminal (Right) */}
-                  <div className="xl:col-span-6 flex justify-center">
-                    <div className="w-full max-w-xl space-y-8">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-[11px] font-black text-slate-800 uppercase tracking-[0.3em]">Upload hub</h3>
-                        {uploadStatus.message && (
-                          <span className={`text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest ${
-                            uploadStatus.type === 'success' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
-                          }`}>
-                            {uploadStatus.message}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
-                        {/* Zone A: Drone Image */}
-                        <div className="relative group cursor-pointer">
-                          <input
-                            type="file" multiple accept="image/*"
-                            onChange={(e) => handleFileChange(e, 'rgb')}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                          />
-                          <div className={`p-8 rounded-[2.5rem] border-2 transition-all duration-300 flex flex-col items-center justify-center gap-4 ${rgbFiles.length > 0
-                            ? 'border-orange-600 bg-orange-100/30'
-                            : 'border-slate-100 bg-slate-50 hover:border-orange-200 hover:bg-white'
-                          }`}>
-                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${rgbFiles.length > 0 ? 'bg-orange-600 text-white shadow-lg' : 'bg-white text-orange-600 shadow-sm'
-                            }`}>
-                              <Camera size={22} />
-                            </div>
-                            <div className="text-center">
-                              <h4 className="text-sm font-bold text-slate-900 mb-0.5 uppercase tracking-tight">Drone Image</h4>
-                              <span className={`text-[10px] font-black tracking-widest transition-colors uppercase ${rgbFiles.length > 0 ? 'text-orange-600' : 'text-slate-400 opacity-60'}`}>
-                                {rgbFiles.length > 0 ? `${rgbFiles.length} Selected` : "Scan Hub"}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Zone B: Site Plan */}
-                        <div className="relative group cursor-pointer">
-                          <input
-                            type="file" multiple accept=".kml"
-                            onChange={(e) => handleFileChange(e, 'thermal')}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                          />
-                          <div className={`p-8 rounded-[2.5rem] border-2 transition-all duration-300 flex flex-col items-center justify-center gap-4 ${thermalFiles.length > 0
-                            ? 'border-blue-600 bg-blue-100/30'
-                            : 'border-slate-100 bg-slate-50 hover:border-blue-200 hover:bg-white'
-                          }`}>
-                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${thermalFiles.length > 0 ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-blue-600 shadow-sm'
-                            }`}>
-                              <Globe size={22} />
-                            </div>
-                            <div className="text-center">
-                              <h4 className="text-sm font-bold text-slate-900 mb-0.5 uppercase tracking-tight">Site Plan</h4>
-                              <span className={`text-[10px] font-black tracking-widest transition-colors uppercase ${thermalFiles.length > 0 ? 'text-blue-600' : 'text-slate-400 opacity-60'}`}>
-                                {thermalFiles.length > 0 ? `${thermalFiles.length} Vectors` : "KML Import"}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (rgbFiles.length === 0 && thermalFiles.length === 0) return;
-                          setShowUploadModal(true);
-                        }}
-                        disabled={uploading || (rgbFiles.length === 0 && thermalFiles.length === 0)}
-                        className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.4em] transition-all hover:bg-orange-600 active:scale-[0.98] disabled:opacity-40 flex items-center justify-center gap-3 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1)] mb-4"
-                      >
-                        {uploading ? (
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                        ) : (
-                          <CloudUpload size={22} />
-                        )}
-                        <span>{uploading ? 'Processing' : 'Finalize Upload'}</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* OUR SERVICES - Minimalist Performance Matrix Redesign */}
-      {/* OUR SERVICES - Exact Image UI Style Match */}
-      <section className="py-24 bg-white relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-24">
-            <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-2 tracking-tighter">
-              Our <span className="text-orange-600">Services</span>
-            </h2>
-            <div className="w-10 h-[2px] bg-orange-600 mx-auto opacity-20"></div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              {
-                icon: Cpu,
-                title: "Live Scans",
-                desc: "We use smart drones to scan your site while it works. You get fast results that show every problem in real-time.",
-                color: "bg-orange-50 text-orange-600"
-              },
-              {
-                icon: Database,
-                title: "Safety Backups",
-                desc: "All your panel data is kept safe in our secure cloud. You can track your health for many years and see changes.",
-                color: "bg-orange-50 text-orange-600"
-              },
-              {
-                icon: ShieldCheck,
-                title: "Easy Reports",
-                desc: "Our platform makes professional reports that are easy to read. These are great for insurance and bank checks.",
-                color: "bg-orange-600 text-white"
-              },
-              {
-                icon: Globe,
-                title: "Expert Help",
-                desc: "If you find a problem, our team is here to help you fix it. We give expert advice to keep you saving money.",
-                color: "bg-orange-50 text-orange-600"
-              }
-            ].map((item, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: idx * 0.1 }}
-                whileHover={{ y: -8, scale: 1.02 }}
-                className="flex flex-col items-start text-left p-8 md:p-12 rounded-[2.5rem] bg-white border border-slate-100/50 group cursor-default transition-all duration-500 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.04)] hover:shadow-[0_40px_120px_-20px_rgba(249,115,22,0.12)] hover:border-orange-600/10"
-              >
-                {/* Catchy Top Accent Icon */}
-                <div className={`w-14 h-14 rounded-2xl ${item.color} flex items-center justify-center mb-10 transition-all duration-500 group-hover:scale-110 group-hover:shadow-lg`}>
-                  <item.icon size={26} strokeWidth={1.5} />
-                </div>
-
-                <h3 className="text-xl md:text-2xl font-bold text-slate-900 mb-4 tracking-tight group-hover:text-orange-600 transition-colors">{item.title}</h3>
-                <p className="text-slate-500 text-[14px] font-medium leading-relaxed opacity-80">
-                  {item.desc}
-                </p>
-
-                {/* Catchy Bottom Micro-Interactive Line */}
-                <div className="w-0 h-[2px] bg-orange-600 mt-8 group-hover:w-8 transition-all duration-500"></div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Main Gallery Section - Dynamic */}
       {sitePhotos.filter(p => p.category === 'Main Gallery').length > 0 && (
@@ -1698,23 +1533,45 @@ export default function HomePage() {
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
                         Solar Capacity*
                       </label>
-                      <div className="relative">
-                        <select
-                          name="solarCapacity"
-                          required
-                          value={formData.solarCapacity}
-                          onChange={handleChange}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
-                        >
-                          <option value="">Please Select</option>
-                          {solarCapacities.map((capacity) => (
-                            <option key={capacity} value={capacity}>{capacity}</option>
-                          ))}
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                      {formData.solarCapacity === "Other" ? (
+                        <div className="relative flex items-center">
+                          <input
+                            name="otherSolarCapacity"
+                            required
+                            value={formData.otherSolarCapacity}
+                            onChange={handleChange}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm pr-12 font-medium text-slate-700 group-hover:bg-white"
+                            placeholder="Enter capacity (e.g. 750 MW)"
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, solarCapacity: "", otherSolarCapacity: "" }))}
+                            className="absolute right-4 text-slate-400 hover:text-orange-500 transition-colors"
+                            title="Back to options"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                          </button>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="relative">
+                          <select
+                            name="solarCapacity"
+                            required
+                            value={formData.solarCapacity}
+                            onChange={handleChange}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
+                          >
+                            <option value="">Please Select</option>
+                            {solarCapacities.map((capacity) => (
+                              <option key={capacity} value={capacity}>{capacity}</option>
+                            ))}
+                          </select>
+                          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-2 group">
@@ -1781,93 +1638,6 @@ export default function HomePage() {
           </div>
         </section >
       )}
-
-      {/* The Inspection Algorithm Section */}
-      < section className="py-20 md:py-24 bg-[#06080c] relative overflow-hidden text-white border-y border-white/5" >
-        {/* Deep Field Glows */}
-        < div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px] -translate-y-1/2 opacity-50" ></div >
-        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-orange-600/10 rounded-full blur-[120px] translate-y-1/2 opacity-50"></div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-12 md:mb-20">
-            <motion.h2
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              className="text-4xl md:text-6xl font-black tracking-tight mb-6 uppercase"
-            >
-              THE INSPECTION <span className="text-orange-500">ALGORITHM</span>
-            </motion.h2>
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-              className="text-slate-500 text-sm md:text-base font-bold max-w-xl mx-auto leading-relaxed tracking-wide uppercase"
-            >
-              Four simple steps to turn solar photos into clear jobs for your team.
-            </motion.p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
-            {[
-              {
-                num: "01",
-                title: "DRONE CONTROL",
-                desc: "Our drones fly by themselves to scan your site.",
-                icon: Globe
-              },
-              {
-                num: "02",
-                title: "HEAT PHOTOS",
-                desc: "We take high-quality heat photos of every panel.",
-                icon: Camera
-              },
-              {
-                num: "03",
-                title: "AI FINDING",
-                desc: "Our smart AI finds every fault and crack automatically.",
-                icon: Brain
-              },
-              {
-                num: "04",
-                title: "SIMPLE REPORTS",
-                desc: "Easy reports that show exactly where the problems are.",
-                icon: FileText
-              }
-            ].map((step, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: idx * 0.1 }}
-                className="relative group pr-4"
-              >
-                {/* Visual Number Label */}
-                <div className="absolute top-0 right-0 text-[120px] font-black text-white/[0.04] leading-none select-none -z-0 translate-x-4 -translate-y-4 group-hover:text-orange-500/[0.06] transition-colors">
-                  {step.num}
-                </div>
-
-                <div className="relative z-10">
-                  <div className="w-16 h-16 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-center mb-8 border-l-orange-500/50 group-hover:bg-slate-800 transition-all cursor-default">
-                    <step.icon className="w-6 h-6 text-orange-500" />
-                  </div>
-
-                  <h3 className="text-base font-black tracking-wider text-slate-100 mb-4 uppercase group-hover:text-orange-500 transition-colors">
-                    {step.title}
-                  </h3>
-
-                  <p className="text-xs text-slate-500 font-bold leading-relaxed tracking-tight group-hover:text-slate-400 transition-colors">
-                    {step.desc}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section >
-
       {/* CTA Section */}
       {
         !user && (

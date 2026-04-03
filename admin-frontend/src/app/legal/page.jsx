@@ -12,7 +12,7 @@ const LegalManagementPage = () => {
     const [saving, setSaving] = useState({ terms: false, privacy: false });
     const [status, setStatus] = useState({ type: '', message: '', target: '' });
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://admin-backend-591983072009.asia-south1.run.app/api';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8002/api';
 
     useEffect(() => {
         fetchLegalContent();

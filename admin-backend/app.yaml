@@ -5,7 +5,7 @@ instance_class: F1
 entrypoint: uvicorn app.main:app --host 0.0.0.0 --port $PORT
 
 env_variables:
-  MONGO_URI: "mongodb+srv://Admin:solarpanel@test.japmv1y.mongodb.net/?appName=Test"
+  MONGO_URI: "mongodb+srv://SolarMark:Aviatricks123@solarmark.vjpkhqo.mongodb.net/?appName=SolarMark"
   DATABASE_NAME: "solarpanel"
   SECRET_KEY: "2rFV8HqEBUMdJPpeyild6WDKIs4qKwwPIMgaHFkyR-k"
   GOOGLE_DRIVE_SERVICE_ACCOUNT_PATH: "service-account.json"

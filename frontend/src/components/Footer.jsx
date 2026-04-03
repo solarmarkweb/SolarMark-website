@@ -12,15 +12,33 @@ import {
 
 const Footer = () => {
     const currentYear = new Date().getFullYear();
+    const [dynamicSocialLinks, setDynamicSocialLinks] = React.useState([]);
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8002/api';
+
+    React.useEffect(() => {
+        const fetchSocial = async () => {
+            try {
+                const res = await fetch(`${API_URL}/footer-social/`);
+                const data = await res.json();
+                setDynamicSocialLinks(Array.isArray(data) ? data : []);
+            } catch (err) {
+                console.error("Error fetching footer social:", err);
+                setDynamicSocialLinks([]);
+            }
+        };
+        fetchSocial();
+    }, [API_URL]);
+
+    const getIcon = (platform) => {
+        const p = platform.toLowerCase();
+        if (p.includes('facebook')) return <Facebook size={18} />;
+        if (p.includes('twitter')) return <Twitter size={18} />;
+        if (p.includes('linkedin')) return <Linkedin size={18} />;
+        if (p.includes('instagram')) return <Instagram size={18} />;
+        return <Mail size={18} />;
+    };
 
     const footerSections = {
-        /*
-        "Solutions": [
-            { name: "Planning", href: "/about" },
-            { name: "Construction", href: "/offers" },
-            { name: "Operations", href: "/offers" },
-        ],
-        */
         "Company": [
             { name: "Home", href: "/" },
             { name: "Bookings", href: "/booking" },
@@ -31,13 +49,6 @@ const Footer = () => {
             { name: "Terms of Service", href: "/terms" },
         ],
     };
-
-    const socialLinks = [
-        { icon: <Facebook size={18} />, href: "#", label: "Facebook" },
-        { icon: <Twitter size={18} />, href: "#", label: "Twitter" },
-        { icon: <Linkedin size={18} />, href: "#", label: "LinkedIn" },
-        { icon: <Instagram size={18} />, href: "#", label: "Instagram" },
-    ];
 
     return (
         <footer className="bg-white border-t border-slate-200">
@@ -53,18 +64,32 @@ const Footer = () => {
                                 className="h-8 w-auto"
                             />
                         </Link>
-                        <p className="text-sm text-slate-600 mb-6 max-w-xs">
+                        <p className="text-sm text-slate-600 mb-6 max-w-xs text-balance">
                             Maximize performance across the solar lifecycle with AI-powered insights and automated tracking.
                         </p>
                         <div className="flex gap-3">
-                            {socialLinks.map((social, index) => (
+                            {Array.isArray(dynamicSocialLinks) && dynamicSocialLinks.map((social, index) => (
                                 <a
-                                    key={index}
-                                    href={social.href}
-                                    className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-orange-600 hover:text-white transition-colors"
-                                    aria-label={social.label}
+                                    key={social.id || index}
+                                    href={social.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-500 hover:bg-orange-500 hover:text-white hover:border-orange-500 transition-all shadow-sm"
+                                    aria-label={social.platform}
                                 >
-                                    {social.icon}
+                                    {social.icon_url ? (
+                                        <img 
+                                            src={`${API_URL.replace('/api', '')}${social.icon_url}`} 
+                                            alt="" 
+                                            className="w-5 h-5 object-contain"
+                                            onError={(e) => {
+                                                e.target.onerror = null;
+                                                e.target.style.display = 'none';
+                                            }}
+                                        />
+                                    ) : (
+                                        getIcon(social.platform)
+                                    )}
                                 </a>
                             ))}
                         </div>
