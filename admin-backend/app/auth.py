@@ -1,10 +1,12 @@
 from datetime import datetime, timedelta
 from typing import Optional
 import os
+import re
 from jose import jwt
 import bcrypt
 from bson import ObjectId
 from fastapi import HTTPException, status
+from pymongo import ReturnDocument
 from app.db import db
 
 # Configuration
@@ -58,6 +60,33 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+def generate_user_code(role: str = "Asset Owner") -> str:
+    """Generate a unique, sequential user code with role-specific prefix."""
+    # Define prefixes based on role
+    # Normalizing role string for matching
+    role_map = {
+        "Drone Service Provider": "SM_DSP",
+        "Operation & Management": "SM_OM",
+        "Asset Owner": "SM_AO"
+    }
+    prefix = role_map.get(role, "SM")
+    
+    # Use a unique counter per prefix to maintain sequential order within categories
+    counter_id = f"user_code_{prefix}"
+    
+    try:
+        result = db.counters.find_one_and_update(
+            {"_id": counter_id},
+            {"$inc": {"seq": 1}},
+            upsert=True,
+            return_document=ReturnDocument.AFTER
+        )
+        seq = result["seq"]
+        return f"{prefix}-{seq:05d}"
+    except Exception as e:
+        print(f"Error generating user code for {role}: {e}")
+        return f"{prefix}-00000"
+
 def create_user(user_data: dict):
     """Create a new user in database"""
     # Check if user already exists
@@ -72,6 +101,10 @@ def create_user(user_data: dict):
     user_data["password"] = hash_password(user_data["password"])
     user_data["email"] = user_data["email"].lower()
     user_data["created_at"] = datetime.utcnow()
+    
+    # Get role-based code using the role from registration
+    role = user_data.get("role", "Asset Owner")
+    user_data["user_code"] = generate_user_code(role)  # Unique role-based ID
     
     # Insert user
     result = db.users.insert_one(user_data)
@@ -101,10 +134,12 @@ def get_user_by_id(user_id: str):
 
 def format_user_response(user):
     """Format user response (remove password) and handle missing fields gracefully"""
+    if not user:
+        return {}
+        
     # Safely get datetime and handle missing 'created_at'
     created_at = user.get("created_at")
     if created_at is None:
-        # Fallback to current time if missing
         created_at = datetime.utcnow()
     
     # Ensure it's in ISO format as required by the pydantic model
@@ -114,11 +149,12 @@ def format_user_response(user):
         created_at_str = str(created_at)
 
     return {
-        "id": str(user["_id"]),
-        "first_name": user.get("first_name", "User"),
-        "last_name": user.get("last_name", ""),
-        "email": user.get("email", ""),
-        "created_at": created_at_str,
-        "is_admin": user.get("is_admin", False),
-        "role": user.get("role", "user")
+        "id": str(user.get("_id", "")),
+        "user_code": str(user.get("user_code", "")),
+        "first_name": str(user.get("first_name", "User")),
+        "last_name": str(user.get("last_name", "")),
+        "email": str(user.get("email", "")),
+        "created_at": str(created_at_str),
+        "is_admin": bool(user.get("is_admin", False)),
+        "role": str(user.get("role", "user"))
     }

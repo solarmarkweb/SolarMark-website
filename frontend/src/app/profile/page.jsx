@@ -19,6 +19,7 @@ import { useRouter } from "next/navigation";
 import { authAPI } from "@/lib/api";
 import ContentProtection from "@/components/ContentProtection";
 import dynamic from 'next/dynamic';
+import * as XLSX from 'xlsx';
 
 // Dynamic import for react-pdf to prevent SSR errors (DOMMatrix is not defined)
 const Document = dynamic(() => import('react-pdf').then(mod => mod.Document), { ssr: false });
@@ -61,6 +62,7 @@ export default function ProfilePage() {
     const [sortOrder, setSortOrder] = useState('desc');
     const [showViewModal, setShowViewModal] = useState(false);
     const [viewingBlob, setViewingBlob] = useState(null);
+    const [excelData, setExcelData] = useState(null);
     const [numPages, setNumPages] = useState(null);
     const [pdfReady, setPdfReady] = useState(false);
 
@@ -125,11 +127,13 @@ export default function ProfilePage() {
                 if (profileRes && profileRes.data) {
                     const freshUser = {
                         id: profileRes.data.id,
+                        user_code: profileRes.data.user_code || "",
                         name: `${profileRes.data.first_name || ''} ${profileRes.data.last_name || ''}`.trim() || profileRes.data.email,
                         email: profileRes.data.email
                     };
                     setUser(freshUser);
                     localStorage.setItem('user_name', freshUser.name);
+                    if (freshUser.user_code) localStorage.setItem('user_code', freshUser.user_code);
                 }
 
                 const bData = bookingsResponse?.data || [];
@@ -386,6 +390,33 @@ export default function ProfilePage() {
             const url = window.URL.createObjectURL(blob);
 
             setViewingBlob(url);
+            
+            // Clear previous excel data
+            setExcelData(null);
+            
+            // Handle Excel/CSV parsing for in-website visualization
+            if (filename.toLowerCase().match(/\.(xlsx|xls|csv)$/)) {
+                try {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const data = new Uint8Array(e.target.result);
+                            const workbook = XLSX.read(data, { type: 'array' });
+                            const firstSheetName = workbook.SheetNames[0];
+                            const worksheet = workbook.Sheets[firstSheetName];
+                            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                            setExcelData(jsonData);
+                        } catch (parseErr) {
+                            console.error("Error parsing spreadsheet:", parseErr);
+                            setExcelData([["Error displaying data. Check file format."]]);
+                        }
+                    };
+                    reader.readAsArrayBuffer(blob);
+                } catch (readerErr) {
+                    console.error("FileReader error:", readerErr);
+                }
+            }
+            
             setShowViewModal(true);
 
             // For non-PDF files, we don't use react-pdf loader
@@ -663,6 +694,46 @@ export default function ProfilePage() {
         return userName[0]?.toUpperCase() || 'U';
     };
 
+    const getFileIcon = (filename) => {
+        const ext = filename?.toLowerCase().split('.').pop();
+        switch (ext) {
+            case 'pdf':
+                return {
+                    icon: <FileText size={24} className="text-red-500" />,
+                    bg: 'bg-red-50',
+                    border: 'border-red-100'
+                };
+            case 'html':
+            case 'htm':
+                return {
+                    icon: <Globe size={24} className="text-blue-500" />,
+                    bg: 'bg-blue-50',
+                    border: 'border-blue-100'
+                };
+            case 'xlsx':
+            case 'xls':
+            case 'csv':
+                return {
+                    icon: <BarChart3 size={24} className="text-emerald-500" />,
+                    bg: 'bg-emerald-50',
+                    border: 'border-emerald-100'
+                };
+            case 'kml':
+            case 'kmz':
+                return {
+                    icon: <MapPin size={24} className="text-purple-500" />,
+                    bg: 'bg-purple-50',
+                    border: 'border-purple-100'
+                };
+            default:
+                return {
+                    icon: <LucideFile size={24} className="text-slate-500" />,
+                    bg: 'bg-slate-50',
+                    border: 'border-slate-100'
+                };
+        }
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen bg-slate-950 flex items-center justify-center">
@@ -688,10 +759,24 @@ export default function ProfilePage() {
                             </div>
                             <div>
                                 <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">{user?.name || 'User'}</h1>
-                                <div className="flex items-center gap-4 text-slate-400 text-sm font-medium">
+                                <div className="flex items-center gap-3 text-slate-400 text-sm font-medium flex-wrap">
                                     <span className="flex items-center gap-1.5"><Mail size={14} className="text-orange-500" /> {user?.email}</span>
                                     <span className="w-1 h-1 bg-slate-700 rounded-full"></span>
-                                    <span className="flex items-center gap-1.5"><ShieldCheck size={14} className="text-green-500" /> Premium Account</span>
+                                    <span className="flex items-center gap-1.5 font-bold text-orange-500 bg-orange-500/5 px-3 py-1 rounded-full border border-orange-500/10 shadow-sm shadow-orange-900/5 transition-all hover:bg-orange-500/10">
+                                        <ShieldCheck size={14} /> {userRole || 'User Account'}
+                                    </span>
+                                    {user?.user_code && (
+                                        <>
+                                            <span className="w-1 h-1 bg-slate-700 rounded-full"></span>
+                                            <span
+                                                onClick={() => navigator.clipboard?.writeText(user.user_code)}
+                                                className="flex items-center gap-1.5 font-mono font-black text-orange-400 tracking-widest text-xs px-3 py-1 rounded-full border border-orange-500/30 bg-orange-500/10 select-all cursor-pointer hover:bg-orange-500/20 transition-all"
+                                                title="Your unique SolarMark User ID — click to copy. Share with admin to manage your reports."
+                                            >
+                                                🪪 {user.user_code}
+                                            </span>
+                                        </>
+                                    )}
                                 </div>
 
                                 <div className="mt-6 flex items-center gap-4 py-2 px-4 bg-white/5 rounded-2xl border border-white/10 w-fit backdrop-blur-sm">
@@ -762,7 +847,7 @@ export default function ProfilePage() {
                                             <div className="relative z-10">
                                                 <h2 className="text-4xl md:text-[2.75rem] font-black text-slate-900 leading-[1.1] tracking-tight uppercase">
                                                     UPLOAD TO <br />
-                                                    <span className="text-[#f97316]">GOOGLE DRIVE</span>
+                                                    <span className="text-[#f97316]">CLOUD</span>
                                                 </h2>
                                                 <p className="mt-6 text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em] leading-relaxed">
                                                     Easy cloud upload <br />
@@ -1063,9 +1148,14 @@ export default function ProfilePage() {
                                                             {isSelected && <CheckSquare size={10} strokeWidth={4} className="text-white" />}
                                                         </button>
 
-                                                        <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center shadow-sm border border-red-100 shrink-0">
-                                                            <FileText size={24} className="text-red-500" />
-                                                        </div>
+                                                        {(() => {
+                                                            const fileMeta = getFileIcon(pdf.filename);
+                                                            return (
+                                                                <div className={`w-12 h-12 ${fileMeta.bg} rounded-xl flex items-center justify-center shadow-sm border ${fileMeta.border} shrink-0`}>
+                                                                    {fileMeta.icon}
+                                                                </div>
+                                                            );
+                                                        })()}
 
                                                         <div className="min-w-0">
                                                             <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -1154,9 +1244,14 @@ export default function ProfilePage() {
                                             {sharedWithMe.map((shared, index) => (
                                                 <div key={shared.share_id || shared.pdf_id || index} className="flex items-center justify-between p-5 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:shadow-lg hover:shadow-slate-200/20 transition-all">
                                                     <div className="flex items-center gap-4 overflow-hidden">
-                                                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-slate-100 shrink-0">
-                                                            <FileText size={20} className="text-blue-500" />
-                                                        </div>
+                                                        {(() => {
+                                                            const fileMeta = getFileIcon(shared.filename);
+                                                            return (
+                                                                <div className={`w-10 h-10 ${fileMeta.bg} rounded-xl flex items-center justify-center shadow-sm border ${fileMeta.border} shrink-0`}>
+                                                                    {React.cloneElement(fileMeta.icon, { size: 20 })}
+                                                                </div>
+                                                            );
+                                                        })()}
                                                         <div className="min-w-0">
                                                             <h4 className="font-bold text-slate-900 text-sm truncate">{shared.filename}</h4>
                                                             <div className="flex items-center gap-3 text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">
@@ -1469,26 +1564,64 @@ export default function ProfilePage() {
                                                 <div className="w-full h-full min-h-[85vh] flex flex-col bg-slate-900 rounded-2xl overflow-hidden relative border border-slate-700 shadow-2xl">
                                                     <KmlViewer kmlUrl={viewingBlob} />
                                                 </div>
-                                            ) : (
-                                                <div className="w-full min-h-[60vh] bg-slate-900 rounded-[2rem] border border-slate-700 flex flex-col items-center justify-center p-12 text-center gap-6">
-                                                    <div className="w-24 h-24 bg-orange-500/10 rounded-3xl flex items-center justify-center text-orange-500 border border-orange-500/20 shadow-2xl shadow-orange-500/10">
-                                                        <BarChart3 size={48} />
+                                             ) : (
+                                                <div className="w-full min-h-[85vh] bg-slate-900 rounded-2xl border border-slate-700 flex flex-col p-0 overflow-hidden relative shadow-inner">
+                                                    <div className="bg-slate-800/80 backdrop-blur-sm border-b border-slate-700 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center text-emerald-500 border border-emerald-500/20">
+                                                                <BarChart3 size={18} />
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Technical Data Analysis</span>
+                                                                <span className="text-sm font-bold text-slate-200 truncate max-w-[200px]">{selectedPdf?.filename}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="px-2 py-1 bg-slate-700/50 text-slate-400 text-[10px] font-black uppercase rounded-md border border-slate-600/50">SECURE VIEW ONLY</span>
+                                                        </div>
                                                     </div>
-                                                    <div className="space-y-2">
-                                                        <h4 className="text-2xl font-black text-white uppercase tracking-tight">Technical Data Ready</h4>
-                                                        <p className="text-slate-400 max-w-md mx-auto text-sm">
-                                                            This spreadsheet dataset requires external software (Excel or CSV Editor) for full analysis.
-                                                        </p>
+
+                                                    <div className="flex-1 overflow-auto p-4 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800/50">
+                                                        {excelData ? (
+                                                            <div className="overflow-x-auto rounded-xl border border-slate-700 shadow-2xl">
+                                                                <table className="w-full text-left border-collapse min-w-max">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            {excelData[0]?.map((cell, idx) => (
+                                                                                <th key={idx} className="px-5 py-4 text-[10px] font-black text-emerald-500 uppercase tracking-widest bg-slate-950 border-b border-slate-800 border-r border-slate-800/50 last:border-r-0">
+                                                                                    {cell || `Col ${idx + 1}`}
+                                                                                </th>
+                                                                            ))}
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody className="divide-y divide-slate-800 bg-slate-900/50">
+                                                                        {excelData.slice(1).map((row, rowIdx) => (
+                                                                            <tr key={rowIdx} className="hover:bg-slate-800/30 transition-colors">
+                                                                                {Array.from({ length: excelData[0]?.length || 0 }).map((_, cellIdx) => (
+                                                                                    <td key={cellIdx} className="px-5 py-4 text-xs text-slate-300 font-medium border-r border-slate-800/50 last:border-r-0">
+                                                                                        {row[cellIdx] !== undefined && row[cellIdx] !== null ? String(row[cellIdx]) : "-"}
+                                                                                    </td>
+                                                                                ))}
+                                                                            </tr>
+                                                                        ))}
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="h-full flex flex-col items-center justify-center gap-4 text-slate-500 py-20">
+                                                                <Loader2 className="animate-spin" size={32} />
+                                                                <span className="text-xs font-bold uppercase tracking-widest">Processing Dataset...</span>
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                    <a
-                                                        href={viewingBlob}
-                                                        download={selectedPdf?.filename}
-                                                        className="px-10 py-5 bg-orange-600 hover:bg-orange-500 text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-xl shadow-orange-900/40 flex items-center gap-3 active:scale-95"
-                                                    >
-                                                        <Download size={18} />
-                                                        Download Data Pack
-                                                    </a>
-                                                    <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest mt-4">Security Verified & Scanned</p>
+                                                    
+                                                    <div className="p-4 bg-slate-800/30 border-t border-slate-700/50 flex items-center justify-between">
+                                                        <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">Protected Environment | Export Disabled</p>
+                                                        <div className="flex items-center gap-2">
+                                                            <Shield size={12} className="text-emerald-500/50" />
+                                                            <span className="text-[9px] text-slate-500 font-black uppercase">Verified Dataset Integrity</span>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             )}
 

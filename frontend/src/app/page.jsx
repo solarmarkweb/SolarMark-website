@@ -800,10 +800,10 @@ export default function HomePage() {
           <div className="flex flex-col items-center max-w-4xl">
             {/* Heading */}
             <div className="mb-8 flex flex-col items-center">
-              <div className="flex items-center gap-3 text-orange-600 font-mono text-[10px] md:text-xs uppercase tracking-[0.2em] mb-6 font-bold relative">
-                <div className="w-8 h-px bg-orange-500"></div> 
+              <div className="flex items-center gap-3 text-black font-mono text-xs md:text-sm uppercase tracking-[0.2em] mb-6 font-bold relative">
+                <div className="w-8 h-px bg-black"></div> 
                 DRONE THERMOGRAPHY • SOLAR INSPECTION 
-                <div className="w-8 h-px bg-orange-500"></div>
+                <div className="w-8 h-px bg-black"></div>
               </div>
 
               <div className="relative">
@@ -970,8 +970,8 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-wrap justify-between items-end gap-8 mb-16">
             <div>
-              <div className="flex items-center gap-3 text-cyan-500 font-mono text-xs uppercase tracking-widest mb-4">
-                <div className="w-6 h-px bg-cyan-500"></div> What We Detect
+              <div className="flex items-center gap-3 text-black font-mono text-sm font-bold uppercase tracking-widest mb-4">
+                <div className="w-6 h-px bg-black"></div> What We Detect
               </div>
               <h2 className="font-black text-3xl md:text-5xl text-slate-900 uppercase leading-none tracking-tight">
                 Nothing Missed. <span className="text-orange-500">Everything</span> Mapped.
@@ -1042,8 +1042,8 @@ export default function HomePage() {
         
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="flex flex-col items-center text-center mb-20">
-            <div className="flex items-center gap-3 text-cyan-500 font-mono text-xs uppercase tracking-[0.3em] mb-4">
-              <div className="w-12 h-px bg-cyan-500"></div> The Process <div className="w-12 h-px bg-cyan-500"></div>
+            <div className="flex items-center gap-3 text-black font-mono text-sm font-bold uppercase tracking-[0.3em] mb-4">
+              <div className="w-12 h-px bg-black"></div> The Process <div className="w-12 h-px bg-black"></div>
             </div>
             <h2 className="font-black text-4xl md:text-5xl text-slate-900 uppercase tracking-tight max-w-2xl leading-[1.1]">
               Find. <span className="text-orange-500">Fix.</span> Forget.
@@ -1088,8 +1088,8 @@ export default function HomePage() {
       <section className="bg-white py-32 px-6 md:px-12 border-t border-slate-100">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col mb-16">
-            <div className="flex items-center gap-3 text-cyan-500 font-mono text-xs uppercase tracking-[0.3em] mb-4">
-              <div className="w-12 h-px bg-cyan-500"></div> Why SolarMark
+            <div className="flex items-center gap-3 text-black font-mono text-sm font-bold uppercase tracking-[0.3em] mb-4">
+              <div className="w-12 h-px bg-black"></div> Why SolarMark
             </div>
             <h2 className="font-black text-3xl md:text-5xl text-slate-900 uppercase tracking-tight leading-[1.1]">
               Because <span className="text-orange-500">Guessing</span> Costs More

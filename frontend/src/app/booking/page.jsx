@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Send, Loader2, ShieldCheck, Zap, Lock, MapPin, Plane, User, Calendar, FileText, Activity } from "lucide-react";
-import { motion } from "framer-motion";
+import React, { useState, useEffect, useRef } from "react";
+import { Send, Loader2, ShieldCheck, Zap, Lock, MapPin, Plane, User, Calendar, FileText, Activity, CheckCircle2, ChevronLeft } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -105,8 +105,49 @@ export default function BookingPage() {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const formTopRef = useRef(null);
+
+    const scrollToFormTop = () => {
+        if (formTopRef.current) {
+            formTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
     const handleSolarCapacityReset = () => {
         setFormData(prev => ({ ...prev, solarCapacity: "", otherSolarCapacity: "" }));
+    };
+
+    const handleResetForm = () => {
+        setStatus({ type: "", message: "" });
+        setFormData({
+            firstName: "",
+            lastName: "",
+            workEmail: "",
+            phone: "",
+            companyName: "",
+            companyType: "",
+            areaSize: "",
+            projectName: "",
+            inspectionPurpose: "",
+            solarCapacity: "",
+            otherSolarCapacity: "",
+            siteAddress: "",
+            latitude: "",
+            longitude: "",
+            airspaceType: "",
+            flightDate: "",
+            flightTime: "",
+            altitude: "",
+            additionalInfo: "",
+            flightAltitude: "",
+            humidity: "",
+            emissivity: "",
+            ambientTemperature: "",
+            reflectedTemperature: "",
+            droneType: "",
+            irradiance: "",
+        });
+        scrollToFormTop();
     };
 
     const handleSubmit = async (e) => {
@@ -115,6 +156,7 @@ export default function BookingPage() {
 
         setSubmitting(true);
         setStatus({ type: 'info', message: 'Initializing your deployment request...' });
+        scrollToFormTop();
 
         const token = localStorage.getItem("auth_token");
 
@@ -193,6 +235,17 @@ export default function BookingPage() {
                 message: 'Success! Your booking request has been received. Our team will contact you to finalize the deployment.'
             });
             setSubmitting(false);
+            // Auto reset form on success
+            setFormData({
+                firstName: "", lastName: "", workEmail: "", phone: "", companyName: "",
+                companyType: "", areaSize: "", projectName: "", inspectionPurpose: "",
+                solarCapacity: "", otherSolarCapacity: "", siteAddress: "", latitude: "",
+                longitude: "", airspaceType: "", flightDate: "", flightTime: "",
+                altitude: "", additionalInfo: "", flightAltitude: "", humidity: "",
+                emissivity: "", ambientTemperature: "", reflectedTemperature: "",
+                droneType: "", irradiance: "",
+            });
+            scrollToFormTop();
 
         } catch (error) {
             setStatus({
@@ -200,6 +253,7 @@ export default function BookingPage() {
                 message: error.message || 'Something went wrong. Please check your connection and try again.'
             });
             setSubmitting(false);
+            scrollToFormTop();
         }
     };
 
@@ -250,6 +304,7 @@ export default function BookingPage() {
                         </motion.div>
                     ) : (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-5xl mx-auto bg-white rounded-[2.5rem] p-8 md:p-16 border border-slate-200 shadow-2xl relative text-slate-950">
+                            <div ref={formTopRef} className="absolute -top-32 h-32 invisible" />
 
                             <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 pb-8 border-b border-slate-100 gap-4">
                                 <div>
@@ -261,15 +316,22 @@ export default function BookingPage() {
                                 </div>
                             </div>
 
-                            {status.message && (
-                                <div className={`mb-10 p-5 rounded-2xl text-center font-bold flex items-center justify-center gap-3 ${status.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : status.type === 'info' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
-                                    {status.type === 'info' && <Loader2 className="animate-spin" size={18} />}
-                                    {status.message}
-                                </div>
-                            )}
+                            <AnimatePresence>
+                                {status.message && (
+                                    <motion.div 
+                                        initial={{ opacity: 0, y: -20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -20 }}
+                                        className={`mb-10 p-6 rounded-3xl text-center font-bold flex items-center justify-center gap-3 shadow-lg ${status.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : status.type === 'info' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-red-50 text-red-700 border border-red-200'}`}
+                                    >
+                                        {status.type === 'info' && <Loader2 className="animate-spin" size={20} />}
+                                        {status.type === 'success' && <CheckCircle2 size={24} className="text-emerald-500" />}
+                                        <span className="text-lg">{status.message}</span>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
 
                             <form onSubmit={handleSubmit} className="space-y-12">
-
                                 {/* Section 1: Contact Info */}
                                 <div className="space-y-6">
                                     <div className="flex items-center gap-3 text-orange-600 mb-6 font-bold">
@@ -401,7 +463,6 @@ export default function BookingPage() {
                                     </button>
                                     <p className="text-center text-slate-400 text-sm mt-6 font-medium italic">By submitting, you confirm that all aviation registration data provided is accurate according to local CAA/FAA regulations.</p>
                                 </div>
-
                             </form>
                         </motion.div>
                     )}

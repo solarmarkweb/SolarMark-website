@@ -313,12 +313,16 @@ async def download_pdf(pdf_id: str, current_user = Depends(get_current_user)):
         # Get file from GridFS
         grid_out = fs.get(file_id)
         
+        # Get content type from metadata or default to pdf
+        content_type = pdf_meta.get("content_type") or "application/pdf"
+        filename = pdf_meta.get("filename", "report.pdf")
+        
         # Create streaming response
         return StreamingResponse(
             iter(lambda: grid_out.read(1024), b''),
-            media_type="application/pdf",
+            media_type=content_type,
             headers={
-                "Content-Disposition": f"attachment; filename={pdf_meta.get('filename', 'report.pdf')}",
+                "Content-Disposition": f"attachment; filename={filename}",
                 "Content-Length": str(pdf_meta.get("file_size", 0))
             }
         )
@@ -352,11 +356,14 @@ async def view_pdf(pdf_id: str):
         grid_out = fs.get(file_id)
         file_content = grid_out.read()
         
+        content_type = pdf_meta.get("content_type") or "application/pdf"
+        filename = pdf_meta.get("filename", "document.pdf")
+        
         return StreamingResponse(
             iter([file_content]),
-            media_type="application/pdf",
+            media_type=content_type,
             headers={
-                "Content-Disposition": f"inline; filename={pdf_meta.get('filename', 'document.pdf')}",
+                "Content-Disposition": f"inline; filename={filename}",
                 "Content-Length": str(pdf_meta.get("file_size", 0))
             }
         )
