@@ -13,6 +13,7 @@ import {
     ChevronRight,
     Shield,
     Sun,
+    Globe,
     Link as LinkIcon,
     Camera,
     FileText,
@@ -65,6 +66,16 @@ const Sidebar = () => {
             icon: <Camera size={20} />,
             path: '/site-photos',
         },
+        {
+            title: 'Home Stats',
+            icon: <LayoutDashboard size={20} />,
+            path: '/home-stats',
+        },
+        {
+            title: 'Footer Social',
+            icon: <Globe size={20} />,
+            path: '/footer-settings',
+        }
     ];
 
     return (

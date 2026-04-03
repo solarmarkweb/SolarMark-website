@@ -1431,3 +1431,116 @@ async def upload_replacement_pdf(
         return {"message": "Replacement document uploaded and status updated to completed"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── REPORT SHARING ENDPOINTS ──
+
+class ShareReportRequest(BaseModel):
+    recipient_email: str
+
+@router.post("/report/{pdf_id}/share")
+async def share_report(
+    pdf_id: str, 
+    request: ShareReportRequest, 
+    background_tasks: BackgroundTasks,
+    current_user = Depends(get_current_user)
+):
+    try:
+        user_id = current_user["id"]
+        pdf_meta = pdfs_collection.find_one({"_id": ObjectId(pdf_id)})
+        if not pdf_meta:
+            raise HTTPException(status_code=404, detail="Report not found")
+        
+        # Check if recipient exists
+        recipient = db.users.find_one({"email": request.recipient_email})
+        if not recipient:
+            raise HTTPException(
+                status_code=404, 
+                detail="Recipient not found. They must be registered on SolarMark to access shared reports."
+            )
+            
+        # Check if already shared
+        existing = db.shared_reports.find_one({
+            "pdf_id": pdf_id,
+            "recipient_email": request.recipient_email,
+        })
+        
+        if not existing:
+            share_doc = {
+                "pdf_id": pdf_id,
+                "filename": pdf_meta.get("filename", ""),
+                "sender_id": user_id,
+                "sender_email": current_user.get("email"),
+                "sender_name": current_user.get("name", "User"),
+                "recipient_id": str(recipient["_id"]),
+                "recipient_email": request.recipient_email,
+                "recipient_name": f"{recipient.get('first_name', '')} {recipient.get('last_name', '')}".strip() or "User",
+                "shared_at": datetime.utcnow()
+            }
+            db.shared_reports.insert_one(share_doc)
+        else:
+            share_doc = existing
+            
+        from app.utils.email_service import email_service
+        background_tasks.add_task(
+            email_service.send_report_shared_notification,
+            share_doc["recipient_email"],
+            share_doc["recipient_name"],
+            share_doc["sender_name"],
+            share_doc["filename"]
+        )
+        
+        return {"message": "Report shared successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error sharing report: {e}")
+        raise HTTPException(status_code=500, detail="Failed to share report")
+
+@router.get("/report/shared-with-me")
+async def get_shared_with_me(current_user = Depends(get_current_user)):
+    try:
+        user_email = current_user.get("email")
+        shared_docs = list(db.shared_reports.find({"recipient_email": user_email}).sort("shared_at", -1))
+        
+        result = []
+        for doc in shared_docs:
+            pdf_meta = pdfs_collection.find_one({"_id": ObjectId(doc.get("pdf_id"))})
+            if not pdf_meta:
+                continue
+                
+            uploaded_at = pdf_meta.get("uploaded_at")
+            if isinstance(uploaded_at, datetime):
+                uploaded_at_str = uploaded_at.isoformat()
+            elif isinstance(uploaded_at, str):
+                uploaded_at_str = uploaded_at
+            else:
+                uploaded_at_str = datetime.utcnow().isoformat()
+                
+            shared_at = doc.get("shared_at")
+            if isinstance(shared_at, datetime):
+                shared_at_str = shared_at.isoformat()
+            else:
+                shared_at_str = datetime.utcnow().isoformat()
+                
+            result.append({
+                "share_id": str(doc["_id"]),
+                "pdf_id": str(pdf_meta["_id"]),
+                "file_id": str(pdf_meta.get("file_id", "")),
+                "filename": pdf_meta.get("filename", ""),
+                "file_size": pdf_meta.get("file_size", 0),
+                "uploaded_at": uploaded_at_str,
+                "shared_at": shared_at_str,
+                "sender_name": doc.get("sender_name", ""),
+                "sender_email": doc.get("sender_email", ""),
+                "shared_by": {
+                    "user_id": doc.get("sender_id", ""),
+                    "user_email": doc.get("sender_email", ""),
+                    "user_name": doc.get("sender_name", "")
+                }
+            })
+            
+        return result
+    except Exception as e:
+        print(f"Error fetching shared reports: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch shared reports")

@@ -130,15 +130,30 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
 async def get_profile(current_user = Depends(get_current_user)):
     """Get current user profile"""
     # current_user is already normalized with 'id', 'name', 'email' keys
-    return {
-        "id": current_user["id"],
-        "first_name": current_user.get("first_name", ""),
-        "last_name": current_user.get("last_name", ""),
-        "email": current_user["email"],
-        "created_at": current_user.get("created_at", datetime.utcnow()).isoformat()
-        if hasattr(current_user.get("created_at"), "isoformat")
-        else str(current_user.get("created_at", ""))
-    }
+    user_data = get_user_by_id(current_user["id"])
+    if not user_data:
+         raise HTTPException(status_code=404, detail="User not found")
+         
+    return format_user_response(user_data)
+
+@router.put("/profile/role")
+async def update_role(payload: dict, current_user = Depends(get_current_user)):
+    """Update current user's role"""
+    role = payload.get("role")
+    if not role:
+        raise HTTPException(status_code=400, detail="Role is required")
+    
+    valid_roles = ["Asset Owner", "Drone Service Provider", "Operation & Management"]
+    if role not in valid_roles:
+        raise HTTPException(status_code=400, detail="Invalid role type")
+    
+    result = db.users.update_one(
+        {"_id": ObjectId(current_user["id"])},
+        {"$set": {"role": role}}
+    )
+    
+    # Return success regardless of whether it actually changed (if it's already that value)
+    return {"message": "Role updated successfully", "role": role}
 
 @router.get("/verify-token")
 async def verify_token(current_user = Depends(get_current_user)):

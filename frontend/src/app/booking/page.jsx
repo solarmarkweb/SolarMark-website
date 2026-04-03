@@ -18,6 +18,7 @@ export default function BookingPage() {
         phone: "",
         companyName: "",
         companyType: "",
+        areaSize: "",
 
         // Project Details
         projectName: "",
@@ -36,10 +37,6 @@ export default function BookingPage() {
         flightTime: "",
         altitude: "",
 
-        // Deliverables
-        outputType: "",
-        resolution: "",
-
         // Additional
         additionalInfo: "",
 
@@ -56,7 +53,7 @@ export default function BookingPage() {
     const [submitting, setSubmitting] = useState(false);
     const [status, setStatus] = useState({ type: "", message: "" });
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://admin-backend-591983072009.asia-south1.run.app/api';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8002/api';
 
     useEffect(() => {
         // Check for logged in user
@@ -135,10 +132,14 @@ export default function BookingPage() {
                 location: formData.siteAddress,
 
                 service_type: formData.companyType,
+                company_name: formData.companyName,
                 system_size: formData.solarCapacity === "Other" ? formData.otherSolarCapacity : formData.solarCapacity,
+                area_size: formData.areaSize,
 
                 project_name: formData.projectName,
                 inspection_purpose: formData.inspectionPurpose,
+                date: formData.flightDate,
+                time: formData.flightTime,
 
                 coordinates: {
                     lat: formData.latitude,
@@ -149,11 +150,6 @@ export default function BookingPage() {
                     date: formData.flightDate,
                     time: formData.flightTime,
                     altitude: formData.altitude
-                },
-
-                output: {
-                    type: formData.outputType,
-                    resolution: formData.resolution
                 },
 
                 // Include thermal data only for Drone Service Provider
@@ -181,7 +177,15 @@ export default function BookingPage() {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.detail || 'Booking failed. Please check your data.');
+                let errorMessage = 'Booking failed. Please check your data.';
+                if (errorData.detail) {
+                    if (Array.isArray(errorData.detail)) {
+                        errorMessage = errorData.detail.map(err => `${err.loc[err.loc.length - 1]}: ${err.msg}`).join(', ');
+                    } else if (typeof errorData.detail === 'string') {
+                        errorMessage = errorData.detail;
+                    }
+                }
+                throw new Error(errorMessage);
             }
 
             setStatus({
@@ -202,7 +206,6 @@ export default function BookingPage() {
     // Dropdown Options
     const inspectionPurposes = ["Thermal Imaging", "Visual Inspection", "Maintenance Audit", "System Performance Analysis", "Fault Detection", "Construction Progress"];
     const airspaceTypes = ["Green (Open)", "Yellow (Controlled)", "Red (Restricted)"];
-    const outputTypes = ["High-Res Orthomosaic", "Level 1 Thermal Report", "AI Defect Identification (PDF)", "3D Digital Twin", "CAD / DXF Layout"];
     const companyTypes = ["Asset Owner", "EPC Contractor", "O&M Team", "Operation & Management", "Drone Service Provider", "Other"];
     const solarCapacities = ["Less than 1 MW", "1-10 MW", "10-50 MW", "50-100 MW", "100-500 MW", "500+ MW", "Other"];
 
@@ -352,7 +355,7 @@ export default function BookingPage() {
                                                 </select>
                                             )}
                                         </div>
-                                        <div className="group"><label className={labelClass}>Area Size (Acres/MW)*</label><input name="areaSize" placeholder="e.g. 50 Acres" className={inputClass} /></div>
+                                        <div className="group"><label className={labelClass}>Area Size (Acres/MW)*</label><input name="areaSize" required value={formData.areaSize} onChange={handleChange} placeholder="e.g. 50 Acres" className={inputClass} /></div>
                                     </div>
                                 </div>
 
@@ -387,16 +390,6 @@ export default function BookingPage() {
                                     <div className="flex items-center gap-3 text-orange-600 mb-6 font-bold">
                                         <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center"><Activity size={20} /></div>
                                         <h3 className="text-xl text-slate-900 uppercase tracking-wider">Deliverables & Analytics</h3>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="group">
-                                            <label className={labelClass}>Primary Output Type*</label>
-                                            <select name="outputType" required value={formData.outputType} onChange={handleChange} className={inputClass}>
-                                                <option value="">Select Output</option>
-                                                {outputTypes.map(o => <option key={o} value={o}>{o}</option>)}
-                                            </select>
-                                        </div>
-                                        <div className="group"><label className={labelClass}>GSD / Resolution Requirements</label><input name="resolution" value={formData.resolution} onChange={handleChange} className={inputClass} placeholder="e.g. 1cm/px" /></div>
                                     </div>
                                     <div className="group px-1 pt-4"><label className={labelClass}>Special Instructions / Site Hazards</label><textarea name="additionalInfo" rows="4" value={formData.additionalInfo} onChange={handleChange} className={inputClass + " resize-none"} placeholder="Add details about site obstacles, birds, or specific anomalies you are tracking..."></textarea></div>
                                 </div>

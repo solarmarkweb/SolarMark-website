@@ -84,4 +84,9 @@
     @apply no-select no-print;
     position: relative;
   }
+
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
 }

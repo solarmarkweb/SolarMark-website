@@ -1,6 +1,19 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Any
+from bson import ObjectId
+
+
+def stringify_objectids(value: Any) -> Any:
+    """Recursively convert ObjectId to str in any nested structure."""
+    if isinstance(value, ObjectId):
+        return str(value)
+    elif isinstance(value, dict):
+        return {k: stringify_objectids(v) for k, v in value.items()}
+    elif isinstance(value, list):
+        return [stringify_objectids(i) for i in value]
+    return value
+
 
 class BookingCreate(BaseModel):
     service_type: str = Field(..., description="Type of service being booked")
@@ -9,6 +22,13 @@ class BookingCreate(BaseModel):
     notes: Optional[str] = Field(None, description="Additional notes")
     contact_phone: str = Field(..., description="Contact phone number")
     status: str = Field("pending", description="Status of the booking")
+    location: Optional[str] = None
+    system_size: Optional[str] = None
+    company_name: Optional[str] = None
+    area_size: Optional[str] = None
+    project_name: Optional[str] = None
+    inspection_purpose: Optional[str] = None
+
 
 class GuestBookingCreate(BaseModel):
     name: str = Field(..., description="Full Name")
@@ -20,7 +40,9 @@ class GuestBookingCreate(BaseModel):
     notes: Optional[str] = Field(None, description="Message/Requirements")
     date: str = Field(..., description="Date of booking (YYYY-MM-DD)")
     time: str = Field(..., description="Time of booking (HH:MM)")
-    
+    company_name: Optional[str] = None
+    area_size: Optional[str] = None
+
     # Enhanced Fields
     project_name: Optional[str] = None
     inspection_purpose: Optional[str] = None
@@ -30,6 +52,10 @@ class GuestBookingCreate(BaseModel):
     flight: Optional[dict] = None
     compliance: Optional[dict] = None
     output: Optional[dict] = None
+    thermal: Optional[dict] = None
+
+    model_config = ConfigDict(extra="allow")
+
 
 class BookingUpdate(BaseModel):
     service_type: Optional[str] = None
@@ -40,7 +66,9 @@ class BookingUpdate(BaseModel):
     status: Optional[str] = None
     location: Optional[str] = None
     system_size: Optional[str] = None
-    
+    company_name: Optional[str] = None
+    area_size: Optional[str] = None
+
     # Enhanced Fields
     project_name: Optional[str] = None
     inspection_purpose: Optional[str] = None
@@ -50,6 +78,8 @@ class BookingUpdate(BaseModel):
     flight: Optional[dict] = None
     compliance: Optional[dict] = None
     output: Optional[dict] = None
+    thermal: Optional[dict] = None
+
 
 class BookingResponse(BaseModel):
     id: str
@@ -59,14 +89,16 @@ class BookingResponse(BaseModel):
     service_type: str
     date: str
     time: str
-    notes: Optional[str]
+    notes: Optional[str] = None
     contact_phone: str
     status: str
     payment_status: Optional[str] = "unpaid"
     location: Optional[str] = None
     system_size: Optional[str] = None
+    company_name: Optional[str] = None
+    area_size: Optional[str] = None
     created_at: datetime
-    
+
     # Enhanced Fields
     project_name: Optional[str] = None
     inspection_purpose: Optional[str] = None
@@ -76,3 +108,6 @@ class BookingResponse(BaseModel):
     flight: Optional[dict] = None
     compliance: Optional[dict] = None
     output: Optional[dict] = None
+    thermal: Optional[dict] = None
+
+    model_config = ConfigDict(extra="allow")

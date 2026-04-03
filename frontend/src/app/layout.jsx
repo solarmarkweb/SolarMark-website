@@ -12,7 +12,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" data-scroll-behavior="smooth">
       <body className={`${inter.className} antialiased bg-white text-slate-900`}>
         <Navbar />
         <main>{children}</main>

@@ -44,15 +44,26 @@ const ContentProtection = ({ children, isProtected = true }) => {
                 blackout();
             }
             
-            // 3. Snapshot Triggers (PrintScreen / Win / Meta / OS Keys)
-            if (e.key === 'PrintScreen' || e.keyCode === 44 || e.key === 'Snapshot' || 
-                e.key === 'Meta' || e.key === 'OS' || e.keyCode === 91 || e.keyCode === 92) {
+            // 3. Snapshot Triggers (PrintScreen / Win / Meta / OS Keys / Snipping Tool / Mac Screenshots)
+            if (e.key === 'PrintScreen' || e.keyCode === 44 || e.key === 'Snapshot' || e.key === 'SysReq' || 
+                e.key === 'Meta' || e.key === 'OS' || e.keyCode === 91 || e.keyCode === 92 ||
+                (e.metaKey && e.shiftKey && (e.key === 's' || e.key === 'S' || e.key === '3' || e.key === '4' || e.key === '5' || e.key === '5')) ||
+                (e.altKey && e.key === 'PrintScreen') ||
+                (e.ctrlKey && e.key === 'PrintScreen')) {
+                blackout();
+            }
+        };
+
+        // Extra fallback: some laptops fire `keyup` instead of `keydown` for Fn+PrintScreen
+        const handleKeyUpSecurity = (e) => {
+            if (e.key === 'PrintScreen' || e.keyCode === 44 || e.key === 'SysReq' || e.key === 'Snapshot') {
                 blackout();
             }
         };
 
         // 4. Specific Snapshot Intent Detection
         document.addEventListener('keydown', handleKeyDownSecurity);
+        document.addEventListener('keyup', handleKeyUpSecurity);
         window.addEventListener('focus', restore);
 
         return () => {
@@ -62,6 +73,7 @@ const ContentProtection = ({ children, isProtected = true }) => {
             document.removeEventListener('selectstart', preventDefault);
             document.removeEventListener('dragstart', preventDefault);
             document.removeEventListener('keydown', handleKeyDownSecurity);
+            document.removeEventListener('keyup', handleKeyUpSecurity);
             window.removeEventListener('focus', restore);
         };
     }, [isProtected]);

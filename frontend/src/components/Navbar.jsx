@@ -113,7 +113,6 @@ export default function Navbar() {
                                 { name: "Home", href: "/" },
                                 { name: "Bookings", href: "/booking" },
                                 { name: "Contact", href: "/contact" },
-                                ...(isLoggedIn ? [{ name: "Profile", href: "/profile" }] : [])
                             ].map((link) => (
                                 <Link
                                     key={link.name}
@@ -145,16 +144,16 @@ export default function Navbar() {
                         ) : (
                             <div className="flex items-center gap-6">
                                 <Link
-                                    href="/login"
+                                    href="/register"
                                     className="text-sm font-bold text-slate-400 hover:text-slate-900 transition-colors"
                                 >
-                                    Sign In
+                                    Sign Up
                                 </Link>
                                 <Link
-                                    href="/booking"
+                                    href="/login"
                                     className="px-8 py-3 text-sm font-bold bg-slate-900 text-white rounded-xl hover:bg-orange-600 transition-all shadow-lg shadow-slate-200/50"
                                 >
-                                    Request Scan
+                                    Log In
                                 </Link>
                             </div>
                         )}
@@ -202,8 +201,8 @@ export default function Navbar() {
                                     <button onClick={() => { handleLogout(); setIsMenuOpen(false); }} className="block w-full py-5 text-center text-red-500 text-sm font-bold">Logout</button>
                                 ) : (
                                     <>
-                                        <Link href="/login" className="block w-full py-5 text-center text-slate-400 text-sm font-bold" onClick={() => setIsMenuOpen(false)}>Sign In</Link>
-                                        <Link href="/booking" className="block w-full py-5 text-center bg-slate-900 text-white rounded-2xl text-sm font-bold shadow-xl shadow-slate-200" onClick={() => setIsMenuOpen(false)}>Request Scan</Link>
+                                        <Link href="/register" className="block w-full py-5 text-center text-slate-400 text-sm font-bold" onClick={() => setIsMenuOpen(false)}>Sign Up</Link>
+                                        <Link href="/login" className="block w-full py-5 text-center bg-slate-900 text-white rounded-2xl text-sm font-bold shadow-xl shadow-slate-200" onClick={() => setIsMenuOpen(false)}>Log In</Link>
                                     </>
                                 )}
                             </div>

@@ -12,7 +12,7 @@ import {
     ShieldCheck, Trash2, Lock, CreditCard,
     Shield, X, GitCompare, ArrowUpDown, BarChart3, CheckSquare, Square, Zap, LogOut,
     MessageSquarePlus, History, Send, MessageSquare, ListTodo, Share2, Users,
-    CloudUpload, Camera, Globe, Database, ArrowRight
+    CloudUpload, Camera, Globe, Database, ArrowRight, ChevronDown
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -301,8 +301,8 @@ export default function ProfilePage() {
     const handleImageUpload = async (e) => {
         e.preventDefault();
 
-        if (rgbFiles.length === 0 && thermalFiles.length === 0) {
-            setUploadStatus({ type: "error", message: "Please select at least one asset to upload." });
+        if (rgbFiles.length === 0) {
+            setUploadStatus({ type: "error", message: "A Drone Image is mandatory to proceed." });
             return;
         }
 
@@ -410,6 +410,22 @@ export default function ProfilePage() {
     const handleLogout = () => {
         authAPI.clearAuthData();
         router.push('/login');
+    };
+
+    const handleRoleSwitch = async (newRole) => {
+        try {
+            setLoading(true);
+            await authAPI.updateRole(newRole);
+            localStorage.setItem("user_role", newRole);
+            setUserRole(newRole);
+            // Re-fetch data to update UI visibility
+            await fetchProfileData();
+        } catch (err) {
+            console.error("Error switching role:", err);
+            setError("Failed to update role. Please try again.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleDeleteBooking = async (bookingId) => {
@@ -562,7 +578,10 @@ export default function ProfilePage() {
         try {
             const existingReview = await authAPI.getMyReportReview(pdf.pdf_id);
             if (existingReview.data) {
-                setReviewText(existingReview.data.user_feedback);
+                // Only pre-fill if the request is still pending
+                if (existingReview.data.status === 'pending') {
+                    setReviewText(existingReview.data.user_feedback);
+                }
                 setReportReviews(prev => ({
                     ...prev,
                     [pdf.pdf_id]: existingReview.data
@@ -674,6 +693,23 @@ export default function ProfilePage() {
                                     <span className="w-1 h-1 bg-slate-700 rounded-full"></span>
                                     <span className="flex items-center gap-1.5"><ShieldCheck size={14} className="text-green-500" /> Premium Account</span>
                                 </div>
+
+                                <div className="mt-6 flex items-center gap-4 py-2 px-4 bg-white/5 rounded-2xl border border-white/10 w-fit backdrop-blur-sm">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Active Identity:</span>
+                                    </div>
+                                    <select
+                                        value={userRole || ""}
+                                        onChange={(e) => handleRoleSwitch(e.target.value)}
+                                        className="bg-transparent text-white text-xs font-black uppercase tracking-widest outline-none cursor-pointer hover:text-orange-400 transition-colors"
+                                    >
+                                        <option value="Asset Owner" className="text-slate-900">Asset Owner</option>
+                                        <option value="Drone Service Provider" className="text-slate-900">Drone Service Provider</option>
+                                        <option value="Operation & Management" className="text-slate-900">Operation & Management</option>
+                                    </select>
+                                    <ChevronDown size={12} className="text-slate-500" />
+                                </div>
                             </div>
                         </div>
 
@@ -719,23 +755,21 @@ export default function ProfilePage() {
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
 
-                                {/* Left Column: Interactive Direct Flow Hub - Professional Ash Theme */}
+                                {/* Left Column: Elegant Clean Intro */}
                                 <div className="lg:col-span-6 xl:col-span-5 flex items-center justify-center">
-                                    <div className="w-full max-w-lg">
-                                        {/* Premium Ash Theme - Replaced Dark Mode */}
-                                        <div className="p-10 md:p-12 bg-slate-200/60 rounded-[2.5rem] shadow-sm relative overflow-hidden group hover:bg-slate-200/80 transition-all duration-500 border border-slate-300/50">
+                                    <div className="w-full max-w-sm">
+                                        <div className="p-10 md:p-12 bg-slate-100/80 rounded-[2.5rem] relative overflow-hidden transition-all duration-500">
                                             <div className="relative z-10">
-                                                <h2 className="text-4xl md:text-5xl font-black text-slate-900 leading-tight tracking-tighter uppercase">
+                                                <h2 className="text-4xl md:text-[2.75rem] font-black text-slate-900 leading-[1.1] tracking-tight uppercase">
                                                     UPLOAD TO <br />
-                                                    <span className="text-orange-600 drop-shadow-sm transition-all duration-500">GOOGLE DRIVE</span>
+                                                    <span className="text-[#f97316]">GOOGLE DRIVE</span>
                                                 </h2>
-                                                <p className="mt-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
+                                                <p className="mt-6 text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em] leading-relaxed">
                                                     Easy cloud upload <br />
                                                     for your solar projects.
                                                 </p>
                                             </div>
-                                            {/* Subtle Background Accent */}
-                                            <div className="absolute top-0 right-0 w-32 h-32 bg-white/40 rounded-full blur-2xl -z-0" />
+                                            <div className="absolute top-0 right-0 w-48 h-48 bg-white/60 rounded-full blur-3xl -z-0 pointer-events-none" />
                                         </div>
                                     </div>
                                 </div>
@@ -757,7 +791,7 @@ export default function ProfilePage() {
                                         whileInView={{ opacity: 1, scale: 1 }}
                                         viewport={{ once: true }}
                                         whileHover={{ y: -4 }}
-                                        className="bg-white border-2 border-slate-950 rounded-[2.5rem] p-8 md:p-10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.05)] w-full max-w-xl relative overflow-hidden"
+                                        className="bg-white border-2 border-slate-950 rounded-[2.5rem] p-8 md:p-10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.05)] w-full max-w-md relative overflow-hidden mx-auto"
                                     >
                                         <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-50">
                                             <h3 className="text-[11px] font-black text-slate-800 uppercase tracking-[0.3em]">Upload here</h3>
@@ -775,7 +809,7 @@ export default function ProfilePage() {
                                                     onChange={(e) => handleFileChange(e, 'rgb')}
                                                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                                 />
-                                                <div className={`p-8 rounded-3xl border-2 transition-all duration-300 flex flex-col items-center justify-center gap-4 ${rgbFiles.length > 0
+                                                <div className={`aspect-square w-full p-4 rounded-[2rem] border-2 transition-all duration-300 flex flex-col items-center justify-center gap-4 ${rgbFiles.length > 0
                                                         ? 'border-orange-600 bg-orange-100 shadow-inner'
                                                         : 'border-orange-100 bg-orange-50 hover:border-orange-200 hover:shadow-lg'
                                                     }`}>
@@ -785,8 +819,8 @@ export default function ProfilePage() {
                                                     </div>
                                                     <div className="text-center">
                                                         <h4 className="text-sm font-bold text-slate-900 mb-0.5 uppercase tracking-tight">Drone Image</h4>
-                                                        <span className={`text-[10px] font-black tracking-widest transition-colors uppercase ${rgbFiles.length > 0 ? 'text-orange-600' : 'text-orange-400 opacity-60'}`}>
-                                                            {rgbFiles.length > 0 ? `${rgbFiles.length} Selected` : "Scan Hub"}
+                                                        <span className={`text-[10px] font-black tracking-widest transition-colors uppercase ${rgbFiles.length > 0 ? 'text-orange-600' : 'text-red-500 opacity-80'}`}>
+                                                            {rgbFiles.length > 0 ? `${rgbFiles.length} Selected` : "REQUIRED"}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -803,7 +837,7 @@ export default function ProfilePage() {
                                                     onChange={(e) => handleFileChange(e, 'thermal')}
                                                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                                 />
-                                                <div className={`p-8 rounded-3xl border-2 transition-all duration-300 flex flex-col items-center justify-center gap-4 ${thermalFiles.length > 0
+                                                <div className={`aspect-square w-full p-4 rounded-[2rem] border-2 transition-all duration-300 flex flex-col items-center justify-center gap-4 ${thermalFiles.length > 0
                                                         ? 'border-orange-600 bg-orange-100 shadow-inner'
                                                         : 'border-orange-100 bg-orange-50 hover:border-orange-200 hover:shadow-lg'
                                                     }`}>
@@ -814,7 +848,7 @@ export default function ProfilePage() {
                                                     <div className="text-center">
                                                         <h4 className="text-sm font-bold text-slate-900 mb-0.5 uppercase tracking-tight">Site Plan</h4>
                                                         <span className={`text-[10px] font-black tracking-widest transition-colors uppercase ${thermalFiles.length > 0 ? 'text-orange-600' : 'text-orange-400 opacity-60'}`}>
-                                                            {thermalFiles.length > 0 ? `${thermalFiles.length} Vectors` : "KML Import"}
+                                                            {thermalFiles.length > 0 ? `${thermalFiles.length} Vectors` : "KML OPTIONAL"}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -825,10 +859,10 @@ export default function ProfilePage() {
                                             <button
                                                 onClick={(e) => {
                                                     e.preventDefault();
-                                                    if (rgbFiles.length === 0 && thermalFiles.length === 0) return;
+                                                    if (rgbFiles.length === 0) return;
                                                     setShowUploadModal(true);
                                                 }}
-                                                disabled={uploading || (rgbFiles.length === 0 && thermalFiles.length === 0)}
+                                                disabled={uploading || rgbFiles.length === 0}
                                                 className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.4em] transition-all hover:bg-orange-600 active:scale-[0.98] disabled:opacity-40 flex items-center justify-center gap-3 shadow-xl"
                                             >
                                                 {uploading ? (
@@ -1117,8 +1151,8 @@ export default function ProfilePage() {
                                         </div>
 
                                         <div className="space-y-3">
-                                            {sharedWithMe.map((shared) => (
-                                                <div key={shared.share_id} className="flex items-center justify-between p-5 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:shadow-lg hover:shadow-slate-200/20 transition-all">
+                                            {sharedWithMe.map((shared, index) => (
+                                                <div key={shared.share_id || shared.pdf_id || index} className="flex items-center justify-between p-5 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:shadow-lg hover:shadow-slate-200/20 transition-all">
                                                     <div className="flex items-center gap-4 overflow-hidden">
                                                         <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-slate-100 shrink-0">
                                                             <FileText size={20} className="text-blue-500" />

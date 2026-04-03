@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8002/api';
 
 const api = axios.create({
     baseURL: API_URL,
@@ -82,6 +82,7 @@ export const authAPI = {
     getProfile: () => api.get('/profile'),
     verifyToken: () => api.get('/verify-token'),
     logout: () => api.post('/logout'),
+    updateRole: (role) => api.put('/profile/role', { role }),
 
     // Drive Links endpoints
     saveLinks: (data) => api.post('/drive-links', data),
