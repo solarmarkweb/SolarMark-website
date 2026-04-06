@@ -797,14 +797,6 @@ export default function ProfilePage() {
                                 </div>
                             </div>
                         </div>
-
-                        <button
-                            onClick={handleLogout}
-                            className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white text-sm font-bold transition-all flex items-center gap-2 backdrop-blur-md"
-                        >
-                            <LogOut size={16} />
-                            Sign Out
-                        </button>
                     </div>
                 </div>
             </div>
@@ -1140,13 +1132,13 @@ export default function ProfilePage() {
                                                 <div key={pdf.pdf_id} className={`flex items-center justify-between p-5 rounded-2xl border transition-all ${isSelected ? 'bg-orange-50/50 border-orange-200 shadow-sm' : 'bg-white border-slate-100 hover:border-slate-200 hover:shadow-md hover:shadow-slate-200/20'
                                                     }`}>
                                                     <div className="flex items-center gap-4 overflow-hidden">
-                                                        <button
-                                                            onClick={() => toggleReportSelection(pdf.pdf_id)}
-                                                            className={`w-5 h-5 rounded-lg flex items-center justify-center border-2 transition-all ${isSelected ? 'bg-orange-600 border-orange-600 scale-110 shadow-lg shadow-orange-600/20' : 'border-slate-200 hover:border-orange-400'
-                                                                }`}
-                                                        >
-                                                            {isSelected && <CheckSquare size={10} strokeWidth={4} className="text-white" />}
-                                                        </button>
+{/* <button
+    onClick={() => toggleReportSelection(pdf.pdf_id)}
+    className={`w-5 h-5 rounded-lg flex items-center justify-center border-2 transition-all ${isSelected ? 'bg-orange-600 border-orange-600 scale-110 shadow-lg shadow-orange-600/20' : 'border-slate-200 hover:border-orange-400'
+        }`}
+>
+    {isSelected && <CheckSquare size={10} strokeWidth={4} className="text-white" />}
+</button> */}
 
                                                         {(() => {
                                                             const fileMeta = getFileIcon(pdf.filename);

@@ -1128,8 +1128,8 @@ export default function HomePage() {
       <section className="bg-white py-32 px-6 md:px-12 text-center relative overflow-hidden">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-orange-600/10 rounded-full blur-[140px] pointer-events-none"></div>
         <div className="max-w-4xl mx-auto relative z-10">
-          <div className="flex items-center justify-center gap-3 text-cyan-500 font-mono text-xs uppercase tracking-widest mb-8">
-            <div className="w-6 h-px bg-black-500"></div> Get Started
+          <div className="flex items-center justify-center gap-3 text-black font-black font-mono text-xs uppercase tracking-widest mb-8">
+            <div className="w-6 h-px bg-black"></div> Get Started
           </div>
           <h2 className="font-black text-4xl md:text-7xl text-slate-900 uppercase leading-none tracking-tight mb-8">
             Stop Losing Yield.<br /><span className="text-orange-500">See Your Site Clearly.</span>
