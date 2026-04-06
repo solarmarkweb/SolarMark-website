@@ -51,6 +51,40 @@ async def upload_site_photo(
         "category": category
     }
 
+@router.post("/create-from-url")
+async def create_site_photo_from_url(
+    payload: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    if not current_user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Only admins can add site photos")
+    
+    url = payload.get("url")
+    title = payload.get("title", "")
+    description = payload.get("description", "")
+    category = payload.get("category", "general")
+    
+    if not url:
+        raise HTTPException(status_code=400, detail="URL is required")
+        
+    photo_doc = {
+        "title": title,
+        "description": description,
+        "category": category,
+        "url": url,
+        "uploaded_at": datetime.utcnow(),
+        "status": "active"
+    }
+    
+    result = db.site_photos.insert_one(photo_doc)
+    
+    return {
+        "id": str(result.inserted_id),
+        "url": url,
+        "title": title,
+        "category": category
+    }
+
 from typing import List, Optional, Dict, Any
 
 @router.get("", response_model=List[dict])

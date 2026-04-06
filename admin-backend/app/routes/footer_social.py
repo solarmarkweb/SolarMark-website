@@ -16,6 +16,12 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 @router.get("")
 async def get_social_links():
     links = list(db.footer_social.find({}))
+    
+    # If no links in D
+    # B, we could either return empty or seed once.
+    # To satisfy the user's need to delete them, we shouldn't return hardcoded ones.
+    # If we want to provide a starting point, we'd seed them into the DB.
+    
     result = []
     for link in links:
         result.append({
@@ -25,14 +31,7 @@ async def get_social_links():
             "icon_url": link.get("icon_url", ""),
             "order": link.get("order", 0)
         })
-    # If no links, return default
-    if not result:
-        return [
-            {"id": "d1", "platform": "Facebook", "url": "#", "icon_url": "", "order": 0},
-            {"id": "d2", "platform": "Twitter", "url": "#", "icon_url": "", "order": 1},
-            {"id": "d3", "platform": "LinkedIn", "url": "#", "icon_url": "", "order": 2},
-            {"id": "d4", "platform": "Instagram", "url": "#", "icon_url": "", "order": 3},
-        ]
+    
     return sorted(result, key=lambda x: x["order"])
 
 @router.post("/upload")
@@ -76,8 +75,10 @@ async def delete_social_link(link_id: str, current_user: dict = Depends(get_curr
         raise HTTPException(status_code=403, detail="Only admins can delete footer social links")
     
     if not ObjectId.is_valid(link_id):
-        # Allow UI cleanup of default d1, d2 links without raising error
-        return {"message": "Success"}
+        raise HTTPException(status_code=400, detail="Invalid link ID format")
         
-    db.footer_social.delete_one({"_id": ObjectId(link_id)})
+    result = db.footer_social.delete_one({"_id": ObjectId(link_id)})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Social link not found")
+        
     return {"message": "Link deleted successfully"}

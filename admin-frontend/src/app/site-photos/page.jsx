@@ -8,6 +8,10 @@ import {
   FileImage, Sliders, Save, ChevronDown
 } from 'lucide-react';
 
+// FIREBASE STORAGE IMPORTS
+import { storage } from '../../lib/firebase';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+
 export default function SitePhotosPage() {
   const router = useRouter();
   const [photos, setPhotos] = useState([]);
@@ -66,30 +70,56 @@ export default function SitePhotosPage() {
     setStatus({ type: 'info', message: 'Uploading photo...' });
 
     const token = localStorage.getItem('token');
-    const uploadData = new FormData();
-    uploadData.append('file', file);
-    uploadData.append('title', formData.title);
-    uploadData.append('description', formData.description);
-    uploadData.append('category', formData.category);
-
+    
     try {
-      const response = await fetch(`${API_URL}/site-photos/upload`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: uploadData
+      // 1. UPLOAD TO FIREBASE STORAGE
+      const fileExtension = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExtension}`;
+      const storageRef = ref(storage, `site-photos/${fileName}`);
+      
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      // Wait for upload to complete
+      const downloadURL = await new Promise((resolve, reject) => {
+        uploadTask.on(
+          'state_changed',
+          (snapshot) => {
+            // Can add progress bar logic here if needed
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            setStatus({ type: 'info', message: `Uploading color... ${Math.round(progress)}%` });
+          },
+          (error) => reject(error),
+          () => {
+            getDownloadURL(uploadTask.snapshot.ref).then((url) => resolve(url));
+          }
+        );
       });
 
-      if (!response.ok) throw new Error('Upload failed');
+      // 2. SEND METADATA AND URL TO BACKEND
+      const response = await fetch(`${API_URL}/site-photos/create-from-url`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          url: downloadURL,
+          title: formData.title,
+          description: formData.description,
+          category: formData.category
+        })
+      });
 
-      setStatus({ type: 'success', message: 'Photo uploaded successfully!' });
+      if (!response.ok) throw new Error('Failed to save metadata to backend');
+
+      setStatus({ type: 'success', message: 'Photo uploaded and published successfully!' });
       setFile(null);
       setPreview(null);
       setFormData({ title: '', description: '', category: 'homepage' });
       fetchPhotos();
     } catch (err) {
-      setStatus({ type: 'error', message: err.message });
+      console.error('Firebase Upload Error:', err);
+      setStatus({ type: 'error', message: err.message || 'Upload failed' });
     } finally {
       setUploading(false);
     }
@@ -287,8 +317,8 @@ export default function SitePhotosPage() {
                 {photos.map((photo) => (
                   <div key={photo.id} className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-200 group hover:shadow-xl hover:scale-[1.02] transition-all duration-500">
                     <div className="relative aspect-video overflow-hidden bg-slate-100">
-                      <img
-                        src={API_URL.replace('/api', '') + photo.url}
+                    <img
+                        src={photo.url.startsWith('http') ? photo.url : `${API_URL.replace('/api', '')}${photo.url}`}
                         alt={photo.title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                       />

@@ -3,6 +3,7 @@ from app.db import db
 from datetime import datetime
 from app.routes.auth import get_current_user
 from app.models.bookings import BookingCreate, BookingUpdate, BookingResponse, GuestBookingCreate, stringify_objectids
+from app.utils.email_service import email_service
 from typing import List, Optional
 from bson import ObjectId
 
@@ -57,6 +58,26 @@ def create_booking(payload: BookingCreate, current_user=Depends(get_current_user
     subscription = db.subscriptions.find_one({"email": document["user_email"]})
     payment_status = subscription.get("status", "unpaid") if subscription else "unpaid"
 
+    # Notify Admin via Email
+    try:
+        booking_details = (
+            f"A new booking has been received from a registered user.\n\n"
+            f"Customer Name: {document.get('user_name')}\n"
+            f"Customer Email: {document.get('user_email')}\n"
+            f"Service: {document.get('service_type')}\n"
+            f"Date: {document.get('date')}\n"
+            f"Time: {document.get('time')}\n"
+            f"Phone: {document.get('contact_phone')}\n"
+            f"Location: {document.get('location', 'N/A')}\n"
+            f"Notes: {document.get('notes', 'No notes provided.')}"
+        )
+        email_service.send_notification(
+            subject=f"New Booking: {document.get('service_type')} - {document.get('user_name')}",
+            body=booking_details
+        )
+    except Exception as e:
+        print(f"Failed to send admin notification: {e}")
+
     return make_booking_response(document, payment_status)
 
 
@@ -72,6 +93,26 @@ def create_guest_booking(payload: GuestBookingCreate):
 
     result = collection.insert_one(document)
     document["_id"] = result.inserted_id
+
+    # Notify Admin via Email
+    try:
+        booking_details = (
+            f"A new guest booking has been received.\n\n"
+            f"Customer Name: {document.get('user_name')}\n"
+            f"Customer Email: {document.get('user_email')}\n"
+            f"Service: {document.get('service_type')}\n"
+            f"Date: {document.get('date')}\n"
+            f"Time: {document.get('time')}\n"
+            f"Phone: {document.get('contact_phone')}\n"
+            f"Location: {document.get('location', 'N/A')}\n"
+            f"Notes: {document.get('notes', 'No notes provided.')}"
+        )
+        email_service.send_notification(
+            subject=f"New Guest Booking: {document.get('service_type')} - {document.get('user_name')}",
+            body=booking_details
+        )
+    except Exception as e:
+        print(f"Failed to send admin notification: {e}")
 
     return make_booking_response(document, "unpaid")
 
