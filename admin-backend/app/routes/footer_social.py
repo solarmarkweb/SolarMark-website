@@ -13,7 +13,7 @@ router = APIRouter(prefix="/footer-social", tags=["Footer Social"])
 UPLOAD_DIR = "uploads/footer_icons"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-@router.get("/")
+@router.get("")
 async def get_social_links():
     links = list(db.footer_social.find({}))
     result = []
@@ -35,7 +35,7 @@ async def get_social_links():
         ]
     return sorted(result, key=lambda x: x["order"])
 
-@router.post("/upload/")
+@router.post("/upload")
 async def add_social_link(
     platform: str = Form(...),
     url: str = Form(...),

@@ -5,7 +5,7 @@ from typing import Any, Dict
 
 router = APIRouter(prefix="/about", tags=["about"])
 
-@router.get("/", response_model=AboutContent)
+@router.get("", response_model=AboutContent)
 async def get_about_content():
     content = db.about_content.find_one({}, {"_id": 0})
     if not content:
@@ -82,7 +82,7 @@ async def get_about_content():
         }
     return content
 
-@router.post("/", response_model=AboutContent)
+@router.post("", response_model=AboutContent)
 async def update_about_content(content: AboutContent):
     db.about_content.delete_many({})
     db.about_content.insert_one(content.dict())

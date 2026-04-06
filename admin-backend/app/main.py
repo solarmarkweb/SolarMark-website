@@ -20,7 +20,11 @@ origins = [
     "http://localhost:3002",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:3001",
-    "http://127.0.0.1:3002"
+    "http://127.0.0.1:3002",
+    "https://solarmark.in",
+    "https://www.solarmark.in",
+    "https://admin.solarmark.in",
+    "https://www.admin.solarmark.in"
 ]
 
 app.add_middleware(

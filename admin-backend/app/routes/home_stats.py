@@ -13,7 +13,7 @@ class StatItem(BaseModel):
 class HomeStatsUpdate(BaseModel):
     stats: List[StatItem]
 
-@router.get("/")
+@router.get("")
 async def get_home_stats():
     record = db.home_stats.find_one({})
     if not record:
@@ -25,7 +25,7 @@ async def get_home_stats():
         ]
     return record.get("stats", [])
 
-@router.post("/")
+@router.post("")
 async def update_home_stats(data: HomeStatsUpdate):
     db.home_stats.delete_many({})
     db.home_stats.insert_one({"stats": [s.dict() for s in data.stats]})

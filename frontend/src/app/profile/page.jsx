@@ -514,24 +514,24 @@ export default function ProfilePage() {
     };
 
     const handleCompareReports = async () => {
-        if (selectedReports.length < 2) {
-            setError("Please select at least 2 reports to compare");
-            return;
-        }
+        // if (selectedReports.length < 2) {
+        //     setError("Please select at least 2 reports to compare");
+        //     return;
+        // }
 
-        try {
-            setComparingReports(true);
-            setError("");
+        // try {
+        //     setComparingReports(true);
+        //     setError("");
 
-            const result = await authAPI.compareReports(selectedReports, sortBy, sortOrder);
-            setComparisonResult(result);
-            setShowComparisonModal(true);
-        } catch (err) {
-            console.error("Error comparing reports:", err);
-            setError(err.response?.data?.detail || "Failed to compare reports");
-        } finally {
-            setComparingReports(false);
-        }
+        //     const result = await authAPI.compareReports(selectedReports, sortBy, sortOrder);
+        //     setComparisonResult(result);
+        //     setShowComparisonModal(true);
+        // } catch (err) {
+        //     console.error("Error comparing reports:", err);
+        //     setError(err.response?.data?.detail || "Failed to compare reports");
+        // } finally {
+        //     setComparingReports(false);
+        // }
     };
 
     const clearComparison = () => {
@@ -1097,7 +1097,7 @@ export default function ProfilePage() {
                                     <p className="text-slate-500 text-sm mt-1">Access and analyze your solar assets</p>
                                 </div>
 
-                                {pdfs.length > 1 && (
+                                {/* {pdfs.length > 1 && (
                                     <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
                                         <button
                                             onClick={handleCompareReports}
@@ -1120,7 +1120,7 @@ export default function ProfilePage() {
                                             </button>
                                         )}
                                     </div>
-                                )}
+                                )} */}
                             </div>
 
                             <ContentProtection isProtected={true}>
