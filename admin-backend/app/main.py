@@ -24,7 +24,8 @@ origins = [
     "https://solarmark.in",
     "https://www.solarmark.in",
     "https://admin.solarmark.in",
-    "https://www.admin.solarmark.in"
+    "https://www.admin.solarmark.in",
+    "https://solar-mark-website-ssar.vercel.app"
 ]
 
 app.add_middleware(
