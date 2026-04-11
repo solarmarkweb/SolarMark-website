@@ -41,6 +41,9 @@ export default function ProfilePage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [bookings, setBookings] = useState([]);
+    const [bookingFilter, setBookingFilter] = useState('All');
+    const [showBookingsList, setShowBookingsList] = useState(false);
+    const [showReportsList, setShowReportsList] = useState(false);
 
     // Data States
     const [pdfs, setPdfs] = useState([]);
@@ -88,6 +91,10 @@ export default function ProfilePage() {
 
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [uploadForm, setUploadForm] = useState({ projectName: "", areaSize: "" });
+
+    // Action Modals
+    const [showBookingModal, setShowBookingModal] = useState(false);
+    const [showContactModal, setShowContactModal] = useState(false);
 
 
 
@@ -751,7 +758,7 @@ export default function ProfilePage() {
             <div className="bg-slate-950 pt-32 pb-32 relative overflow-hidden">
                 <div className="absolute inset-0 bg-[url('https://images.pexels.com/photos/3912982/pexels-photo-3912982.jpeg')] bg-cover bg-center opacity-10 mix-blend-overlay"></div>
 
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div className="max-w-[1800px] w-[96%] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
                         <div className="flex items-center gap-6">
                             <div className="w-24 h-24 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-2xl ring-4 ring-slate-900 overflow-hidden relative group">
@@ -773,28 +780,13 @@ export default function ProfilePage() {
                                                 className="flex items-center gap-1.5 font-mono font-black text-orange-400 tracking-widest text-xs px-3 py-1 rounded-full border border-orange-500/30 bg-orange-500/10 select-all cursor-pointer hover:bg-orange-500/20 transition-all"
                                                 title="Your unique SolarMark User ID — click to copy. Share with admin to manage your reports."
                                             >
-                                                🪪 {user.user_code}
+                                                CLIENT ID: {user.user_code}
                                             </span>
                                         </>
                                     )}
                                 </div>
 
-                                <div className="mt-6 flex items-center gap-4 py-2 px-4 bg-white/5 rounded-2xl border border-white/10 w-fit backdrop-blur-sm">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
-                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Active Identity:</span>
-                                    </div>
-                                    <select
-                                        value={userRole || ""}
-                                        onChange={(e) => handleRoleSwitch(e.target.value)}
-                                        className="bg-transparent text-white text-xs font-black uppercase tracking-widest outline-none cursor-pointer hover:text-orange-400 transition-colors"
-                                    >
-                                        <option value="Asset Owner" className="text-slate-900">Asset Owner</option>
-                                        <option value="Drone Service Provider" className="text-slate-900">Drone Service Provider</option>
-                                        <option value="Operation & Management" className="text-slate-900">Operation & Management</option>
-                                    </select>
-                                    <ChevronDown size={12} className="text-slate-500" />
-                                </div>
+
                             </div>
                         </div>
                     </div>
@@ -802,7 +794,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Main Content Dashboard */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-20 pb-20">
+            <div className="max-w-[1800px] w-[96%] mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-20 pb-20">
                 {error && (
                     <motion.div
                         initial={{ opacity: 0, y: -20 }}
@@ -843,7 +835,7 @@ export default function ProfilePage() {
                                                 </h2>
                                                 <p className="mt-6 text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em] leading-relaxed">
                                                     Easy cloud upload <br />
-                                                    for your solar projects.
+                                                    for Drone Service Providers Only.
                                                 </p>
                                             </div>
                                             <div className="absolute top-0 right-0 w-48 h-48 bg-white/60 rounded-full blur-3xl -z-0 pointer-events-none" />
@@ -959,8 +951,8 @@ export default function ProfilePage() {
                 )}
 
 
-                {/* Stats Grid - Standard 3-Container System */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                {/* Stats Grid - 7 Container System */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4 xl:gap-6 mb-12 items-start">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -972,11 +964,7 @@ export default function ProfilePage() {
                                 <FileText size={24} />
                             </div>
                             <h3 className="text-3xl font-black text-slate-900 mb-1 tracking-tight">{stats.total_pdfs}</h3>
-                            <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Inspection Reports</p>
-                        </div>
-                        <div className="mt-6 pt-6 border-t border-slate-50 flex justify-between items-center text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                            <span>Data Volume</span>
-                            <span className="text-slate-900">{stats.total_size} MB</span>
+                            <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Reports</p>
                         </div>
                     </motion.div>
 
@@ -993,10 +981,6 @@ export default function ProfilePage() {
                             <h3 className="text-3xl font-black text-slate-900 mb-1 tracking-tight">{stats.total_bookings}</h3>
                             <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Total Bookings</p>
                         </div>
-                        <div className="mt-6 pt-6 border-t border-slate-50 flex justify-between items-center text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                            <span>Pending Jobs</span>
-                            <span className="text-orange-600">{bookings.filter(b => b.status === 'pending').length} Active</span>
-                        </div>
                     </motion.div>
 
                     <motion.div
@@ -1012,265 +996,331 @@ export default function ProfilePage() {
                             <h3 className="text-3xl font-black text-slate-900 mb-1 tracking-tight">{bookings.filter(b => b.status === 'completed' || b.status === 'confirmed').length}</h3>
                             <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Completed Audits</p>
                         </div>
-                        <div className="mt-6 pt-6 border-t border-slate-50 flex justify-between items-center text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                            <span>Success Rate</span>
-                            <span className="text-emerald-600">{stats.total_bookings > 0 ? Math.round((bookings.filter(b => b.status === 'completed').length / stats.total_bookings) * 100) : 0}%</span>
+                    </motion.div>
+
+
+                        {/* Bookings Container */}
+                        <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 flex flex-col transition-all overflow-hidden relative">
+                            <div 
+                                className="p-6 group cursor-pointer transition-all relative overflow-hidden"
+                                onClick={() => setShowBookingsList(!showBookingsList)}
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-br from-amber-400/0 to-amber-400/5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                <div className="relative z-10 w-full">
+                                    <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center mb-4 text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition-all duration-500 shadow-lg shadow-amber-100">
+                                        <Calendar size={24} />
+                                    </div>
+                                    <h3 className="text-xl font-black text-slate-900 mb-1 tracking-tight">Your Bookings</h3>
+                                    <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Track Scheduled Audits</p>
+                                    <div className={`mt-3 flex items-center gap-1 text-slate-400 group-hover:text-amber-600 transition-all ${showBookingsList ? 'rotate-180' : ''}`}>
+                                        <ChevronDown size={16} />
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 flex flex-col transition-all overflow-hidden relative">
+                            <div 
+                                className="p-6 group cursor-pointer transition-all relative overflow-hidden"
+                                onClick={() => setShowReportsList(!showReportsList)}
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-br from-blue-400/0 to-blue-400/5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                <div className="relative z-10 w-full">
+                                    <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mb-4 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 shadow-lg shadow-blue-100">
+                                        <FileText size={24} />
+                                    </div>
+                                    <h3 className="text-xl font-black text-slate-900 mb-1 tracking-tight">Reports</h3>
+                                    <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Access Solar Assets</p>
+                                    <div className={`mt-3 flex items-center gap-1 text-slate-400 group-hover:text-blue-600 transition-all ${showReportsList ? 'rotate-180' : ''}`}>
+                                        <ChevronDown size={16} />
+                                    </div>
+                                </div>
+                            </div>
+
+
+                        </div>
+
+
+
+                    {/* NEW: Booking Form Trigger Card */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4 }}
+                        onClick={() => router.push('/booking')}
+                        className="p-8 bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 flex flex-col justify-between group hover:border-orange-400 cursor-pointer transition-all duration-500 hover:-translate-y-1 relative overflow-hidden"
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-br from-orange-400/0 to-orange-400/5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <div className="relative z-10 text-left">
+                            <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center mb-6 text-orange-600 group-hover:bg-orange-600 group-hover:text-white transition-all duration-500 shadow-lg shadow-orange-100">
+                                <Zap size={24} />
+                            </div>
+                            <h3 className="text-2xl font-black text-slate-900 mb-1 tracking-tight">Booking Form</h3>
+                            <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Schedule Inspection</p>
+                        </div>
+                    </motion.div>
+
+                    {/* NEW: Contact Form Trigger Card */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5 }}
+                        onClick={() => router.push('/contact')}
+                        className="p-8 bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 flex flex-col justify-between group hover:border-blue-500 cursor-pointer transition-all duration-500 hover:-translate-y-1 relative overflow-hidden"
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-400/0 to-blue-400/5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <div className="relative z-10 text-left">
+                            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 shadow-lg shadow-blue-100">
+                                <MessageSquare size={24} />
+                            </div>
+                            <h3 className="text-2xl font-black text-slate-900 mb-1 tracking-tight">Contact Form</h3>
+                            <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Direct Assistance</p>
                         </div>
                     </motion.div>
 
                 </div>
 
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
-                    {/* Left Column: Bookings */}
-                    <div className="xl:col-span-1 space-y-8">
-                        <div className="bg-white rounded-[2rem] border border-slate-200 shadow-lg p-8">
-                            <div className="flex items-center justify-between mb-8">
-                                <h3 className="text-xl font-bold text-slate-900">Recent Bookings</h3>
-                                <button
-                                    onClick={() => router.push('/booking')}
-                                    className="p-2 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors"
-                                    title="New Booking"
-                                >
-                                    <Zap size={18} />
-                                </button>
-                            </div>
-
-                            <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-                                {bookings.length > 0 ? bookings.map((booking) => (
-                                    <div key={booking.id} className="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:border-orange-200 transition-all group relative">
-                                        <div className="flex items-center justify-between mb-3">
-                                            <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${booking.status === 'pending' ? 'bg-amber-100 text-amber-700' :
-                                                booking.status === 'confirmed' ? 'bg-blue-100 text-blue-700' :
-                                                    booking.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
-                                                        'bg-red-100 text-red-700'
-                                                }`}>
-                                                {booking.status}
-                                            </span>
-                                            <button
-                                                onClick={() => handleDeleteBooking(booking.id)}
-                                                className="text-slate-300 hover:text-red-500 transition-colors"
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
-                                        </div>
-
-                                        <h4 className="font-bold text-slate-900 mb-2">{booking.service_type || 'General Inquiry'}</h4>
-                                        <div className="space-y-1">
-                                            <div className="flex items-center gap-2 text-xs text-slate-500">
-                                                <Calendar size={12} />
-                                                <span>{booking.date} at {booking.time}</span>
-                                            </div>
-                                            {booking.location && (
-                                                <div className="flex items-center gap-2 text-xs text-slate-500">
-                                                    <MapPin size={12} />
-                                                    <span>{booking.location}</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                )) : (
-                                    <div className="text-center py-10">
-                                        <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
-                                            <Calendar size={20} />
-                                        </div>
-                                        <p className="text-slate-500 text-sm font-medium">No active bookings found.</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Right Column: Reports */}
-                    <div className="xl:col-span-2">
-                        <div className="bg-white rounded-[2rem] border border-slate-200 shadow-lg p-8">
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-                                <div>
-                                    <h3 className="text-xl font-bold text-slate-900">Inspection Reports</h3>
-                                    <p className="text-slate-500 text-sm mt-1">Access and analyze your solar assets</p>
+                {/* Expanded Bookings Panel - Full Width */}
+                <AnimatePresence>
+                    {showBookingsList && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden mb-8"
+                        >
+                            <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 p-8">
+                                <div className="flex items-center justify-between mb-6">
+                                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Your Bookings</h3>
+                                    <button onClick={() => setShowBookingsList(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                                        <X size={20} />
+                                    </button>
                                 </div>
-
-                                {/* {pdfs.length > 1 && (
-                                    <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+                                <div className="flex gap-2 mb-6 overflow-x-auto pb-2 custom-scrollbar">
+                                    {['All', 'Pending', 'Completed', 'Rejected'].map(filter => (
                                         <button
-                                            onClick={handleCompareReports}
-                                            disabled={selectedReports.length < 2 || comparingReports}
-                                            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 ${selectedReports.length >= 2
-                                                ? 'bg-slate-900 text-white shadow-lg'
-                                                : 'text-slate-400 cursor-not-allowed'
-                                                }`}
+                                            key={filter}
+                                            onClick={() => setBookingFilter(filter)}
+                                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${bookingFilter === filter ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
                                         >
-                                            {comparingReports ? <Loader2 className="w-3 h-3 animate-spin" /> : <GitCompare className="w-3 h-3" />}
-                                            Compare ({selectedReports.length})
+                                            {filter}
                                         </button>
-
-                                        {selectedReports.length > 0 && (
-                                            <button
-                                                onClick={clearComparison}
-                                                className="px-3 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 transition-colors"
-                                            >
-                                                Clear
-                                            </button>
-                                        )}
-                                    </div>
-                                )} */}
-                            </div>
-
-                            <ContentProtection isProtected={true}>
-                                <div className="space-y-3">
-                                    {loading ? (
-                                        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
-                                            <div className="relative mb-4">
-                                                <div className="absolute inset-0 bg-orange-200 rounded-full blur-xl animate-pulse"></div>
-                                                <Loader2 className="w-12 h-12 text-orange-600 animate-spin relative z-10" />
-                                            </div>
-                                            <p className="text-slate-500 font-bold text-sm animate-pulse">Syncing Secure Reports...</p>
-                                        </div>
-                                    ) : pdfs.length > 0 ? (
-                                        pdfs.map((pdf) => {
-                                            const isSelected = selectedReports.includes(pdf.pdf_id);
+                                    ))}
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                                    {(() => {
+                                        const filteredBookings = bookings.filter(b => bookingFilter === 'All' || (b.status || '').toLowerCase() === bookingFilter.toLowerCase());
+                                        
+                                        if (filteredBookings.length === 0) {
                                             return (
-                                                <div key={pdf.pdf_id} className={`flex items-center justify-between p-5 rounded-2xl border transition-all ${isSelected ? 'bg-orange-50/50 border-orange-200 shadow-sm' : 'bg-white border-slate-100 hover:border-slate-200 hover:shadow-md hover:shadow-slate-200/20'
-                                                    }`}>
-                                                    <div className="flex items-center gap-4 overflow-hidden">
-{/* <button
-    onClick={() => toggleReportSelection(pdf.pdf_id)}
-    className={`w-5 h-5 rounded-lg flex items-center justify-center border-2 transition-all ${isSelected ? 'bg-orange-600 border-orange-600 scale-110 shadow-lg shadow-orange-600/20' : 'border-slate-200 hover:border-orange-400'
-        }`}
->
-    {isSelected && <CheckSquare size={10} strokeWidth={4} className="text-white" />}
-</button> */}
+                                                <div className="col-span-full text-center py-16 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                                                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400 shadow-sm">
+                                                        <Calendar size={20} />
+                                                    </div>
+                                                    <p className="text-slate-900 font-bold text-sm mb-1">{bookings.length === 0 ? "No upcoming bookings" : `No ${bookingFilter.toLowerCase()} bookings`}</p>
+                                                    <p className="text-slate-500 text-xs">{bookings.length === 0 ? "Click the Booking Form card to schedule one." : "Try selecting a different filter."}</p>
+                                                </div>
+                                            );
+                                        }
 
-                                                        {(() => {
-                                                            const fileMeta = getFileIcon(pdf.filename);
-                                                            return (
-                                                                <div className={`w-12 h-12 ${fileMeta.bg} rounded-xl flex items-center justify-center shadow-sm border ${fileMeta.border} shrink-0`}>
-                                                                    {fileMeta.icon}
+                                        return filteredBookings.map((booking) => (
+                                            <div key={booking.id} className="p-5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-orange-200 transition-all group relative">
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${booking.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                                                        booking.status === 'confirmed' ? 'bg-blue-100 text-blue-700' :
+                                                            booking.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
+                                                                'bg-red-100 text-red-700'
+                                                        }`}>
+                                                        {booking.status}
+                                                    </span>
+                                                    <button
+                                                        onClick={() => handleDeleteBooking(booking.id)}
+                                                        className="text-slate-300 hover:text-red-500 transition-colors"
+                                                        title="Remove Booking"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+                                                <h4 className="font-bold text-slate-900 mb-2 truncate">{booking.service_type || 'General Inquiry'}</h4>
+                                                <div className="space-y-1.5">
+                                                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                                                        <Calendar size={12} className="text-orange-500" />
+                                                        <span>{booking.date} {booking.time ? `at ${booking.time}` : ''}</span>
+                                                    </div>
+                                                    {booking.location && (
+                                                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                                                            <MapPin size={12} className="text-orange-500" />
+                                                            <span className="truncate" title={booking.location}>{booking.location}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ));
+                                    })()}
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Expanded Reports Panel - Full Width */}
+                <AnimatePresence>
+                    {showReportsList && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden mb-8"
+                        >
+                            <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 p-8">
+                                <div className="flex items-center justify-between mb-6">
+                                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Inspection Reports</h3>
+                                    <button onClick={() => setShowReportsList(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                                        <X size={20} />
+                                    </button>
+                                </div>
+                                <ContentProtection isProtected={true}>
+                                    <div className="space-y-3">
+                                        {loading ? (
+                                            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                                                <div className="relative mb-4">
+                                                    <div className="absolute inset-0 bg-orange-200 rounded-full blur-xl animate-pulse"></div>
+                                                    <Loader2 className="w-12 h-12 text-orange-600 animate-spin relative z-10" />
+                                                </div>
+                                                <p className="text-slate-500 font-bold text-sm animate-pulse">Syncing Secure Reports...</p>
+                                            </div>
+                                        ) : pdfs.length > 0 ? (
+                                            pdfs.map((pdf) => {
+                                                const isSelected = selectedReports.includes(pdf.pdf_id);
+                                                return (
+                                                    <div key={pdf.pdf_id} className={`flex items-center justify-between p-5 rounded-2xl border transition-all ${isSelected ? 'bg-orange-50/50 border-orange-200 shadow-sm' : 'bg-white border-slate-100 hover:border-slate-200 hover:shadow-md hover:shadow-slate-200/20'
+                                                        }`}>
+                                                        <div className="flex items-center gap-4 overflow-hidden">
+                                                            {(() => {
+                                                                const fileMeta = getFileIcon(pdf.filename);
+                                                                return (
+                                                                    <div className={`w-12 h-12 ${fileMeta.bg} rounded-xl flex items-center justify-center shadow-sm border ${fileMeta.border} shrink-0`}>
+                                                                        {fileMeta.icon}
+                                                                    </div>
+                                                                );
+                                                            })()}
+                                                            <div className="min-w-0">
+                                                                <div className="flex flex-wrap items-center gap-2 mb-1">
+                                                                    <h4 className="font-bold text-slate-900 text-sm pr-4" title={pdf.filename}>{truncateFilename(pdf.filename)}</h4>
+                                                                    {pdf.report_type && (
+                                                                        <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${pdf.report_type === 'rgb' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                                                                            }`}>
+                                                                            {pdf.report_type === 'rgb' ? 'DRONE DATA' : 'SITE PLAN'}
+                                                                        </span>
+                                                                    )}
                                                                 </div>
-                                                            );
-                                                        })()}
-
-                                                        <div className="min-w-0">
-                                                            <div className="flex flex-wrap items-center gap-2 mb-1">
-                                                                <h4 className="font-bold text-slate-900 text-sm pr-4" title={pdf.filename}>{truncateFilename(pdf.filename)}</h4>
-                                                                {pdf.report_type && (
-                                                                    <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${pdf.report_type === 'rgb' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
-                                                                        }`}>
-                                                                        {pdf.report_type === 'rgb' ? 'DRONE DATA' : 'SITE PLAN'}
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                            <div className="flex items-center gap-3 text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
-                                                                <span>{formatDate(pdf.uploaded_at)}</span>
-                                                                <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-                                                                <span>{formatFileSize(pdf.file_size)}</span>
+                                                                <div className="flex items-center gap-3 text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
+                                                                    <span>{formatDate(pdf.uploaded_at)}</span>
+                                                                    <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+                                                                    <span>{formatFileSize(pdf.file_size)}</span>
+                                                                </div>
                                                             </div>
                                                         </div>
+                                                        <div className="flex items-center gap-3">
+                                                            {reportReviews[pdf.pdf_id] && (
+                                                                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border shadow-sm ${reportReviews[pdf.pdf_id]?.status === 'completed'
+                                                                        ? 'bg-green-100 text-green-700 border-green-200 animate-pulse'
+                                                                        : 'bg-blue-100 text-blue-700 border-blue-200'
+                                                                    }`}>
+                                                                    {reportReviews[pdf.pdf_id]?.status === 'completed' ? (
+                                                                        <><CheckCircle2 size={10} strokeWidth={3} /> CHANGES MADE</>
+                                                                    ) : (
+                                                                        <><Clock size={10} strokeWidth={3} /> REVIEW PENDING</>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                            <button
+                                                                onClick={() => handleReviewClick(pdf)}
+                                                                className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm active:scale-95"
+                                                            >
+                                                                <MessageSquarePlus size={14} className="text-orange-500" />
+                                                                <span>Review</span>
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleShareClick(pdf)}
+                                                                className="px-4 py-2 bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm active:scale-95 group"
+                                                            >
+                                                                <Share2 size={14} className="group-hover:text-white transition-colors" />
+                                                                <span>Share</span>
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDownloadClick(pdf)}
+                                                                className="px-4 py-2 bg-slate-900 hover:bg-orange-600 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-xl shadow-slate-900/20 active:scale-95"
+                                                            >
+                                                                <Eye size={14} />
+                                                                <span>Visualize</span>
+                                                            </button>
+                                                        </div>
                                                     </div>
+                                                );
+                                            })
+                                        ) : (
+                                            <div className="text-center py-20 border-2 border-dashed border-slate-100 rounded-3xl">
+                                                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                                                    <Folder size={32} />
+                                                </div>
+                                                <h4 className="text-slate-900 font-bold mb-2">No Reports Available</h4>
+                                                <p className="text-slate-500 text-sm max-w-xs mx-auto mb-6">Your inspection reports will appear here once the analysis is complete.</p>
+                                            </div>
+                                        )}
+                                    </div>
 
-                                                    <div className="flex items-center gap-3">
-                                                        {reportReviews[pdf.pdf_id] && (
-                                                            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border shadow-sm ${reportReviews[pdf.pdf_id]?.status === 'completed'
-                                                                    ? 'bg-green-100 text-green-700 border-green-200 animate-pulse'
-                                                                    : 'bg-blue-100 text-blue-700 border-blue-200'
-                                                                }`}>
-                                                                {reportReviews[pdf.pdf_id]?.status === 'completed' ? (
-                                                                    <><CheckCircle2 size={10} strokeWidth={3} /> CHANGES MADE</>
-                                                                ) : (
-                                                                    <><Clock size={10} strokeWidth={3} /> REVIEW PENDING</>
-                                                                )}
+                                    {/* SHARED WITH ME SECTION */}
+                                    {sharedWithMe.length > 0 && (
+                                        <div className="mt-12 pt-12 border-t border-slate-100">
+                                            <div className="flex items-center gap-3 mb-8">
+                                                <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center border border-blue-100">
+                                                    <Users size={16} />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-lg font-bold text-slate-900">Shared with Me</h3>
+                                                    <p className="text-xs text-slate-400 font-medium">Reports shared by other users</p>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-3">
+                                                {sharedWithMe.map((shared, index) => (
+                                                    <div key={shared.share_id || shared.pdf_id || index} className="flex items-center justify-between p-5 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:shadow-lg hover:shadow-slate-200/20 transition-all">
+                                                        <div className="flex items-center gap-4 overflow-hidden">
+                                                            {(() => {
+                                                                const fileMeta = getFileIcon(shared.filename);
+                                                                return (
+                                                                    <div className={`w-10 h-10 ${fileMeta.bg} rounded-xl flex items-center justify-center shadow-sm border ${fileMeta.border} shrink-0`}>
+                                                                        {React.cloneElement(fileMeta.icon, { size: 20 })}
+                                                                    </div>
+                                                                );
+                                                            })()}
+                                                            <div className="min-w-0">
+                                                                <h4 className="font-bold text-slate-900 text-sm truncate">{shared.filename}</h4>
+                                                                <div className="flex items-center gap-3 text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">
+                                                                    <span className="text-blue-600">From: {shared.sender_name || shared.sender_email}</span>
+                                                                    <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+                                                                    <span>Shared {formatDate(shared.shared_at)}</span>
+                                                                </div>
                                                             </div>
-                                                        )}
-
+                                                        </div>
                                                         <button
-                                                            onClick={() => handleReviewClick(pdf)}
-                                                            className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm active:scale-95"
-                                                        >
-                                                            <MessageSquarePlus size={14} className="text-orange-500" />
-                                                            <span>Review</span>
-                                                        </button>
-
-                                                        <button
-                                                            onClick={() => handleShareClick(pdf)}
-                                                            className="px-4 py-2 bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm active:scale-95 group"
-                                                        >
-                                                            <Share2 size={14} className="group-hover:text-white transition-colors" />
-                                                            <span>Share</span>
-                                                        </button>
-
-                                                        <button
-                                                            onClick={() => handleDownloadClick(pdf)}
-                                                            className="px-4 py-2 bg-slate-900 hover:bg-orange-600 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-xl shadow-slate-900/20 active:scale-95"
+                                                            onClick={() => handleDownloadClick({ pdf_id: shared.pdf_id, filename: shared.filename })}
+                                                            className="px-4 py-2 bg-slate-900 hover:bg-blue-600 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm"
                                                         >
                                                             <Eye size={14} />
                                                             <span>Visualize</span>
                                                         </button>
                                                     </div>
-                                                </div>
-                                            );
-                                        })
-                                    ) : (
-                                        <div className="text-center py-20 border-2 border-dashed border-slate-100 rounded-3xl">
-                                            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
-                                                <Folder size={32} />
+                                                ))}
                                             </div>
-                                            <h4 className="text-slate-900 font-bold mb-2">No Reports Available</h4>
-                                            <p className="text-slate-500 text-sm max-w-xs mx-auto mb-6">Your inspection reports will appear here once the analysis is complete.</p>
                                         </div>
                                     )}
-                                </div>
-
-                                {/* SHARED WITH ME SECTION */}
-                                {sharedWithMe.length > 0 && (
-                                    <div className="mt-12 pt-12 border-t border-slate-100">
-                                        <div className="flex items-center gap-3 mb-8">
-                                            <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center border border-blue-100">
-                                                <Users size={16} />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-lg font-bold text-slate-900">Shared with Me</h3>
-                                                <p className="text-xs text-slate-400 font-medium">Reports shared by other users</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-3">
-                                            {sharedWithMe.map((shared, index) => (
-                                                <div key={shared.share_id || shared.pdf_id || index} className="flex items-center justify-between p-5 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:shadow-lg hover:shadow-slate-200/20 transition-all">
-                                                    <div className="flex items-center gap-4 overflow-hidden">
-                                                        {(() => {
-                                                            const fileMeta = getFileIcon(shared.filename);
-                                                            return (
-                                                                <div className={`w-10 h-10 ${fileMeta.bg} rounded-xl flex items-center justify-center shadow-sm border ${fileMeta.border} shrink-0`}>
-                                                                    {React.cloneElement(fileMeta.icon, { size: 20 })}
-                                                                </div>
-                                                            );
-                                                        })()}
-                                                        <div className="min-w-0">
-                                                            <h4 className="font-bold text-slate-900 text-sm truncate">{shared.filename}</h4>
-                                                            <div className="flex items-center gap-3 text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">
-                                                                <span className="text-blue-600">From: {shared.sender_name || shared.sender_email}</span>
-                                                                <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-                                                                <span>Shared {formatDate(shared.shared_at)}</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <button
-                                                        onClick={() => handleDownloadClick({ pdf_id: shared.pdf_id, filename: shared.filename })}
-                                                        className="px-4 py-2 bg-slate-900 hover:bg-blue-600 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm"
-                                                    >
-                                                        <Eye size={14} />
-                                                        <span>Visualize</span>
-                                                    </button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </ContentProtection>
-                        </div>
-                    </div>
-
-
-                </div>
+                                </ContentProtection>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
 
             {/* Payment Modal - Commented out for now */}

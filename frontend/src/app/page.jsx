@@ -30,7 +30,7 @@ export default function HomePage() {
   const [uploadedImages, setUploadedImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [anomalyTab, setAnomalyTab] = useState('thermal');
+
   const [status, setStatus] = useState({ type: '', message: '' });
   const [viewMode, setViewMode] = useState('grid');
   const [selectedImage, setSelectedImage] = useState(null);
@@ -231,6 +231,12 @@ export default function HomePage() {
     fetchSitePhotos();
     fetchHomeStats();
     setIsMounted(true);
+
+    // Significant 10% font size increase for all sections
+    document.documentElement.style.fontSize = '115%';
+    return () => {
+      document.documentElement.style.fontSize = '';
+    };
   }, []);
 
   const fetchHomeStats = async () => {
@@ -796,8 +802,8 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen overflow-x-hidden">
       {/* NEW DESIGN: SILENT FAILURE (HERO SECTION) */}
-      <section className="bg-white py-24 md:py-32 px-6 md:px-12 relative overflow-hidden flex items-center justify-center border-b border-slate-100">
-        <div className="max-w-5xl mx-auto w-full relative z-10 text-center flex flex-col items-center mt-12">
+      <section className="bg-white pt-24 pb-12 md:pt-32 md:pb-16 px-6 md:px-12 relative overflow-hidden flex items-center justify-center border-b border-slate-100">
+        <div className="max-w-6xl mx-auto w-full relative z-10 text-center flex flex-col items-center mt-12">
           <div className="flex flex-col items-center max-w-4xl">
             {/* Heading */}
             <div className="mb-8 flex flex-col items-center">
@@ -828,15 +834,15 @@ export default function HomePage() {
                   </button>
                 ) : (
                   <Link href="/register" className="w-full sm:w-auto px-8 py-4 bg-orange-500 text-white font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-orange-600 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-[0_15px_30px_-10px_rgba(249,115,22,0.4)]">
-                    REGISTER NOW <ArrowRight size={16} />
+                    REGISTER NOW TO SEE THE SAMPLE DATA <ArrowRight size={16} />
                   </Link>
                 )}
-                <button onClick={() => {
+                {/* <button onClick={() => {
                   const processSection = document.getElementById('process-section');
                   if (processSection) processSection.scrollIntoView({ behavior: 'smooth' });
                 }} className="w-full sm:w-auto px-8 py-4 bg-white border-2 border-slate-200 text-slate-900 font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-slate-50 hover:border-orange-200 hover:scale-105 active:scale-95 transition-all flex items-center justify-center shadow-sm">
                   SEE HOW IT WORKS
-                </button>
+                </button> */}
               </div>
             </div>
           </div>
@@ -844,7 +850,7 @@ export default function HomePage() {
       </section>
 
       {/* ELEGANT MINIMALIST STATS */}
-      <section className="bg-white py-24 border-b border-slate-100">
+      <section className="bg-white pt-12 pb-24 border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-10">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 lg:gap-12">
             {homeStats.map((stat, i) => (
@@ -887,6 +893,7 @@ export default function HomePage() {
                 const Icon = item.icon;
                 return (
                   <motion.div key={i} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
+                    style={{ fontSize: '130%' }}
                     className="bg-white px-6 py-8 md:p-8 rounded-[1.5rem] shadow-[0_20px_50px_-20px_rgba(0,0,0,0.08)] border border-orange-100 relative lg:ml-auto w-full lg:max-w-[340px] flex flex-col items-end text-right z-20 hover:-translate-y-1 transition-transform">
 
                     {/* DASHED CONNECTOR LINE TO CENTER */}
@@ -909,10 +916,9 @@ export default function HomePage() {
 
             {/* MIDDLE COLUMN: Text Content */}
             <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="order-1 lg:order-2 flex flex-col items-center text-center z-10 px-4 lg:px-8 xl:px-12 relative py-12 shrink-0">
-
-              <div className="w-12 h-12 bg-white rounded-full border border-orange-200 flex items-center justify-center mb-6 shadow-xl relative pointer-events-none">
+              <div className="w-16 h-16 bg-white rounded-full border border-orange-200 flex items-center justify-center mb-6 shadow-xl relative pointer-events-none">
                 <div className="absolute inset-0 rounded-full ring-4 ring-orange-200/50 -z-10"></div>
-                <Eye className="text-orange-500" size={20} strokeWidth={2.5} />
+                <Eye className="text-orange-500" size={28} strokeWidth={2.5} />
               </div>
 
               <div className="text-orange-600 text-[9px] uppercase tracking-[0.2em] font-bold mb-4 font-mono">
@@ -942,6 +948,7 @@ export default function HomePage() {
                 const Icon = item.icon;
                 return (
                   <motion.div key={i} initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
+                    style={{ fontSize: '102%' }}
                     className="bg-white px-6 py-8 md:p-8 rounded-[1.5rem] shadow-[0_20px_50px_-20px_rgba(0,0,0,0.08)] border border-orange-100 relative lg:mr-auto w-full lg:max-w-[340px] flex flex-col items-start text-left z-20 hover:-translate-y-1 transition-transform">
 
                     {/* DASHED CONNECTOR LINE FROM CENTER */}
@@ -966,71 +973,54 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* NEW DESIGN: ANOMALIES DETECTION */}
-      <section className="bg-[#f8fafc] py-24 px-6 md:px-12 border-y border-slate-200">
+      {/* MINIMAL DESIGN: ANOMALIES DETECTION */}
+      <section className="bg-white py-24 px-6 md:px-12 border-b border-slate-100">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-wrap justify-between items-end gap-8 mb-16">
-            <div>
-              <div className="flex items-center gap-3 text-black font-mono text-sm font-bold uppercase tracking-widest mb-4">
-                <div className="w-6 h-px bg-black"></div> What We Detect
-              </div>
-              <h2 className="font-black text-3xl md:text-5xl text-slate-900 uppercase leading-none tracking-tight">
-                Nothing Missed. <span className="text-orange-500">Everything</span> Mapped.
-              </h2>
-            </div>
-            <div className="flex bg-white p-1 rounded-lg border border-slate-200">
-              <button onClick={() => setAnomalyTab("thermal")}
-                className={`font-mono text-xs uppercase tracking-wider px-6 py-2 rounded transition-all ${anomalyTab === "thermal" ? "bg-orange-600 text-white font-bold" : "text-slate-500 hover:text-slate-900"}`}>
-                Thermal
-              </button>
-              <button onClick={() => setAnomalyTab("visual")}
-                className={`font-mono text-xs uppercase tracking-wider px-6 py-2 rounded transition-all ${anomalyTab === "visual" ? "bg-orange-600 text-white font-bold" : "text-slate-500 hover:text-slate-900"}`}>
-                Visual (RGB)
-              </button>
-            </div>
+          <div className="flex items-center gap-3 text-black font-mono text-sm font-bold uppercase tracking-widest mb-6">
+            <div className="w-10 h-px bg-black"></div> What We Detect
           </div>
-          <AnimatePresence mode="wait">
-            <motion.div key={anomalyTab} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
-              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {(anomalyTab === "thermal" ? [
-                { name: "Hotspot", category: "anomaly-hotspot", sev: "h", style: "radial-gradient(circle at 32% 42%, #fffde0 0%, #FFD700 12%, #FF4500 26%, #8B1500 48%, #2d0a00 72%, #120308 100%)" },
-                { name: "Multi Hotspot", category: "anomaly-multi-hotspot", sev: "h", style: "radial-gradient(circle at 30% 28%, #FFD700 9%, #FF6B1A 18%, transparent 30%), radial-gradient(circle at 67% 62%, #FFD700 9%, #FF6B1A 18%, transparent 28%), linear-gradient(135deg, #1a0900 0%, #3d1200 50%, #1a0900 100%)" },
-                { name: "Bypassed Substring", category: "anomaly-bypassed", sev: "m", style: "linear-gradient(0deg, #a03000 0%, #FF6B1A 28%, #FFAA00 33%, #ffffff 50%, #FF6B1A 72%, #a03000 100%)" },
-                { name: "Diode Failure", category: "anomaly-diode", sev: "m", style: "linear-gradient(160deg, #FF8C00 0%, #FF4500 25%, #8B1500 50%, #200600 75%, #080108 100%)" },
-                { name: "PID Effect", category: "anomaly-pid", sev: "h", style: "linear-gradient(135deg, #0a0012 0%, #3d0060 45%, #7a00a0 60%, #bb33cc 78%, #ff80ff 100%)" }
-              ] : [
-                { name: "Soiling", category: "anomaly-soiling", sev: "l", style: "radial-gradient(ellipse at 35% 50%, rgba(200,170,90,0.6) 0%, transparent 55%), linear-gradient(135deg, #1a2035 0%, #4a5580 100%)" },
-                { name: "Broken Glass", category: "anomaly-broken-glass", sev: "h", style: "repeating-linear-gradient(-48deg, transparent 0px, transparent 7px, rgba(255,255,255,0.15) 7px, rgba(255,255,255,0.15) 8px), linear-gradient(135deg, #1e2d4a 0%, #2e4a7a 100%)" },
-                { name: "Delamination", category: "anomaly-delamination", sev: "m", style: "radial-gradient(ellipse at 38% 40%, rgba(255,255,255,0.2) 0%, transparent 28%), linear-gradient(135deg, #1e2f60 0%, #2a4080 100%)" },
-                { name: "Vegetation", category: "anomaly-vegetation", sev: "l", style: "linear-gradient(135deg, #0f2010 0%, #1a4020 40%, #0e5010 65%, #0d2a0a 100%)" },
-                { name: "Shadowing", category: "anomaly-shadowing", sev: "m", style: "linear-gradient(135deg, #2a3550 0%, #1a2535 35%, #090f1a 55%, #2a3550 100%)" }
-              ]).map((card, i) => {
-                const imgUrl = getDynamicPhoto(card.category, null);
-                return (
-                  <div key={i} className="bg-white border border-slate-200 rounded-lg overflow-hidden group hover:border-orange-500/50 transition-all cursor-pointer shadow-sm">
-                    <div className="aspect-square relative overflow-hidden bg-slate-100">
-                      {loadingPhotos ? (
-                        <div className="absolute inset-0 bg-slate-200 animate-pulse"></div>
-                      ) : imgUrl ? (
-                        <img src={imgUrl} alt={card.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                      ) : (
-                        <div className="absolute inset-0 group-hover:scale-105 transition-transform duration-500" style={{ background: card.style }}></div>
-                      )}
-                    </div>
-                    <div className="p-3 flex justify-between items-center text-xs font-mono uppercase tracking-widest text-slate-700 bg-white">
-                      {card.name}
-                      <div className={`w-1.5 h-1.5 rounded-full ${card.sev === "h" ? "bg-red-500" : card.sev === "m" ? "bg-orange-500" : "bg-yellow-400"}`}></div>
-                    </div>
+          <h2 className="font-black text-3xl md:text-5xl text-slate-900 uppercase leading-none tracking-tight mb-16">
+            Nothing Missed. <span className="text-orange-500">Everything</span> Mapped.
+          </h2>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-12 gap-x-6">
+            {[
+              // THERMAL
+              { name: "Hotspot", type: "Thermal", category: "anomaly-hotspot", style: "radial-gradient(circle at 32% 42%, #fffde0 0%, #FFD700 12%, #FF4500 26%, #8B1500 48%, #2d0a00 72%, #120308 100%)" },
+              { name: "Multi Hotspot", type: "Thermal", category: "anomaly-multi-hotspot", style: "radial-gradient(circle at 30% 28%, #FFD700 9%, #FF6B1A 18%, transparent 30%), radial-gradient(circle at 67% 62%, #FFD700 9%, #FF6B1A 18%, transparent 28%), linear-gradient(135deg, #1a0900 0%, #3d1200 50%, #1a0900 100%)" },
+              { name: "Bypassed Substring", type: "Thermal", category: "anomaly-bypassed", style: "linear-gradient(0deg, #a03000 0%, #FF6B1A 28%, #FFAA00 33%, #ffffff 50%, #FF6B1A 72%, #a03000 100%)" },
+              { name: "Diode Failure", type: "Thermal", category: "anomaly-diode", style: "linear-gradient(160deg, #FF8C00 0%, #FF4500 25%, #8B1500 50%, #200600 75%, #080108 100%)" },
+              { name: "PID Effect", type: "Thermal", category: "anomaly-pid", style: "linear-gradient(135deg, #0a0012 0%, #3d0060 45%, #7a00a0 60%, #bb33cc 78%, #ff80ff 100%)" },
+              // VISUAL
+              { name: "Soiling", type: "Visual", category: "anomaly-soiling", style: "radial-gradient(ellipse at 35% 50%, rgba(200,170,90,0.6) 0%, transparent 55%), linear-gradient(135deg, #1a2035 0%, #4a5580 100%)" },
+              { name: "Broken Glass", type: "Visual", category: "anomaly-broken-glass", style: "repeating-linear-gradient(-48deg, transparent 0px, transparent 7px, rgba(255,255,255,0.15) 7px, rgba(255,255,255,0.15) 8px), linear-gradient(135deg, #1e2d4a 0%, #2e4a7a 100%)" },
+              { name: "Delamination", type: "Visual", category: "anomaly-delamination", style: "radial-gradient(ellipse at 38% 40%, rgba(255,255,255,0.2) 0%, transparent 28%), linear-gradient(135deg, #1e2f60 0%, #2a4080 100%)" },
+              { name: "Vegetation", type: "Visual", category: "anomaly-vegetation", style: "linear-gradient(135deg, #0f2010 0%, #1a4020 40%, #0e5010 65%, #0d2a0a 100%)" },
+              { name: "Shadowing", type: "Visual", category: "anomaly-shadowing", style: "linear-gradient(135deg, #2a3550 0%, #1a2535 35%, #090f1a 55%, #2a3550 100%)" }
+            ].map((card, i) => {
+              const imgUrl = getDynamicPhoto(card.category, null);
+              return (
+                <div key={i} className="group cursor-pointer">
+                  <div className="aspect-square relative overflow-hidden rounded-lg bg-slate-100 border border-slate-200">
+                    {loadingPhotos ? (
+                      <div className="absolute inset-0 bg-slate-200 animate-pulse"></div>
+                    ) : imgUrl ? (
+                      <img src={imgUrl} alt={card.name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                    ) : (
+                      <div className="absolute inset-0 transition-transform duration-500 group-hover:scale-105" style={{ background: card.style }}></div>
+                    )}
                   </div>
-                )
-              })}
-            </motion.div>
-          </AnimatePresence>
-          <div className="mt-8 flex flex-wrap items-center gap-x-10 gap-y-4 text-xs font-mono uppercase tracking-widest text-slate-500">
-            <span>Severity:</span>
-            <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-red-500"></div> Critical</div>
-            <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-orange-500"></div> Moderate</div>
-            <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-yellow-400"></div> Minor</div>
+                  <div className="mt-4 flex items-center gap-3">
+                    <span className="text-sm font-bold uppercase text-slate-900 leading-none">
+                      {card.name}
+                    </span>
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 flex items-center">
+                       <span className="text-orange-500 mr-1.5">•</span>{card.type}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       </section>
@@ -1064,15 +1054,16 @@ export default function HomePage() {
                 const Icon = step.icon;
                 return (
                 <motion.div key={i} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.2 }}
+                  style={{ fontSize: '102%' }}
                   className="relative flex flex-col items-center text-center group">
                   
                   {/* ICON CIRCLE */}
-                  <div className="w-20 h-20 rounded-full bg-white shadow-[0_15px_35px_-12px_rgba(0,0,0,0.1)] border border-slate-100 flex items-center justify-center text-orange-500 mb-8 relative z-10 group-hover:bg-orange-500 group-hover:text-white group-hover:scale-110 transition-all duration-500">
-                    <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-slate-900 text-white text-[10px] font-black flex items-center justify-center shadow-lg border-2 border-white group-hover:bg-cyan-500 transition-colors">
-                      {step.num}
+                    <div className="w-24 h-24 rounded-full bg-white shadow-[0_15px_35px_-12px_rgba(0,0,0,0.1)] border border-slate-100 flex items-center justify-center text-orange-500 mb-8 relative z-10 group-hover:bg-orange-500 group-hover:text-white group-hover:scale-110 transition-all duration-500">
+                      <div className="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-slate-900 text-white text-[11px] font-black flex items-center justify-center shadow-lg border-2 border-white group-hover:bg-cyan-500 transition-colors">
+                        {step.num}
+                      </div>
+                      <Icon size={40} strokeWidth={1.5} />
                     </div>
-                    <Icon size={32} strokeWidth={1.5} />
-                  </div>
 
                   <div className="bg-white/60 backdrop-blur-sm px-8 py-10 rounded-[2rem] border border-white shadow-[0_20px_50px_-20px_rgba(0,0,0,0.05)] hover:bg-white hover:shadow-[0_40px_70px_-25px_rgba(0,0,0,0.08)] transition-all duration-500 flex-grow w-full">
                     <h3 className="font-extrabold text-xl text-slate-900 uppercase tracking-wider mb-4 leading-tight">{step.title}</h3>
@@ -1532,47 +1523,22 @@ export default function HomePage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2 group">
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 group-focus-within:text-orange-600 transition-colors">
-                        Solar Capacity*
+                        Solar Capacity (MW)*
                       </label>
-                      {formData.solarCapacity === "Other" ? (
-                        <div className="relative flex items-center">
-                          <input
-                            name="otherSolarCapacity"
-                            required
-                            value={formData.otherSolarCapacity}
-                            onChange={handleChange}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm pr-12 font-medium text-slate-700 group-hover:bg-white"
-                            placeholder="Enter capacity (e.g. 750 MW)"
-                            autoFocus
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setFormData(prev => ({ ...prev, solarCapacity: "", otherSolarCapacity: "" }))}
-                            className="absolute right-4 text-slate-400 hover:text-orange-500 transition-colors"
-                            title="Back to options"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                          </button>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          name="solarCapacity"
+                          required
+                          value={formData.solarCapacity}
+                          onChange={handleChange}
+                          placeholder="e.g. 50"
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm font-medium text-slate-700 group-hover:bg-white"
+                        />
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 font-bold text-xs">
+                          MW
                         </div>
-                      ) : (
-                        <div className="relative">
-                          <select
-                            name="solarCapacity"
-                            required
-                            value={formData.solarCapacity}
-                            onChange={handleChange}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none shadow-sm appearance-none font-medium text-slate-700 group-hover:bg-white"
-                          >
-                            <option value="">Please Select</option>
-                            {solarCapacities.map((capacity) => (
-                              <option key={capacity} value={capacity}>{capacity}</option>
-                            ))}
-                          </select>
-                          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                          </div>
-                        </div>
-                      )}
+                      </div>
                     </div>
 
                     <div className="space-y-2 group">
@@ -1639,29 +1605,6 @@ export default function HomePage() {
           </div>
         </section >
       )}
-      {/* CTA Section */}
-      {
-        !user && (
-          <section className="py-16 md:py-20 bg-orange-600 relative overflow-hidden">
-            <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
-              <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-8 uppercase tracking-tight">
-                Ready to switch to cleaner, cheaper energy?
-              </h2>
-              <p className="text-orange-100 text-xl mb-10 font-medium italic">
-                Join thousands of satisfied homeowners who have already made the switch.
-              </p>
-              <Link
-                href="/register"
-                className="inline-flex items-center px-6 py-3.5 md:px-10 md:py-5 bg-white text-orange-600 rounded-2xl font-bold text-sm md:text-lg shadow-xl hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
-              >
-                Start Your Journey <ArrowRight className="ml-2" />
-              </Link>
-            </div>
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full -translate-x-1/2 translate-y-1/3"></div>
-          </section>
-        )
-      }
-
       {/* Proposal Modal */}
       <AnimatePresence>
         {showProposalModal && (

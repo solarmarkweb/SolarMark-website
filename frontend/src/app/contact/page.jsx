@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { Mail, Phone, MapPin, Send, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { Mail, Phone, MapPin, Send, Loader2, CheckCircle, AlertCircle, ChevronLeft } from "lucide-react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 export default function ContactPage() {
+    const router = useRouter();
     const [formData, setFormData] = useState({
         first_name: "",
         last_name: "",
@@ -65,6 +67,15 @@ export default function ContactPage() {
 
     return (
         <div className="pt-32 pb-20 bg-white min-h-screen">
+            {/* Back Button */}
+            <button
+                onClick={() => router.back()}
+                className="fixed top-24 left-6 z-50 flex items-center gap-2 px-4 py-2.5 bg-white/90 backdrop-blur-md rounded-xl border border-slate-200 shadow-lg shadow-slate-200/50 text-slate-700 hover:text-orange-600 hover:border-orange-200 transition-all text-sm font-bold group"
+            >
+                <ChevronLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
+                Back
+            </button>
+
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-20">
                     <motion.h1

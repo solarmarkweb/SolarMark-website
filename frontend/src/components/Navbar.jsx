@@ -108,31 +108,35 @@ export default function Navbar() {
 
                     {/* Desktop Navigation & Actions - Far Right */}
                     <div className="hidden lg:flex items-center justify-end">
-                        <div className="flex items-center gap-1">
-                            {[
-                                { name: "Home", href: "/" },
-                                { name: "Bookings", href: "/booking" },
-                                { name: "Contact", href: "/contact" },
-                            ].map((link) => (
-                                <Link
-                                    key={link.name}
-                                    href={link.href}
-                                    className={`px-4 py-2 text-sm font-bold transition-all duration-300 rounded-lg ${pathname === link.href ? "text-orange-600 bg-orange-50/50" : "text-slate-600 hover:text-orange-600 hover:bg-slate-50/50"}`}
-                                >
-                                    {link.name}
-                                </Link>
-                            ))}
-                        </div>
-
-                        <div className="h-6 w-[1px] bg-slate-200 mx-4"></div>
+                        {!isLoggedIn && (
+                            <>
+                                <div className="flex items-center gap-1">
+                                    {[
+                                        { name: "Home", href: "/" },
+                                        { name: "Bookings", href: "/booking" },
+                                        { name: "Contact", href: "/contact" },
+                                    ].map((link) => (
+                                        <Link
+                                            key={link.name}
+                                            href={link.href}
+                                            className={`px-4 py-2 text-sm font-bold transition-all duration-300 rounded-lg ${pathname === link.href ? "text-orange-600 bg-orange-50/50" : "text-slate-600 hover:text-orange-600 hover:bg-slate-50/50"}`}
+                                        >
+                                            {link.name}
+                                        </Link>
+                                    ))}
+                                </div>
+                                <div className="h-6 w-[1px] bg-slate-200 mx-4"></div>
+                            </>
+                        )}
 
                         {isLoggedIn ? (
                             <div className="flex items-center gap-4">
                                 <Link
                                     href="/profile"
-                                    className="w-9 h-9 rounded-full flex items-center justify-center transition-all bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200/50"
+                                    className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200/50"
                                 >
                                     <UserIcon size={16} />
+                                    <span className="text-sm font-bold">Your Dashboard</span>
                                 </Link>
                                 <button
                                     onClick={handleLogout}
@@ -179,12 +183,14 @@ export default function Navbar() {
                             className="lg:hidden mt-4 pb-8 border border-slate-100 p-8 bg-white/95 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl absolute top-full left-4 right-4 text-slate-900"
                         >
                             <div className="space-y-2">
-                                {[
-                                    { name: "Home", href: "/" },
-                                    { name: "Bookings", href: "/booking" },
-                                    { name: "Contact", href: "/contact" },
-                                    ...(isLoggedIn ? [{ name: "Profile", href: "/profile" }] : [])
-                                ].map((link) => (
+                                {(isLoggedIn
+                                    ? [{ name: "Profile", href: "/profile" }]
+                                    : [
+                                        { name: "Home", href: "/" },
+                                        { name: "Bookings", href: "/booking" },
+                                        { name: "Contact", href: "/contact" }
+                                    ]
+                                ).map((link) => (
                                     <Link 
                                         key={link.name}
                                         href={link.href} 

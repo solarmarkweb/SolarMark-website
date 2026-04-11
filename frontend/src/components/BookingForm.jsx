@@ -268,15 +268,6 @@ export default function BookingPage() {
 
     return (
         <div className="min-h-screen bg-white">
-            {/* Back Button */}
-            <button
-                onClick={() => router.back()}
-                className="fixed top-24 left-6 z-50 flex items-center gap-2 px-4 py-2.5 bg-white/90 backdrop-blur-md rounded-xl border border-slate-200 shadow-lg shadow-slate-200/50 text-slate-700 hover:text-orange-600 hover:border-orange-200 transition-all text-sm font-bold group"
-            >
-                <ChevronLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
-                Back
-            </button>
-
             {/* Premium Header */}
             <section className="pt-24 md:pt-32 pb-20 md:pb-24 bg-slate-950 text-white relative overflow-hidden">
                 <div className="absolute inset-0 bg-[url('https://images.pexels.com/photos/9875415/pexels-photo-9875415.jpeg?auto=compress&cs=tinysrgb&w=1200')] bg-cover bg-center opacity-20 mix-blend-overlay"></div>
@@ -374,10 +365,10 @@ export default function BookingPage() {
                                             <div className="group"><label className={labelClass}>Flight Altitude (m)*</label><input name="flightAltitude" required value={formData.flightAltitude} onChange={handleChange} className={inputClass} placeholder="e.g. 50" /></div>
                                             <div className="group"><label className={labelClass}>Humidity (%)*</label><input name="humidity" required value={formData.humidity} onChange={handleChange} className={inputClass} placeholder="e.g. 45" /></div>
                                             <div className="group"><label className={labelClass}>Emissivity (0-1)*</label><input name="emissivity" required value={formData.emissivity} onChange={handleChange} className={inputClass} placeholder="e.g. 0.95" /></div>
-                                            <div className="group"><label className={labelClass}>Ambient Temp (°C)*</label><input name="ambientTemperature" required value={formData.ambientTemperature} onChange={handleChange} className={inputClass} placeholder="e.g. 25" /></div>
-                                            <div className="group"><label className={labelClass}>Reflected Temp (°C)*</label><input name="reflectedTemperature" required value={formData.reflectedTemperature} onChange={handleChange} className={inputClass} placeholder="e.g. 25" /></div>
+                                            <div className="group"><label className={labelClass}>Ambient Temp (Â°C)*</label><input name="ambientTemperature" required value={formData.ambientTemperature} onChange={handleChange} className={inputClass} placeholder="e.g. 25" /></div>
+                                            <div className="group"><label className={labelClass}>Reflected Temp (Â°C)*</label><input name="reflectedTemperature" required value={formData.reflectedTemperature} onChange={handleChange} className={inputClass} placeholder="e.g. 25" /></div>
                                             <div className="group"><label className={labelClass}>Drone Model*</label><input name="droneType" required value={formData.droneType} onChange={handleChange} className={inputClass} placeholder="e.g. DJI M30T" /></div>
-                                            <div className="group md:col-span-2 lg:col-span-1"><label className={labelClass}>Irradiance (W/m²)*</label><input name="irradiance" required value={formData.irradiance} onChange={handleChange} className={inputClass} placeholder="e.g. 600" /></div>
+                                            <div className="group md:col-span-2 lg:col-span-1"><label className={labelClass}>Irradiance (W/mÂ²)*</label><input name="irradiance" required value={formData.irradiance} onChange={handleChange} className={inputClass} placeholder="e.g. 600" /></div>
                                         </div>
                                     </div>
                                 )}
@@ -430,6 +421,31 @@ export default function BookingPage() {
                                     </div>
                                 </div>
 
+                                {/* Section 3: Site Location */}
+                                <div className="space-y-6 pt-6 border-t border-slate-50">
+                                    <div className="flex items-center gap-3 text-orange-600 mb-6 font-bold">
+                                        <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center"><MapPin size={20} /></div>
+                                        <h3 className="text-xl text-slate-900 uppercase tracking-wider">Site Location & Geodata</h3>
+                                    </div>
+                                    <div className="group"><label className={labelClass}>Street Address / Access Points*</label><input name="siteAddress" required value={formData.siteAddress} onChange={handleChange} className={inputClass} placeholder="Entry point coordinates or physical address" /></div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="group"><label className={labelClass}>Latitude*</label><input name="latitude" required value={formData.latitude} onChange={handleChange} className={inputClass} placeholder="28.7041" /></div>
+                                        <div className="group"><label className={labelClass}>Longitude*</label><input name="longitude" required value={formData.longitude} onChange={handleChange} className={inputClass} placeholder="77.1025" /></div>
+                                    </div>
+                                </div>
+
+                                {/* Section 5: Schedule */}
+                                <div className="space-y-6 pt-6 border-t border-slate-50">
+                                    <div className="flex items-center gap-3 text-orange-600 mb-6 font-bold">
+                                        <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center"><Calendar size={20} /></div>
+                                        <h3 className="text-xl text-slate-900 uppercase tracking-wider">Flight Window</h3>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="group"><label className={labelClass}>Preferred Date*</label><input name="flightDate" type="date" required value={formData.flightDate} onChange={handleChange} className={inputClass} /></div>
+                                        <div className="group"><label className={labelClass}>Takeoff Time*</label><input name="flightTime" type="time" required value={formData.flightTime} onChange={handleChange} className={inputClass} /></div>
+                                        <div className="group"><label className={labelClass}>Max Altitude (AGL)*</label><input name="altitude" required value={formData.altitude} onChange={handleChange} className={inputClass} placeholder="e.g. 120m" /></div>
+                                    </div>
+                                </div>
 
                                 {/* Section 6: Outputs */}
                                 <div className="space-y-6 pt-6 border-t border-slate-50">
