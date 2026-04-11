@@ -23,6 +23,10 @@ def get_drive_service():
         _drive_service = GoogleDriveService()
     return _drive_service
 
+def reset_drive_service():
+    global _drive_service
+    _drive_service = None
+
 
 # MongoDB connection
 from app.db import db
@@ -141,12 +145,20 @@ async def upload_images(files: List[UploadFile], image_type: str, current_user: 
         )
         
         for file in files:
-            # Determine if this file is valid for the chosen category - Both RGB and Thermal are images
+            # Both RGB and Thermal are images, but Site Plan (thermal role) can be KML
             file_ext = file.filename.split('.')[-1].lower() if '.' in file.filename else ''
-            is_valid = file.content_type and file.content_type.startswith('image/')
+            
+            is_image = file.content_type and (
+                file.content_type.startswith('image/') or 
+                file_ext in ['jpg', 'jpeg', 'png', 'webp', 'tiff', 'tif']
+            )
+            
+            is_kml = file_ext == 'kml' or file.content_type == 'application/vnd.google-earth.kml+xml'
+            
+            is_valid = is_image or is_kml
             
             if not is_valid:
-                logger.warning(f"Skipping unsupported or mismatched file for {image_type}: {file.filename}")
+                logger.warning(f"Skipping unsupported file for {image_type}: {file.filename} (Type: {file.content_type})")
                 continue
             
             # Use user name and project name for the filename
@@ -156,12 +168,22 @@ async def upload_images(files: List[UploadFile], image_type: str, current_user: 
             # Read file data
             file_data = await file.read()
             file_size = len(file_data)
-            
+
+            # Determine mime_type with fallbacks
+            mime_type = file.content_type
+            if not mime_type:
+                if is_kml:
+                    mime_type = 'application/vnd.google-earth.kml+xml'
+                elif is_image:
+                    mime_type = f'image/{file_ext}' if file_ext else 'image/jpeg'
+                else:
+                    mime_type = 'application/octet-stream'
+
             # Upload to Google Drive inside the specific subfolder
             drive_file_id, drive_file_url, drive_file_size = drive_service.upload_image_to_drive(
                 file_data=file_data,
                 filename=new_filename,
-                mime_type=file.content_type,
+                mime_type=mime_type,
                 user_folder_id=subfolder_id
             )
             
@@ -210,6 +232,10 @@ async def upload_images(files: List[UploadFile], image_type: str, current_user: 
         
     except Exception as e:
         logger.error(f"Error uploading images: {str(e)}")
+        # If token expired or revoked, reset cache to force reload next time
+        if "invalid_grant" in str(e).lower() or "refresherror" in str(e).lower():
+            logger.info("Token appears invalid. Resetting Drive Service cache.")
+            reset_drive_service()
         raise HTTPException(status_code=500, detail=f"Failed to upload images: {str(e)}")
 
 async def get_or_create_user_folder(current_user: dict):

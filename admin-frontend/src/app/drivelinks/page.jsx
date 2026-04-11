@@ -66,7 +66,7 @@ export default function DriveLinksPage() {
 
   const fileInputRef = useRef(null);
   const router = useRouter();
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8002/api';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001/api';
 
   useEffect(() => {
     checkAdminAuth();
@@ -75,6 +75,13 @@ export default function DriveLinksPage() {
   }, []);
 
   const checkAdminAuth = () => {
+    const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+    
+    if (!token) {
+      router.push('/'); // Redirect to login if no token
+      return false;
+    }
+
     setIsAdmin(true);
     let name = localStorage.getItem('admin_name');
     if (!name || name === 'Admin User' || name === 'System Admin') {
@@ -85,18 +92,40 @@ export default function DriveLinksPage() {
       name: name,
       loginTime: localStorage.getItem('admin_login_time') || Date.now()
     });
+    return true;
   };
 
   const fetchLinks = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
+      setError('');
+      
+      const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+      
+      if (!token) {
+        setError('Authentication session missing. Redirecting...');
+        setTimeout(() => router.push('/'), 2000);
+        return;
+      }
 
       // 1. Fetch all users
       const usersResponse = await fetch(`${API_URL}/users/all`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (!usersResponse.ok) throw new Error('Failed to fetch users');
+      
+      if (usersResponse.status === 401 || usersResponse.status === 403) {
+        setError('Your session has expired or you do not have permission. Redirecting to login...');
+        localStorage.removeItem('token');
+        localStorage.removeItem('auth_token');
+        setTimeout(() => router.push('/'), 2000);
+        return;
+      }
+
+      if (!usersResponse.ok) {
+        const errorData = await usersResponse.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Failed to fetch users from server');
+      }
+      
       const users = await usersResponse.json();
 
       // 2. Fetch consolidated submission stats
@@ -127,7 +156,7 @@ export default function DriveLinksPage() {
       setError('');
 
     } catch (err) {
-      setError('Error loading user submissions. Please try again.');
+      setError(`Error Loading Dashboard: ${err.message}`);
       console.error('Error fetching submissions:', err);
     } finally {
       setLoading(false);
