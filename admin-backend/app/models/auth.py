@@ -6,6 +6,7 @@ class UserRegister(BaseModel):
     email: str
     password: str
     role: str = "user"
+    is_sub_admin: bool = False
 
     @validator('first_name')
     def validate_first_name(cls, v):
@@ -39,6 +40,7 @@ class UserResponse(BaseModel):
     email: str = ""
     created_at: str = ""
     is_admin: bool = False
+    is_sub_admin: bool = False
     role: str = "user"
 
 class Token(BaseModel):

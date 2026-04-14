@@ -32,12 +32,9 @@ export default function LoginPage() {
     setError('');
 
     // Strict Admin Credential Enforcement
-    if (email !== 'admin@gmail.com' || password !== 'admin1234') {
-      setError('Access Restricted: Only the master administrator account can access this panel.');
-      setLoading(false);
-      return;
-    }
-
+    // Check if it's the master admin or a registered sub-admin
+    // (We removed the hardcoded check to allow sub-admins to login via their own credentials)
+    
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8002/api';
 
     try {
@@ -56,14 +53,15 @@ export default function LoginPage() {
 
       const data = await response.json();
 
-      if (!data.user.is_admin) {
-        throw new Error('Authorized user but not an administrator');
+      if (!data.user.is_admin && !data.user.is_sub_admin) {
+        throw new Error('Authorized user but not an administrator or sub-admin');
       }
 
       // Save real data from backend
       localStorage.setItem('token', data.access_token);
       localStorage.setItem('admin_name', data.user.first_name + ' ' + data.user.last_name);
-      localStorage.setItem('is_admin', data.user.is_admin.toString());
+      localStorage.setItem('is_admin', data.user.is_admin ? 'true' : 'false');
+      localStorage.setItem('is_sub_admin', data.user.is_sub_admin ? 'true' : 'false');
 
       setIsSuccess(true);
       setTimeout(() => router.push('/dashboard'), 800);

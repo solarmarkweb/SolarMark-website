@@ -11,6 +11,8 @@ export default function UserManagementPage() {
     const [error, setError] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const router = useRouter();
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [isSubAdmin, setIsSubAdmin] = useState(false);
     const [stats, setStats] = useState({
         total: 0,
         active: 0,
@@ -141,7 +143,7 @@ export default function UserManagementPage() {
         if (!searchTerm) return true;
 
         const searchLower = searchTerm.toLowerCase();
-        const roleStr = user.is_admin ? 'Admin' : (user.role || 'User');
+        const roleStr = user.is_admin ? 'Admin' : (user.is_sub_admin ? 'Sub-Admin' : (user.role || 'User'));
         return (
             (user.first_name && user.first_name.toLowerCase().includes(searchLower)) ||
             (user.last_name && user.last_name.toLowerCase().includes(searchLower)) ||
@@ -176,8 +178,34 @@ export default function UserManagementPage() {
 
     // Fetch users on component mount
     useEffect(() => {
+        const adminStatus = localStorage.getItem('is_admin') === 'true';
+        const subAdminStatus = localStorage.getItem('is_sub_admin') === 'true';
+        setIsAdmin(adminStatus);
+        setIsSubAdmin(subAdminStatus);
         fetchUsers();
     }, []);
+
+    // Toggle sub-admin status
+    const toggleSubAdmin = async (userId) => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.patch(`${API_URL}/users/${userId}/sub-admin-status`, {}, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            // Update local state
+            setUsers(users.map(u => 
+                u._id === userId ? { ...u, is_sub_admin: response.data.is_sub_admin } : u
+            ));
+            
+            alert(`User sub-admin status updated: ${response.data.is_sub_admin ? 'Enabled' : 'Disabled'}`);
+        } catch (err) {
+            console.error('Error updating sub-admin status:', err);
+            alert(err.response?.data?.detail || 'Failed to update sub-admin status');
+        }
+    };
 
     return (
         <div className="p-6 pb-20">
@@ -317,9 +345,11 @@ export default function UserManagementPage() {
                                         <td className="px-8 py-5">
                                             <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${user.is_admin || user.role === 'admin' || user.role === 'Admin'
                                                 ? 'bg-red-50 text-red-600 border-red-100'
-                                                : 'bg-blue-50 text-blue-600 border-blue-100'
+                                                : user.is_sub_admin 
+                                                    ? 'bg-purple-50 text-purple-600 border-purple-100'
+                                                    : 'bg-blue-50 text-blue-600 border-blue-100'
                                                 }`}>
-                                                {user.is_admin || user.role === 'admin' || user.role === 'Admin' ? 'Admin' : (user.role || 'User')}
+                                                {user.is_admin || user.role === 'admin' || user.role === 'Admin' ? 'Admin' : (user.is_sub_admin ? 'Sub-Admin' : (user.role || 'User'))}
                                             </span>
                                         </td>
                                         <td className="px-8 py-5">
@@ -350,13 +380,28 @@ export default function UserManagementPage() {
                                                         onChange={(e) => handleFileUpload(e, user._id || user.id)}
                                                     />
                                                 </label>
-                                                <button
-                                                    onClick={() => handleDeleteUser(user._id || user.id)}
-                                                    className="px-3 py-1.5 text-[10px] font-bold text-rose-600 hover:text-white hover:bg-rose-500 rounded-lg transition-all border border-rose-100 bg-rose-50"
-                                                    title="Delete User"
-                                                >
-                                                    DELETE
-                                                </button>
+                                                
+                                                {isAdmin && !user.is_admin && user.email !== 'admin@gmail.com' && (
+                                                    <button
+                                                        onClick={() => toggleSubAdmin(user._id || user.id)}
+                                                        className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all border ${user.is_sub_admin 
+                                                            ? 'text-purple-600 border-purple-100 bg-purple-50 hover:bg-purple-500 hover:text-white' 
+                                                            : 'text-gray-600 border-gray-100 bg-gray-50 hover:bg-gray-500 hover:text-white'}`}
+                                                        title="Toggle Sub-Admin Privileges"
+                                                    >
+                                                        {user.is_sub_admin ? 'REVOKE SUB' : 'MAKE SUB'}
+                                                    </button>
+                                                )}
+
+                                                {isAdmin && !user.is_admin && user.email !== 'admin@gmail.com' && (
+                                                    <button
+                                                        onClick={() => handleDeleteUser(user._id || user.id)}
+                                                        className="px-3 py-1.5 text-[10px] font-bold text-rose-600 hover:text-white hover:bg-rose-500 rounded-lg transition-all border border-rose-100 bg-rose-50"
+                                                        title="Delete User"
+                                                    >
+                                                        DELETE
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>

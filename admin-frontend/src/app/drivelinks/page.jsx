@@ -38,6 +38,7 @@ export default function DriveLinksPage() {
   const [copiedLink, setCopiedLink] = useState('');
   const [selectedUser, setSelectedUser] = useState('all');
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSubAdmin, setIsSubAdmin] = useState(false);
   const [adminInfo, setAdminInfo] = useState(null);
   const [expandedRows, setExpandedRows] = useState({});
   const [linkPDFs, setLinkPDFs] = useState({});
@@ -82,10 +83,15 @@ export default function DriveLinksPage() {
       return false;
     }
 
-    setIsAdmin(true);
+    const adminStatus = localStorage.getItem('is_admin') === 'true';
+    const subAdminStatus = localStorage.getItem('is_sub_admin') === 'true';
+    
+    setIsAdmin(adminStatus);
+    setIsSubAdmin(subAdminStatus);
+    
     let name = localStorage.getItem('admin_name');
     if (!name || name === 'Admin User' || name === 'System Admin') {
-      name = 'Princilla Savier';
+      name = 'Admin User';
       localStorage.setItem('admin_name', name);
     }
     setAdminInfo({
@@ -308,7 +314,7 @@ export default function DriveLinksPage() {
 
   const confirmDelete = (link) => {
     if (!isAdmin) {
-      setError('Admin login required to delete links');
+      setError('Master Admin privileges required to delete records');
       return;
     }
 

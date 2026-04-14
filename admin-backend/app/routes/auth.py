@@ -38,6 +38,8 @@ async def register(user_data: UserRegister):
         )
 
     user_dict = user_data.dict()
+    user_dict["is_admin"] = False
+    user_dict["is_sub_admin"] = False
 
     # Create user
     user = create_user(user_dict)
@@ -120,6 +122,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
             "first_name": user.get("first_name", ""),
             "last_name": user.get("last_name", ""),
             "is_admin": user.get("is_admin", False),
+            "is_sub_admin": user.get("is_sub_admin", False),
         }
     except HTTPException:
         raise
@@ -199,11 +202,11 @@ async def refresh_token(data: dict):
 async def get_all_users(current_user = Depends(get_current_user)):
     """Get all users for admin management"""
     try:
-        # Security: Only admins can view all users
-        if not current_user.get("is_admin"):
+        # Security: Only admins or sub-admins can view all users
+        if not current_user.get("is_admin") and not current_user.get("is_sub_admin"):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Forbidden: Admin access required"
+                detail="Forbidden: Admin or Sub-Admin access required"
             )
 
         # Fetch users, excluding the system admin
@@ -228,6 +231,7 @@ async def get_all_users(current_user = Depends(get_current_user)):
                 "email": str(user.get("email", "")),
                 "role": str(user.get("role", "user")),
                 "is_admin": bool(user.get("is_admin", False)),
+                "is_sub_admin": bool(user.get("is_sub_admin", False)),
                 "status": str(user.get("status", "active")),
                 "created_at": created_at_str
             })
@@ -237,6 +241,32 @@ async def get_all_users(current_user = Depends(get_current_user)):
     except Exception as e:
         logger.error(f"Critical error in get_all_users: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+@router.patch("/users/{user_id}/sub-admin-status")
+async def toggle_sub_admin_status(user_id: str, current_user = Depends(get_current_user)):
+    """Toggle a user's sub-admin status (Admin only)"""
+    if not current_user.get("is_admin"):
+         raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: Only administrators can modify sub-admin status"
+        )
+    
+    try:
+        user = db.users.find_one({"_id": ObjectId(user_id)})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        current_status = user.get("is_sub_admin", False)
+        new_status = not current_status
+        
+        db.users.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": {"is_sub_admin": new_status}}
+        )
+        
+        return {"message": f"Sub-admin status updated to {new_status}", "is_sub_admin": new_status}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/users/{user_id}")
 async def delete_user(user_id: str, current_user = Depends(get_current_user)):

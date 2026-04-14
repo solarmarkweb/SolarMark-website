@@ -23,15 +23,16 @@ import {
 const Sidebar = () => {
     const pathname = usePathname();
 
-    const menuItems = [
+    const isAdmin = typeof window !== 'undefined' ? localStorage.getItem('is_admin') === 'true' : false;
+    const isSubAdmin = typeof window !== 'undefined' ? localStorage.getItem('is_sub_admin') === 'true' : false;
+
+    const allMenuItems = [
         {
             title: 'Dashboard',
             icon: <LayoutDashboard size={20} />,
             path: '/dashboard',
         },
         {
-            title: 'Reports',
-            icon: <FileText size={20} />,
             title: 'Reports',
             icon: <FileText size={20} />,
             path: '/drivelinks',
@@ -77,6 +78,16 @@ const Sidebar = () => {
             path: '/footer-settings',
         }
     ];
+
+    // Filter items based on role
+    const menuItems = allMenuItems.filter(item => {
+        if (isAdmin) return true; // Admins see everything
+        if (isSubAdmin) {
+            // Sub-admins see limited set
+            return ['Dashboard', 'Reports', 'User Management'].includes(item.title);
+        }
+        return false;
+    });
 
     return (
         <aside className="fixed left-0 top-0 h-screen w-56 bg-white text-slate-600 flex flex-col z-50 border-r border-slate-100 shadow-xl">

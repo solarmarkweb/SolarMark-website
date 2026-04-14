@@ -156,5 +156,6 @@ def format_user_response(user):
         "email": str(user.get("email", "")),
         "created_at": str(created_at_str),
         "is_admin": bool(user.get("is_admin", False)),
+        "is_sub_admin": bool(user.get("is_sub_admin", False)),
         "role": str(user.get("role", "user"))
     }
