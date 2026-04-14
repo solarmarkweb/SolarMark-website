@@ -46,8 +46,29 @@ async def upload_pdf(
         if file_size > MAX_SIZE:
             raise HTTPException(status_code=400, detail="File size should be less than 50MB")
         
-        link_exists = collection.find_one({"_id": ObjectId(link_id)})
+        # Resolve link_id: Could be a Drive Link ID, User ID (ObjectId), Image ID, or User Code
+        link_exists = None
+        user_exists = None
+        image_exists = None
         
+        # 1. Try resolving as ObjectId for internal records
+        if ObjectId.is_valid(link_id):
+            link_exists = collection.find_one({"_id": ObjectId(link_id)})
+            if not link_exists:
+                user_exists = db.users.find_one({"_id": ObjectId(link_id)})
+                if not user_exists:
+                    image_exists = db.images.find_one({"_id": ObjectId(link_id)})
+        
+        # 2. If no record found yet, try resolving as a human-readable User Code (e.g., SM_DSP-00001)
+        if not (link_exists or user_exists or image_exists):
+            user_exists = db.users.find_one({"user_code": link_id})
+            if user_exists:
+                # If found by user_code, update the link_id to the actual internal ID for database consistency
+                link_id = str(user_exists["_id"])
+        
+        if not (link_exists or user_exists or image_exists):
+            raise HTTPException(status_code=404, detail="No matching Drive link, User ID, or User Code found")
+
         user_email = ""
         user_name = ""
         user_id = ""
@@ -60,33 +81,27 @@ async def upload_pdf(
             user_id = link_exists.get("user_id")
             dl1 = drive_link_1 or link_exists.get("drive_link_1", "")
             dl2 = drive_link_2 or link_exists.get("drive_link_2", "")
-        else:
-            user_exists = db.users.find_one({"_id": ObjectId(link_id)})
-            if user_exists:
-                user_email = user_exists.get("email")
-                user_name = f"{user_exists.get('first_name', '')} {user_exists.get('last_name', '')}"
-                user_id = str(user_exists["_id"])
-                dl1 = drive_link_1 or ""
-                dl2 = drive_link_2 or ""
-            else:
-                image_exists = db.images.find_one({"_id": ObjectId(link_id)})
-                if image_exists:
-                    user_id = image_exists.get("user_id")
-                    user_name = image_exists.get("user_name")
-                    # Try to fetch fresh user info by ID for the email
-                    if user_id:
-                        user_rec = db.users.find_one({"_id": ObjectId(user_id)})
-                        if user_rec:
-                            user_email = user_rec.get("email")
-                            user_name = f"{user_rec.get('first_name', '')} {user_rec.get('last_name', '')}".strip()
-                    
-                    if not user_email: # Fallback
-                        user_email = image_exists.get("user_email")
-                        
-                    dl1 = drive_link_1 or ""
-                    dl2 = drive_link_2 or ""
-                else:
-                    raise HTTPException(status_code=404, detail="Drive link, User, or Image record not found")
+        elif user_exists:
+            user_email = user_exists.get("email")
+            user_name = f"{user_exists.get('first_name', '')} {user_exists.get('last_name', '')}".strip()
+            user_id = str(user_exists["_id"])
+            dl1 = drive_link_1 or ""
+            dl2 = drive_link_2 or ""
+        elif image_exists:
+            user_id = image_exists.get("user_id")
+            user_name = image_exists.get("user_name")
+            # Try to fetch fresh user info by ID for the email
+            if user_id:
+                user_rec = db.users.find_one({"_id": ObjectId(user_id)})
+                if user_rec:
+                    user_email = user_rec.get("email")
+                    user_name = f"{user_rec.get('first_name', '')} {user_rec.get('last_name', '')}".strip()
+            
+            if not user_email: # Fallback
+                user_email = image_exists.get("user_email")
+                
+            dl1 = drive_link_1 or ""
+            dl2 = drive_link_2 or ""
         
         uploader_user = {
             "_id": ObjectId(user_id) if user_id and ObjectId.is_valid(user_id) else ObjectId(),
