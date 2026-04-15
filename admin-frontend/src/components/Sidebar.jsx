@@ -75,6 +75,11 @@ const Sidebar = () => {
             title: 'Footer Social',
             icon: <Globe size={20} />,
             path: '/footer-settings',
+        },
+        {
+            title: 'Sample Report',
+            icon: <FileText size={20} />,
+            path: '/sample-report',
         }
     ];
 

@@ -240,7 +240,12 @@ def get_my_pdfs(current_user = Depends(get_current_user)):
         user_id = current_user["id"]
         print(f"DEBUG: Fetching PDFs for user_id: '{user_id}'")
         
-        pdfs = list(pdfs_collection.find({"user_id": user_id}).sort("uploaded_at", -1))
+        pdfs = list(pdfs_collection.find({
+            "$or": [
+                {"user_id": user_id},
+                {"is_sample_report": True}
+            ]
+        }).sort("uploaded_at", -1))
         
         result = []
         for pdf in pdfs:
@@ -258,6 +263,7 @@ def get_my_pdfs(current_user = Depends(get_current_user)):
                 "filename": pdf.get("filename", ""),
                 "link_id": pdf.get("link_id", ""),
                 "report_type": pdf.get("report_type", ""), # Add this for specific categorization
+                "is_sample_report": pdf.get("is_sample_report", False),
                 "drive_link_1": pdf.get("drive_link_1", ""),
                 "drive_link_2": pdf.get("drive_link_2", ""),
                 "file_size": pdf.get("file_size", 0),
@@ -276,6 +282,37 @@ def get_my_pdfs(current_user = Depends(get_current_user)):
     except Exception as e:
         print(f"Error fetching user PDFs: {e}")
         raise HTTPException(status_code=500, detail="Error fetching PDFs")
+
+@router.get("/pdfs/all-sample-reports")
+def get_all_sample_reports(current_user = Depends(get_current_user)):
+    """Admin endpoint: fetch all reports marked as sample reports."""
+    try:
+        pdfs = list(pdfs_collection.find({"is_sample_report": True}).sort("uploaded_at", -1))
+        
+        result = []
+        for pdf in pdfs:
+            uploaded_at = pdf.get("uploaded_at")
+            if isinstance(uploaded_at, datetime):
+                uploaded_at_str = uploaded_at.isoformat()
+            elif isinstance(uploaded_at, str):
+                uploaded_at_str = uploaded_at
+            else:
+                uploaded_at_str = datetime.utcnow().isoformat()
+            
+            result.append({
+                "pdf_id": str(pdf["_id"]),
+                "file_id": str(pdf.get("file_id", "")),
+                "filename": pdf.get("filename", ""),
+                "file_size": pdf.get("file_size", 0),
+                "content_type": pdf.get("content_type", ""),
+                "uploaded_at": uploaded_at_str,
+                "is_sample_report": True
+            })
+        return result
+    except Exception as e:
+        print(f"Error fetching sample reports: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching sample reports")
+
 
 @router.get("/pdf/download/{pdf_id}")
 async def download_pdf(pdf_id: str, current_user = Depends(get_current_user)):
@@ -1551,3 +1588,58 @@ async def get_shared_with_me(current_user = Depends(get_current_user)):
     except Exception as e:
         print(f"Error fetching shared reports: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch shared reports")
+
+@router.post("/upload-sample-report")
+async def upload_sample_report(
+    pdf: UploadFile = File(...),
+    current_user = Depends(get_current_user)
+):
+    try:
+        content = await pdf.read()
+        file_size = len(content)
+        
+        file_id = fs.put(
+            content,
+            filename=pdf.filename,
+            content_type=pdf.content_type,
+            metadata={
+                "original_filename": pdf.filename,
+                "uploaded_at": datetime.utcnow().isoformat(),
+                "file_size": file_size,
+                "upload_type": "sample_report"
+            }
+        )
+        
+        pdf_document = {
+            "_id": ObjectId(),
+            "file_id": file_id,
+            "filename": pdf.filename,
+            "link_id": "sample_report_link",
+            "drive_link_1": "",
+            "drive_link_2": "",
+            "user_id": "sample",
+            "user_email": "admin@solarmark.com",
+            "user_name": "SolarMark Admin",
+            "file_size": file_size,
+            "content_type": pdf.content_type,
+            "uploaded_at": datetime.utcnow(),
+            "status": "uploaded",
+            "stored_in": "mongodb_gridfs",
+            "upload_type": "sample_report",
+            "is_sample_report": True
+        }
+        
+        result = pdfs_collection.insert_one(pdf_document)
+        pdf_id = str(result.inserted_id)
+        
+        return {
+            "message": "Sample report uploaded successfully",
+            "pdf_id": pdf_id,
+            "file_id": str(file_id),
+            "filename": pdf.filename,
+            "file_size": file_size,
+            "uploaded_at": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        print(f"Error uploading sample report: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to upload sample report: {str(e)}")
