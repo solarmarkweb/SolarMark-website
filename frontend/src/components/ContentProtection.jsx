@@ -56,15 +56,19 @@ const ContentProtection = ({ children, isProtected = true }) => {
             }
             
             // 3. Snapshot Triggers (PrintScreen / PrtSc / PrtScn / Win / Meta / Alt / Ctrl combinations)
-            const isPrtSc = e.key === 'PrintScreen' || e.keyCode === 44 || e.key === 'Snapshot' || 
-                           e.key === 'SysReq' || e.key === 'PrtSc' || e.key === 'PrtScn' || 
-                           e.key === 'PrntScrn' || e.keyCode === 124 || e.keyCode === 121;
+            const isPrtSc = e.key === 'PrintScreen' || e.code === 'PrintScreen' || e.keyCode === 44 || e.key === 'SysReq' || 
+                           e.key === 'Snapshot' || e.key === 'PrtSc' || e.key === 'PrtScn' || 
+                           e.key === 'PrntScrn' || e.keyCode === 124 || e.keyCode === 121 ||
+                           e.key === 'Insert' || e.keyCode === 45;
             
-            const isMetaCapture = e.key === 'Meta' || e.key === 'OS' || e.keyCode === 91 || e.keyCode === 92;
+            const isMetaCapture = e.key === 'Meta' || e.code === 'MetaLeft' || e.code === 'MetaRight' || e.key === 'OS' || e.keyCode === 91 || e.keyCode === 92;
             
             const isMacCapture = e.metaKey && e.shiftKey && (e.key === 's' || e.key === 'S' || e.key === '3' || e.key === '4' || e.key === '5');
 
-            if (isPrtSc || isMetaCapture || isMacCapture || (e.altKey && isPrtSc) || (e.ctrlKey && isPrtSc)) {
+            // Block Windows+Shift+S explicitly
+            const isWinShiftS = e.metaKey && e.shiftKey && (e.key === 's' || e.key === 'S');
+
+            if (isPrtSc || isMetaCapture || isMacCapture || isWinShiftS || (e.altKey && isPrtSc) || (e.ctrlKey && isPrtSc)) {
                 e.preventDefault();
                 e.stopPropagation();
                 blackout();
@@ -73,9 +77,10 @@ const ContentProtection = ({ children, isProtected = true }) => {
 
         // Extra logic for keyup (capture delayed releases of Fn+combinations)
         const handleKeyUpSecurity = (e) => {
-            const isPrtSc = e.key === 'PrintScreen' || e.keyCode === 44 || e.key === 'SysReq' || 
+            const isPrtSc = e.key === 'PrintScreen' || e.code === 'PrintScreen' || e.keyCode === 44 || e.key === 'SysReq' || 
                            e.key === 'Snapshot' || e.key === 'PrtSc' || e.key === 'PrtScn' || 
-                           e.key === 'PrntScrn' || e.key === 'Meta';
+                           e.key === 'PrntScrn' || e.key === 'Meta' || e.code === 'MetaLeft' || e.code === 'MetaRight' || e.key === 'OS' ||
+                           e.key === 'Insert' || e.keyCode === 45;
             if (isPrtSc) {
                 blackout();
             }

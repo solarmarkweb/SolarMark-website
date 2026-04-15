@@ -78,6 +78,9 @@ app.include_router(home_stats_router, prefix="/api", tags=["home-stats"])
 from app.routes.footer_social import router as footer_social_router
 app.include_router(footer_social_router, prefix="/api", tags=["footer-social"])
 
+from app.routes.external_api import router as external_api_router
+app.include_router(external_api_router, prefix="/api", tags=["external-api"])
+
 @app.get("/")
 def root():
     return {
@@ -91,7 +94,8 @@ def root():
             "images": "/api/images/*",
             "legal": "/api/legal/*",
             "site_photos": "/api/site-photos/*",
-            "payments": "/api/payments/*"
+            "payments": "/api/payments/*",
+            "external": "/api/external/*"
         }
     }
 

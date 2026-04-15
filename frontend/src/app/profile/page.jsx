@@ -911,7 +911,11 @@ export default function ProfilePage() {
                             pdfs.map((pdf) => {
                                 const fileMeta = getFileIcon(pdf.filename);
                                 return (
-                                    <div key={pdf.pdf_id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 rounded-2xl border border-slate-100 hover:border-orange-200 hover:shadow-lg hover:shadow-slate-200/20 transition-all bg-white group gap-4">
+                                    <div key={pdf.pdf_id} className={`flex flex-col sm:flex-row sm:items-center justify-between p-5 rounded-2xl border transition-all bg-white group gap-4 ${
+                                        pdf.is_sample_report
+                                            ? 'border-orange-100 bg-orange-50/30 hover:border-orange-300 hover:shadow-lg hover:shadow-orange-100/30'
+                                            : 'border-slate-100 hover:border-orange-200 hover:shadow-lg hover:shadow-slate-200/20'
+                                    }`}>
                                         <div className="flex items-center gap-4">
                                             <div className={`w-12 h-12 ${fileMeta.bg} rounded-xl flex items-center justify-center shadow-sm border ${fileMeta.border} shrink-0`}>
                                                 {fileMeta.icon}
@@ -919,7 +923,12 @@ export default function ProfilePage() {
                                             <div className="min-w-0">
                                                 <div className="flex flex-wrap items-center gap-2 mb-1">
                                                     <h4 className="font-bold text-slate-900 text-sm truncate" title={pdf.filename}>{truncateFilename(pdf.filename)}</h4>
-                                                    {pdf.report_type && (
+                                                    {pdf.is_sample_report && (
+                                                        <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-orange-100 text-orange-700 flex items-center gap-1">
+                                                            ★ SAMPLE
+                                                        </span>
+                                                    )}
+                                                    {pdf.report_type && !pdf.is_sample_report && (
                                                         <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${pdf.report_type === 'rgb' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
                                                             {pdf.report_type === 'rgb' ? 'DRONE DATA' : 'SITE PLAN'}
                                                         </span>
@@ -933,12 +942,16 @@ export default function ProfilePage() {
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <button onClick={() => handleShareClick(pdf)} className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Share Report">
-                                                <Share2 size={18} />
-                                            </button>
-                                            <button onClick={() => handleReviewClick(pdf)} className="p-2.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all" title="Request Changes">
-                                                <MessageSquarePlus size={18} />
-                                            </button>
+                                            {!pdf.is_sample_report && (
+                                                <>
+                                                    <button onClick={() => handleShareClick(pdf)} className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Share Report">
+                                                        <Share2 size={18} />
+                                                    </button>
+                                                    <button onClick={() => handleReviewClick(pdf)} className="p-2.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all" title="Request Changes">
+                                                        <MessageSquarePlus size={18} />
+                                                    </button>
+                                                </>
+                                            )}
                                             <button onClick={() => handleDownloadClick(pdf)} className="ml-2 px-5 py-2.5 bg-slate-900 hover:bg-orange-600 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-lg shadow-slate-900/10">
                                                 <Eye size={16} />
                                                 Visualize
@@ -1481,454 +1494,458 @@ export default function ProfilePage() {
     );
 
     return (
-        <div className="min-h-screen bg-slate-50 flex flex-col">
-            {/* Full Width Top Navbar */}
-            <header className="h-20 bg-white shadow-sm border-b border-slate-100 flex items-center justify-between px-10 fixed top-0 w-full z-[90] backdrop-blur-md bg-white/80">
-                <div className="flex items-center gap-8">
-                    <div className="flex items-center gap-3 group cursor-pointer" onClick={() => router.push('/')}>
-                        <img 
-                            src="/solar_mark_logo.svg" 
-                            alt="SolarMark Logo" 
-                            className="h-8 w-auto group-hover:scale-105 transition-transform"
-                        />
-                    </div>
+        <ContentProtection>
+            <div className="min-h-screen bg-slate-50 flex flex-col">
+                {/* Full Width Top Navbar */}
+                <header className="h-20 bg-white shadow-sm border-b border-slate-100 flex items-center justify-between px-10 fixed top-0 w-full z-[90] backdrop-blur-md bg-white/80">
+                    <div className="flex items-center gap-8">
+                        <div className="flex items-center gap-3 group cursor-pointer" onClick={() => router.push('/')}>
+                            <img 
+                                src="/solar_mark_logo.svg" 
+                                alt="SolarMark Logo" 
+                                className="h-8 w-auto group-hover:scale-105 transition-transform"
+                            />
+                        </div>
 
-                    <div className="h-6 w-px bg-slate-200" />
+                        <div className="h-6 w-px bg-slate-200" />
 
-                    <div className="flex items-center gap-2">
-                        <span className="text-slate-900 text-[10px] font-black uppercase tracking-[0.2em] bg-orange-100 px-3 py-1.5 rounded-xl text-orange-600 border border-orange-200 shadow-sm">
-                            {navigationItems.find(i => i.id === activeSection)?.label || 'Dashboard'}
-                        </span>
-                    </div>
-                </div>
-                
-                <div className="flex items-center gap-6">
-                    {user?.user_code && (
-                         <div 
-                            onClick={() => navigator.clipboard?.writeText(user.user_code)}
-                            className="px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-[10px] font-black text-slate-900 uppercase tracking-[0.2em] cursor-pointer hover:bg-orange-50 hover:border-orange-200 transition-all flex items-center gap-2"
-                         >
-                            <ShieldCheck size={14} className="text-orange-500" />
-                            ID: {user.user_code}
-                         </div>
-                    )}
-                    <div className="h-8 w-px bg-slate-100"></div>
-                    <button className="text-slate-400 hover:text-slate-600 transition-colors">
-                        <Settings size={20} />
-                    </button>
-                </div>
-            </header>
-
-            <div className="flex flex-1 pt-20">
-                {/* Sidebar below header */}
-                <aside className="w-72 bg-slate-950 flex flex-col fixed h-[calc(100vh-80px)] top-20 z-[80] transition-all duration-300">
-                    <div className="p-8 flex-1 flex flex-col overflow-y-auto custom-scrollbar pt-10">
-                        <div className="space-y-2">
-                            {navigationItems.map((item) => (
-                                <button
-                                    key={item.id}
-                                    onClick={() => setActiveSection(item.id)}
-                                    className={`w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-sm font-bold transition-all ${
-                                        activeSection === item.id 
-                                        ? 'bg-orange-600 text-white shadow-xl shadow-orange-900/30' 
-                                        : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
-                                    }`}
-                                >
-                                    {item.icon}
-                                    {item.label}
-                                </button>
-                            ))}
+                        <div className="flex items-center gap-2">
+                            <span className="text-slate-900 text-[10px] font-black uppercase tracking-[0.2em] bg-orange-100 px-3 py-1.5 rounded-xl text-orange-600 border border-orange-200 shadow-sm">
+                                {navigationItems.find(i => i.id === activeSection)?.label || 'Dashboard'}
+                            </span>
                         </div>
                     </div>
-
-                    {/* Logout Button at Bottom */}
-                    <div className="p-8 border-t border-white/5">
-                        <button 
-                            onClick={handleLogout}
-                            className="w-full py-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-black uppercase tracking-[0.2em] hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2 group"
-                        >
-                            <LogOut size={16} className="group-hover:-translate-x-1 transition-transform" />
-                            Sign Out
+                    
+                    <div className="flex items-center gap-6">
+                        {user?.user_code && (
+                             <div 
+                                onClick={() => navigator.clipboard?.writeText(user.user_code)}
+                                className="px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-[10px] font-black text-slate-900 uppercase tracking-[0.2em] cursor-pointer hover:bg-orange-50 hover:border-orange-200 transition-all flex items-center gap-2"
+                             >
+                                <ShieldCheck size={14} className="text-orange-500" />
+                                ID: {user.user_code}
+                             </div>
+                        )}
+                        <div className="h-8 w-px bg-slate-100"></div>
+                        <button className="text-slate-400 hover:text-slate-600 transition-colors">
+                            <Settings size={20} />
                         </button>
                     </div>
-                </aside>
+                </header>
 
-                {/* Main Content Area */}
-                <main className="flex-1 ml-72 min-h-screen">
-                    <div className="p-10 max-w-[1600px] mx-auto">
-
-                    {error && (
-                        <motion.div
-                            initial={{ opacity: 0, y: -20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center justify-between"
-                        >
-                            <div className="flex items-center text-red-600 font-bold text-sm">
-                                <AlertCircle className="w-5 h-5 mr-3" />
-                                {error}
-                            </div>
-                            <button onClick={() => setError("")} className="text-red-400 hover:text-red-600">
-                                <X size={18} />
-                            </button>
-                        </motion.div>
-                    )}
-
-                    {activeSection === 'dashboard' && renderDashboard()}
-                    {activeSection === 'reports' && renderReports()}
-                    {activeSection === 'bookings' && renderBookings()}
-                    {activeSection === 'upload' && renderUpload()}
-                    {activeSection === 'contact' && renderContact()}
-                </div>
-            </main>
-
-            <AnimatePresence>
-                {showViewModal && viewingBlob && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 bg-slate-950/90 backdrop-blur-sm"
-                    >
-                        <motion.div
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-white w-full max-w-6xl h-full max-h-[90vh] rounded-[2.5rem] overflow-hidden flex flex-col shadow-2xl"
-                        >
-                            <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
-                                <div className="flex items-center gap-4">
-                                    <div className={`w-12 h-12 ${getFileIcon(selectedPdf?.filename).bg} rounded-2xl flex items-center justify-center shadow-sm border ${getFileIcon(selectedPdf?.filename).border}`}>
-                                        {getFileIcon(selectedPdf?.filename).icon}
-                                    </div>
-                                    <div className="min-w-0">
-                                        <h3 className="text-lg font-bold text-slate-900 truncate max-w-[300px]" title={selectedPdf?.filename}>
-                                            {selectedPdf?.filename}
-                                        </h3>
-                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Inspection Report Visualization</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <a 
-                                        href={viewingBlob} 
-                                        download={selectedPdf?.filename}
-                                        className="hidden sm:flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all text-xs font-bold"
-                                        title="Download Original"
+                <div className="flex flex-1 pt-20">
+                    {/* Sidebar below header */}
+                    <aside className="w-72 bg-slate-950 flex flex-col fixed h-[calc(100vh-80px)] top-20 z-[80] transition-all duration-300">
+                        <div className="p-8 flex-1 flex flex-col overflow-y-auto custom-scrollbar pt-10">
+                            <div className="space-y-2">
+                                {navigationItems.map((item) => (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => setActiveSection(item.id)}
+                                        className={`w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-sm font-bold transition-all ${
+                                            activeSection === item.id 
+                                            ? 'bg-orange-600 text-white shadow-xl shadow-orange-900/30' 
+                                            : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
+                                        }`}
                                     >
-                                        <Download size={16} />
-                                        Download
-                                    </a>
-                                    <button 
-                                        onClick={() => { setShowViewModal(false); setViewingBlob(null); }}
-                                        className="p-3 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                                    >
-                                        <X size={20} />
+                                        {item.icon}
+                                        {item.label}
                                     </button>
-                                </div>
+                                ))}
                             </div>
+                        </div>
 
-                            <div className="flex-1 overflow-auto bg-slate-50 relative custom-scrollbar">
-                                {selectedPdf?.filename.toLowerCase().endsWith('.pdf') ? (
-                                    <div className="p-4 md:p-12 flex justify-center">
-                                        <Document
-                                            file={viewingBlob}
-                                            onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-                                            loading={
-                                                <div className="flex flex-col items-center py-20">
-                                                    <Loader2 className="w-10 h-10 text-orange-500 animate-spin mb-4" />
-                                                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Rendering PDF Matrix...</p>
-                                                </div>
-                                            }
-                                            className="shadow-2xl rounded-sm overflow-hidden border border-slate-200"
-                                        >
-                                            {Array.from(new Array(numPages), (el, index) => (
-                                                <Page 
-                                                    key={`page_${index + 1}`} 
-                                                    pageNumber={index + 1} 
-                                                    width={typeof window !== 'undefined' ? Math.min(window.innerWidth * 0.85, 1000) : 800}
-                                                    className="mb-8 last:mb-0"
-                                                    renderAnnotationLayer={false}
-                                                    renderTextLayer={false}
-                                                    loading={<div className="h-[600px] bg-white animate-pulse" />}
-                                                />
-                                            ))}
-                                        </Document>
+                        {/* Logout Button at Bottom */}
+                        <div className="p-8 border-t border-white/5">
+                            <button 
+                                onClick={handleLogout}
+                                className="w-full py-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-black uppercase tracking-[0.2em] hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2 group"
+                            >
+                                <LogOut size={16} className="group-hover:-translate-x-1 transition-transform" />
+                                Sign Out
+                            </button>
+                        </div>
+                    </aside>
+
+                    {/* Main Content Area */}
+                    <main className="flex-1 ml-72 min-h-screen">
+                        <div className="p-10 max-w-[1600px] mx-auto">
+
+                        {error && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center justify-between"
+                            >
+                                <div className="flex items-center text-red-600 font-bold text-sm">
+                                    <AlertCircle className="w-5 h-5 mr-3" />
+                                    {error}
+                                </div>
+                                <button onClick={() => setError("")} className="text-red-400 hover:text-red-600">
+                                    <X size={18} />
+                                </button>
+                            </motion.div>
+                        )}
+
+                        {activeSection === 'dashboard' && renderDashboard()}
+                        {activeSection === 'reports' && renderReports()}
+                        {activeSection === 'bookings' && renderBookings()}
+                        {activeSection === 'upload' && renderUpload()}
+                        {activeSection === 'contact' && renderContact()}
+                    </div>
+                </main>
+
+                <AnimatePresence>
+                    {showViewModal && viewingBlob && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 bg-slate-950/90 backdrop-blur-sm"
+                        >
+                            <motion.div
+                                initial={{ scale: 0.95, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.95, opacity: 0 }}
+                                className="bg-white w-full max-w-6xl h-full max-h-[90vh] rounded-[2.5rem] overflow-hidden flex flex-col shadow-2xl"
+                            >
+                                <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-12 h-12 ${getFileIcon(selectedPdf?.filename).bg} rounded-2xl flex items-center justify-center shadow-sm border ${getFileIcon(selectedPdf?.filename).border}`}>
+                                            {getFileIcon(selectedPdf?.filename).icon}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <h3 className="text-lg font-bold text-slate-900 truncate max-w-[300px]" title={selectedPdf?.filename}>
+                                                {selectedPdf?.filename}
+                                            </h3>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Inspection Report Visualization</p>
+                                        </div>
                                     </div>
-                                ) : selectedPdf?.filename.toLowerCase().match(/\.(xlsx|xls|csv)$/) ? (
-                                    <div className="p-4 md:p-8">
-                                        <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
-                                            <div className="overflow-x-auto">
-                                                <table className="w-full text-sm text-left text-slate-500">
-                                                    <thead className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] bg-slate-50 border-b border-slate-100">
-                                                        <tr>
-                                                            {excelData && excelData[0] && excelData[0].map((header, i) => (
-                                                                <th key={i} className="px-6 py-5 whitespace-nowrap">{header}</th>
-                                                            ))}
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {excelData && excelData.slice(1).map((row, i) => (
-                                                            <tr key={i} className="bg-white border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
-                                                                {row.map((cell, j) => (
-                                                                    <td key={j} className="px-6 py-4 font-bold text-slate-700 whitespace-nowrap">{cell || '-'}</td>
+                                    <div className="flex items-center gap-3">
+                                        {!selectedPdf?.is_sample_report && (
+                                            <a 
+                                                href={viewingBlob} 
+                                                download={selectedPdf?.filename}
+                                                className="hidden sm:flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all text-xs font-bold"
+                                                title="Download Original"
+                                            >
+                                                <Download size={16} />
+                                                Download
+                                            </a>
+                                        )}
+                                        <button 
+                                            onClick={() => { setShowViewModal(false); setViewingBlob(null); }}
+                                            className="p-3 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                        >
+                                            <X size={20} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="flex-1 overflow-auto bg-slate-50 relative custom-scrollbar">
+                                    {selectedPdf?.filename.toLowerCase().endsWith('.pdf') ? (
+                                        <div className="p-4 md:p-12 flex justify-center">
+                                            <Document
+                                                file={viewingBlob}
+                                                onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+                                                loading={
+                                                    <div className="flex flex-col items-center py-20">
+                                                        <Loader2 className="w-10 h-10 text-orange-500 animate-spin mb-4" />
+                                                        <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Rendering PDF Matrix...</p>
+                                                    </div>
+                                                }
+                                                className="shadow-2xl rounded-sm overflow-hidden border border-slate-200"
+                                            >
+                                                {Array.from(new Array(numPages), (el, index) => (
+                                                    <Page 
+                                                        key={`page_${index + 1}`} 
+                                                        pageNumber={index + 1} 
+                                                        width={typeof window !== 'undefined' ? Math.min(window.innerWidth * 0.85, 1000) : 800}
+                                                        className="mb-8 last:mb-0"
+                                                        renderAnnotationLayer={false}
+                                                        renderTextLayer={false}
+                                                        loading={<div className="h-[600px] bg-white animate-pulse" />}
+                                                    />
+                                                ))}
+                                            </Document>
+                                        </div>
+                                    ) : selectedPdf?.filename.toLowerCase().match(/\.(xlsx|xls|csv)$/) ? (
+                                        <div className="p-4 md:p-8">
+                                            <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+                                                <div className="overflow-x-auto">
+                                                    <table className="w-full text-sm text-left text-slate-500">
+                                                        <thead className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] bg-slate-50 border-b border-slate-100">
+                                                            <tr>
+                                                                {excelData && excelData[0] && excelData[0].map((header, i) => (
+                                                                    <th key={i} className="px-6 py-5 whitespace-nowrap">{header}</th>
                                                                 ))}
                                                             </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                            {(!excelData || excelData.length <= 1) && (
-                                                <div className="py-20 text-center">
-                                                    <p className="text-slate-400 font-medium">No data points recovered from spreadsheet.</p>
+                                                        </thead>
+                                                        <tbody>
+                                                            {excelData && excelData.slice(1).map((row, i) => (
+                                                                <tr key={i} className="bg-white border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                                                                    {row.map((cell, j) => (
+                                                                        <td key={j} className="px-6 py-4 font-bold text-slate-700 whitespace-nowrap">{cell || '-'}</td>
+                                                                    ))}
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
                                                 </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                ) : selectedPdf?.filename.toLowerCase().endsWith('.html') || selectedPdf?.filename.toLowerCase().endsWith('.htm') ? (
-                                    <iframe src={viewingBlob} className="w-full h-full border-none bg-white" title="HTML Visualization" />
-                                ) : selectedPdf?.filename.toLowerCase().match(/\.(kml|kmz)$/) ? (
-                                    <div className="w-full h-full min-h-[600px] outline-none">
-                                        <KmlViewer kmlUrl={viewingBlob} />
-                                    </div>
-                                ) : (
-                                    <div className="h-full flex flex-col items-center justify-center p-12 text-center">
-                                        <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center text-orange-200 mb-6">
-                                            <AlertTriangle size={40} />
-                                        </div>
-                                        <h4 className="text-xl font-bold text-slate-900 mb-2">Interface Incompatible</h4>
-                                        <p className="text-slate-500 text-sm max-w-sm mb-8">This file format requires local visualization or a specialized viewer. Please download the file to proceed.</p>
-                                        <a 
-                                            href={viewingBlob} 
-                                            download={selectedPdf?.filename}
-                                            className="px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-orange-600 transition-all shadow-xl"
-                                        >
-                                            Download Asset
-                                        </a>
-                                    </div>
-                                )}
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            <AnimatePresence>
-                {showReviewModal && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
-                    >
-                        <motion.div
-                            initial={{ scale: 0.95, opacity: 0, y: 20 }}
-                            animate={{ scale: 1, opacity: 1, y: 0 }}
-                            exit={{ scale: 0.95, opacity: 0, y: 20 }}
-                            className="bg-white w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl border border-slate-100"
-                        >
-                            <div className="p-8">
-                                <div className="flex items-center gap-4 mb-6">
-                                    <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600">
-                                        <MessageSquarePlus size={28} />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-xl font-bold text-slate-900">Request Changes</h3>
-                                        <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Report Analysis Feedback</p>
-                                    </div>
-                                </div>
-                                
-                                <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 mb-6">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Target Asset</p>
-                                    <p className="text-sm font-bold text-slate-700 truncate">{selectedPdfForReview?.filename}</p>
-                                </div>
-
-                                <p className="text-sm text-slate-500 mb-6 leading-relaxed font-medium">
-                                    Please describe any discrepancies or specific areas you'd like us to re-analyze. Our technical team will prioritize your request.
-                                </p>
-
-                                <textarea
-                                    value={reviewText}
-                                    onChange={(e) => setReviewText(e.target.value)}
-                                    placeholder="e.g. Please check tower 4 shadow analysis. The vegetation markup seems slightly offset..."
-                                    className="w-full h-40 px-6 py-5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-700 resize-none mb-8 placeholder:text-slate-300"
-                                />
-
-                                <div className="flex gap-4">
-                                    <button 
-                                        onClick={() => setShowReviewModal(false)}
-                                        className="flex-1 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-slate-600 transition-colors"
-                                    >
-                                        Discard
-                                    </button>
-                                    <button 
-                                        onClick={submitReview}
-                                        disabled={submittingReview || !reviewText.trim()}
-                                        className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-orange-600 transition-all shadow-xl shadow-slate-900/10 disabled:opacity-50"
-                                    >
-                                        {submittingReview ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Submit Request'}
-                                    </button>
-                                </div>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            <AnimatePresence>
-                {showShareModal && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
-                    >
-                        <motion.div
-                            initial={{ scale: 0.95, opacity: 0, scale: 0.9 }}
-                            animate={{ scale: 1, opacity: 1, scale: 1 }}
-                            exit={{ scale: 0.95, opacity: 0, scale: 0.9 }}
-                            className="bg-white w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl"
-                        >
-                            <div className="p-10">
-                                {shareSuccess ? (
-                                    <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="text-center py-6">
-                                        <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500 mx-auto mb-6 shadow-lg shadow-emerald-500/10">
-                                            <CheckCircle2 size={40} />
-                                        </div>
-                                        <h3 className="text-2xl font-bold text-slate-900 mb-2">Access Granted</h3>
-                                        <p className="text-slate-400 font-medium italic">Collaborator has been notified via email.</p>
-                                    </motion.div>
-                                ) : (
-                                    <>
-                                        <div className="flex items-center gap-4 mb-8">
-                                            <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 shadow-sm border border-blue-100">
-                                                <Share2 size={28} />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-xl font-bold text-slate-900">Share Report</h3>
-                                                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Cross-Team Collaboration</p>
+                                                {(!excelData || excelData.length <= 1) && (
+                                                    <div className="py-20 text-center">
+                                                        <p className="text-slate-400 font-medium">No data points recovered from spreadsheet.</p>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
-                                        
-                                        <p className="text-sm text-slate-500 mb-8 font-medium leading-relaxed">Securely share this analyzed data with your team members or asset stakeholders.</p>
-
-                                        <div className="space-y-1.5 mb-10">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Recipient Work Email</label>
-                                            <div className="relative">
-                                                <Mail size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" />
-                                                <input 
-                                                    type="email"
-                                                    value={shareRecipientEmail}
-                                                    onChange={(e) => setShareRecipientEmail(e.target.value)}
-                                                    placeholder="partner@organization.com"
-                                                    className="w-full pl-14 pr-6 py-5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-bold text-slate-700" 
-                                                />
-                                            </div>
+                                    ) : selectedPdf?.filename.toLowerCase().endsWith('.html') || selectedPdf?.filename.toLowerCase().endsWith('.htm') ? (
+                                        <iframe src={viewingBlob} className="w-full h-full border-none bg-white" title="HTML Visualization" />
+                                    ) : selectedPdf?.filename.toLowerCase().match(/\.(kml|kmz)$/) ? (
+                                        <div className="w-full h-full min-h-[600px] outline-none">
+                                            <KmlViewer kmlUrl={viewingBlob} />
                                         </div>
-
-                                        <div className="flex gap-4">
-                                            <button 
-                                                onClick={() => setShowShareModal(false)}
-                                                className="flex-1 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-slate-600 transition-colors"
+                                    ) : (
+                                        <div className="h-full flex flex-col items-center justify-center p-12 text-center">
+                                            <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center text-orange-200 mb-6">
+                                                <AlertTriangle size={40} />
+                                            </div>
+                                            <h4 className="text-xl font-bold text-slate-900 mb-2">Interface Incompatible</h4>
+                                            <p className="text-slate-500 text-sm max-w-sm mb-8">This file format requires local visualization or a specialized viewer. Please download the file to proceed.</p>
+                                            <a 
+                                                href={viewingBlob} 
+                                                download={selectedPdf?.filename}
+                                                className="px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-orange-600 transition-all shadow-xl"
                                             >
-                                                Abort
-                                            </button>
-                                            <button 
-                                                onClick={handleConfirmShare}
-                                                disabled={isSharing || !shareRecipientEmail.includes('@')}
-                                                className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-blue-600 transition-all shadow-xl shadow-slate-900/10 disabled:opacity-50 flex items-center justify-center gap-3"
-                                            >
-                                                {isSharing ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-                                                Confirm Access
-                                            </button>
+                                                Download Asset
+                                            </a>
                                         </div>
-                                    </>
-                                )}
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            <AnimatePresence>
-                {showUploadModal && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
-                    >
-                        <motion.div
-                            initial={{ scale: 0.95, opacity: 0, y: 30 }}
-                            animate={{ scale: 1, opacity: 1, y: 0 }}
-                            exit={{ scale: 0.95, opacity: 0, y: 30 }}
-                            className="bg-white w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl"
-                        >
-                            <form onSubmit={handleImageUpload} className="p-10">
-                                <div className="flex items-center gap-4 mb-8">
-                                    <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 border border-orange-100">
-                                        <Database size={28} />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-xl font-bold text-slate-900">Finalize Assets</h3>
-                                        <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Ready for Analysis Ingestion</p>
-                                    </div>
+                                    )}
                                 </div>
-                                
-                                <div className="space-y-6 mb-10">
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Identifier*</label>
-                                        <input 
-                                            required
-                                            value={uploadForm.projectName}
-                                            onChange={(e) => setUploadForm({...uploadForm, projectName: e.target.value})}
-                                            placeholder="Solar Site - Quadrant A"
-                                            className="w-full px-6 py-5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-700" 
-                                        />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Asset Capacity / Area Size</label>
-                                        <input 
-                                            value={uploadForm.areaSize}
-                                            onChange={(e) => setUploadForm({...uploadForm, areaSize: e.target.value})}
-                                            placeholder="25 Megawatts / 100 Acres"
-                                            className="w-full px-6 py-5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-700" 
-                                        />
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                <AnimatePresence>
+                    {showReviewModal && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
+                        >
+                            <motion.div
+                                initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                                animate={{ scale: 1, opacity: 1, y: 0 }}
+                                exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                                className="bg-white w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl border border-slate-100"
+                            >
+                                <div className="p-8">
+                                    <div className="flex items-center gap-4 mb-6">
+                                        <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600">
+                                            <MessageSquarePlus size={28} />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-bold text-slate-900">Request Changes</h3>
+                                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Report Analysis Feedback</p>
+                                        </div>
                                     </div>
                                     
-                                    <div className="grid grid-cols-2 gap-3 p-4 rounded-2xl bg-slate-900 text-white">
-                                         <div className="text-center p-2">
-                                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-tight mb-1">Visuals</p>
-                                            <p className="text-xl font-bold text-orange-500">{rgbFiles.length}</p>
-                                         </div>
-                                         <div className="text-center p-2 border-l border-white/10">
-                                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-tight mb-1">Vectors</p>
-                                            <p className="text-xl font-bold text-orange-500">{thermalFiles.length}</p>
-                                         </div>
+                                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 mb-6">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Target Asset</p>
+                                        <p className="text-sm font-bold text-slate-700 truncate">{selectedPdfForReview?.filename}</p>
+                                    </div>
+
+                                    <p className="text-sm text-slate-500 mb-6 leading-relaxed font-medium">
+                                        Please describe any discrepancies or specific areas you'd like us to re-analyze. Our technical team will prioritize your request.
+                                    </p>
+
+                                    <textarea
+                                        value={reviewText}
+                                        onChange={(e) => setReviewText(e.target.value)}
+                                        placeholder="e.g. Please check tower 4 shadow analysis. The vegetation markup seems slightly offset..."
+                                        className="w-full h-40 px-6 py-5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-700 resize-none mb-8 placeholder:text-slate-300"
+                                    />
+
+                                    <div className="flex gap-4">
+                                        <button 
+                                            onClick={() => setShowReviewModal(false)}
+                                            className="flex-1 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-slate-600 transition-colors"
+                                        >
+                                            Discard
+                                        </button>
+                                        <button 
+                                            onClick={submitReview}
+                                            disabled={submittingReview || !reviewText.trim()}
+                                            className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-orange-600 transition-all shadow-xl shadow-slate-900/10 disabled:opacity-50"
+                                        >
+                                            {submittingReview ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Submit Request'}
+                                        </button>
                                     </div>
                                 </div>
-
-                                <div className="flex gap-4">
-                                    <button 
-                                        type="button"
-                                        onClick={() => setShowUploadModal(false)}
-                                        className="flex-1 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-slate-600 transition-colors"
-                                    >
-                                        Modify
-                                    </button>
-                                    <button 
-                                        type="submit"
-                                        disabled={uploading || !uploadForm.projectName}
-                                        className="flex-1 py-4 bg-orange-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-orange-700 transition-all shadow-xl shadow-orange-600/20 disabled:opacity-50 flex items-center justify-center gap-3"
-                                    >
-                                        {uploading ? <Loader2 size={18} className="animate-spin" /> : <CloudUpload size={18} />}
-                                        Execute Sync
-                                    </button>
-                                </div>
-                            </form>
+                            </motion.div>
                         </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                    )}
+                </AnimatePresence>
+
+                <AnimatePresence>
+                    {showShareModal && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
+                        >
+                            <motion.div
+                                initial={{ scale: 0.95, opacity: 0, scale: 0.9 }}
+                                animate={{ scale: 1, opacity: 1, scale: 1 }}
+                                exit={{ scale: 0.95, opacity: 0, scale: 0.9 }}
+                                className="bg-white w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl"
+                            >
+                                <div className="p-10">
+                                    {shareSuccess ? (
+                                        <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="text-center py-6">
+                                            <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500 mx-auto mb-6 shadow-lg shadow-emerald-500/10">
+                                                <CheckCircle2 size={40} />
+                                            </div>
+                                            <h3 className="text-2xl font-bold text-slate-900 mb-2">Access Granted</h3>
+                                            <p className="text-slate-400 font-medium italic">Collaborator has been notified via email.</p>
+                                        </motion.div>
+                                    ) : (
+                                        <>
+                                            <div className="flex items-center gap-4 mb-8">
+                                                <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 shadow-sm border border-blue-100">
+                                                    <Share2 size={28} />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-xl font-bold text-slate-900">Share Report</h3>
+                                                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Cross-Team Collaboration</p>
+                                                </div>
+                                            </div>
+                                            
+                                            <p className="text-sm text-slate-500 mb-8 font-medium leading-relaxed">Securely share this analyzed data with your team members or asset stakeholders.</p>
+
+                                            <div className="space-y-1.5 mb-10">
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Recipient Work Email</label>
+                                                <div className="relative">
+                                                    <Mail size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" />
+                                                    <input 
+                                                        type="email"
+                                                        value={shareRecipientEmail}
+                                                        onChange={(e) => setShareRecipientEmail(e.target.value)}
+                                                        placeholder="partner@organization.com"
+                                                        className="w-full pl-14 pr-6 py-5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-bold text-slate-700" 
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="flex gap-4">
+                                                <button 
+                                                    onClick={() => setShowShareModal(false)}
+                                                    className="flex-1 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-slate-600 transition-colors"
+                                                >
+                                                    Abort
+                                                </button>
+                                                <button 
+                                                    onClick={handleConfirmShare}
+                                                    disabled={isSharing || !shareRecipientEmail.includes('@')}
+                                                    className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-blue-600 transition-all shadow-xl shadow-slate-900/10 disabled:opacity-50 flex items-center justify-center gap-3"
+                                                >
+                                                    {isSharing ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                                                    Confirm Access
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                <AnimatePresence>
+                    {showUploadModal && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
+                        >
+                            <motion.div
+                                initial={{ scale: 0.95, opacity: 0, y: 30 }}
+                                animate={{ scale: 1, opacity: 1, y: 0 }}
+                                exit={{ scale: 0.95, opacity: 0, y: 30 }}
+                                className="bg-white w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl"
+                            >
+                                <form onSubmit={handleImageUpload} className="p-10">
+                                    <div className="flex items-center gap-4 mb-8">
+                                        <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 border border-orange-100">
+                                            <Database size={28} />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-bold text-slate-900">Finalize Assets</h3>
+                                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Ready for Analysis Ingestion</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="space-y-6 mb-10">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Identifier*</label>
+                                            <input 
+                                                required
+                                                value={uploadForm.projectName}
+                                                onChange={(e) => setUploadForm({...uploadForm, projectName: e.target.value})}
+                                                placeholder="Solar Site - Quadrant A"
+                                                className="w-full px-6 py-5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-700" 
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Asset Capacity / Area Size</label>
+                                            <input 
+                                                value={uploadForm.areaSize}
+                                                onChange={(e) => setUploadForm({...uploadForm, areaSize: e.target.value})}
+                                                placeholder="25 Megawatts / 100 Acres"
+                                                className="w-full px-6 py-5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-bold text-slate-700" 
+                                            />
+                                        </div>
+                                        
+                                        <div className="grid grid-cols-2 gap-3 p-4 rounded-2xl bg-slate-900 text-white">
+                                             <div className="text-center p-2">
+                                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-tight mb-1">Visuals</p>
+                                                <p className="text-xl font-bold text-orange-500">{rgbFiles.length}</p>
+                                             </div>
+                                             <div className="text-center p-2 border-l border-white/10">
+                                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-tight mb-1">Vectors</p>
+                                                <p className="text-xl font-bold text-orange-500">{thermalFiles.length}</p>
+                                             </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-4">
+                                        <button 
+                                            type="button"
+                                            onClick={() => setShowUploadModal(false)}
+                                            className="flex-1 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-slate-600 transition-colors"
+                                        >
+                                            Modify
+                                        </button>
+                                        <button 
+                                            type="submit"
+                                            disabled={uploading || !uploadForm.projectName}
+                                            className="flex-1 py-4 bg-orange-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-orange-700 transition-all shadow-xl shadow-orange-600/20 disabled:opacity-50 flex items-center justify-center gap-3"
+                                        >
+                                            {uploading ? <Loader2 size={18} className="animate-spin" /> : <CloudUpload size={18} />}
+                                            Execute Sync
+                                        </button>
+                                    </div>
+                                </form>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
         </div>
-    </div>
-);
+    </ContentProtection>
+    );
 }
