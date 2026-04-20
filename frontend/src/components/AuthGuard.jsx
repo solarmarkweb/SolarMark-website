@@ -16,8 +16,13 @@ export default function AuthGuard({ children }) {
 
     const isAuthenticated = typeof window !== 'undefined' ? !!localStorage.getItem("auth_token") : false;
 
+    const publicLegalPaths = ["/privacy", "/terms"];
+
     useEffect(() => {
-        if (mounted && isAuthenticated && !pathname.startsWith("/profile")) {
+        // Normalize path by removing trailing slash for comparison
+        const normalizedPath = pathname.endsWith("/") && pathname !== "/" ? pathname.slice(0, -1) : pathname;
+        const isPublicLegal = publicLegalPaths.includes(normalizedPath);
+        if (mounted && isAuthenticated && !pathname.startsWith("/profile") && !isPublicLegal) {
             router.replace("/profile");
         }
     }, [mounted, isAuthenticated, pathname, router]);
@@ -25,8 +30,10 @@ export default function AuthGuard({ children }) {
     // Don't render anything that could flicker until we've checked the auth state on the client
     if (!mounted) return <div className="min-h-screen bg-white" />;
 
-    // If we're logged in and not on profile, we're definitely redirecting
-    if (isAuthenticated && !pathname.startsWith("/profile")) {
+    // If we're logged in and not on profile (and not on a legal page), we're definitely redirecting
+    const normalizedPath = pathname.endsWith("/") && pathname !== "/" ? pathname.slice(0, -1) : pathname;
+    const isPublicLegal = publicLegalPaths.includes(normalizedPath);
+    if (isAuthenticated && !pathname.startsWith("/profile") && !isPublicLegal) {
         return (
             <div className="min-h-screen bg-white flex flex-col items-center justify-center">
                 <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4"></div>

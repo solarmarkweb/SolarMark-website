@@ -22,6 +22,11 @@ import {
 
 const Sidebar = () => {
     const pathname = usePathname();
+    const [mounted, setMounted] = React.useState(false);
+
+    React.useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const isAdmin = typeof window !== 'undefined' ? localStorage.getItem('is_admin') === 'true' : false;
     const isSubAdmin = typeof window !== 'undefined' ? localStorage.getItem('is_sub_admin') === 'true' : false;
@@ -116,7 +121,7 @@ const Sidebar = () => {
                     Main Menu
                 </p>
 
-                {menuItems.map((item) => {
+                {mounted && menuItems.map((item) => {
                     const isActive = pathname === item.path;
                     return (
                         <Link

@@ -1495,7 +1495,7 @@ export default function ProfilePage() {
     );
 
     return (
-        <ContentProtection>
+        <ContentProtection showWatermark={activeSection === 'reports'}>
             <div className="min-h-screen bg-slate-50 flex flex-col">
                 {/* Full Width Top Navbar */}
                 <header className="h-20 bg-white shadow-sm border-b border-slate-100 flex items-center justify-between px-6 md:px-10 fixed top-0 w-full z-[90] backdrop-blur-md bg-white/80">

@@ -7,7 +7,7 @@ const PrivacyPage = () => {
     const [content, setContent] = useState('');
     const [loading, setLoading] = useState(true);
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://admin-backend-591983072009.asia-south1.run.app/api';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001/api';
 
     useEffect(() => {
         const fetchContent = async () => {
