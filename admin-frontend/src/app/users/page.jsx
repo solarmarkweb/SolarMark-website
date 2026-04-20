@@ -21,7 +21,7 @@ export default function UserManagementPage() {
     const [uploadingUserId, setUploadingUserId] = useState(null);
 
     // API configuration
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8002/api';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api';
 
     // Fetch all registered users from backend
     const fetchUsers = async () => {

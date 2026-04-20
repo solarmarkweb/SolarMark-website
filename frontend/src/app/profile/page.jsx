@@ -13,7 +13,7 @@ import {
     Shield, X, GitCompare, ArrowUpDown, BarChart3, CheckSquare, Square, Zap, LogOut, Activity, Terminal,
     MessageSquarePlus, History, Send, MessageSquare, ListTodo, Share2, Users,
     CloudUpload, Camera, Globe, Database, ArrowRight, ChevronDown, LayoutDashboard, Plus,
-    Contact2, Settings, HelpCircle, ChevronLeft, Info, ChevronRight
+    Contact2, Settings, HelpCircle, ChevronLeft, Info, ChevronRight, Menu
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -46,6 +46,7 @@ export default function ProfilePage() {
     const [showBookingsList, setShowBookingsList] = useState(false);
     const [showReportsList, setShowReportsList] = useState(false);
     const [activeSection, setActiveSection] = useState('dashboard');
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     // Data States
     const [pdfs, setPdfs] = useState([]);
@@ -803,8 +804,8 @@ export default function ProfilePage() {
                         <div className="w-32 h-32 rounded-full bg-gradient-to-br from-orange-500 to-orange-700 border-4 border-white/20 flex items-center justify-center text-4xl font-black text-white shadow-2xl shrink-0">
                             {getUserInitials(user?.name)}
                         </div>
-                        <div className="flex-1 text-center md:text-left">
-                            <h1 className="text-4xl font-bold mb-3 tracking-tight">Welcome, {user?.name}!</h1>
+                        <div className="flex-1 text-center md:text-left min-w-0">
+                            <h1 className="text-2xl md:text-4xl font-bold mb-3 tracking-tight truncate">Welcome, {user?.name}!</h1>
                             <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-6">
                                 <div className="px-5 py-2.5 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3 backdrop-blur-md">
                                     <Mail size={16} className="text-orange-500" />
@@ -1016,8 +1017,8 @@ export default function ProfilePage() {
                     <div className="p-8 md:p-12 border-b border-slate-100 bg-slate-50/50">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                             <div>
-                                <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Inspection Deployment Form</h2>
-                                <p className="text-slate-500 font-medium mt-1">Aviation-grade compliance and technical specification request.</p>
+                                <h2 className="text-xl md:text-3xl font-bold text-slate-900 tracking-tight">Inspection Deployment Form</h2>
+                                <p className="text-slate-500 text-sm font-medium mt-1">Aviation-grade compliance and technical specification request.</p>
                             </div>
                             <div className="flex items-center gap-2 px-5 py-2.5 bg-emerald-50 text-emerald-700 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border border-emerald-100 shadow-sm shrink-0">
                                 <ShieldCheck size={16} /> Secure Aviation Sync
@@ -1371,7 +1372,7 @@ export default function ProfilePage() {
                             <div className="h-0.5 w-12 bg-orange-600 rounded-full" />
                             <span className="text-[10px] font-black text-orange-600 uppercase tracking-[0.3em]">Data Ingestion Portal</span>
                         </div>
-                        <h2 className="text-5xl font-black text-slate-900 leading-none uppercase mb-6">
+                        <h2 className="text-3xl md:text-5xl font-black text-slate-900 leading-none uppercase mb-6">
                             Upload to <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-orange-400">Cloud</span>
                         </h2>
                         <p className="text-sm text-slate-500 font-medium leading-relaxed max-w-md">
@@ -1497,47 +1498,71 @@ export default function ProfilePage() {
         <ContentProtection>
             <div className="min-h-screen bg-slate-50 flex flex-col">
                 {/* Full Width Top Navbar */}
-                <header className="h-20 bg-white shadow-sm border-b border-slate-100 flex items-center justify-between px-10 fixed top-0 w-full z-[90] backdrop-blur-md bg-white/80">
-                    <div className="flex items-center gap-8">
+                <header className="h-20 bg-white shadow-sm border-b border-slate-100 flex items-center justify-between px-6 md:px-10 fixed top-0 w-full z-[90] backdrop-blur-md bg-white/80">
+                    <div className="flex items-center gap-4 md:gap-8">
+                        {/* Mobile Menu Toggle */}
+                        <button 
+                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                            className="lg:hidden p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-slate-600 hover:text-orange-600 hover:bg-orange-50 transition-all transition-colors"
+                        >
+                            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+                        </button>
+
                         <div className="flex items-center gap-3 group cursor-pointer" onClick={() => setActiveSection('dashboard')}>
                             <img 
                                 src="/solar_mark_logo.svg" 
                                 alt="SolarMark Logo" 
-                                className="h-8 w-auto group-hover:scale-105 transition-transform"
+                                className="h-6 md:h-8 w-auto group-hover:scale-105 transition-transform"
                             />
                         </div>
 
-                        <div className="h-6 w-px bg-slate-200" />
+                        <div className="hidden md:block h-6 w-px bg-slate-200" />
 
-                        <div className="flex items-center gap-2">
+                        <div className="hidden md:flex items-center gap-2">
                             <span className="text-slate-900 text-[10px] font-black uppercase tracking-[0.2em] bg-orange-100 px-3 py-1.5 rounded-xl text-orange-600 border border-orange-200 shadow-sm">
                                 {navigationItems.find(i => i.id === activeSection)?.label || 'Dashboard'}
                             </span>
                         </div>
                     </div>
                     
-                    <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-3 md:gap-6">
                         {user?.user_code && (
                              <div 
                                 onClick={() => navigator.clipboard?.writeText(user.user_code)}
-                                className="px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-[10px] font-black text-slate-900 uppercase tracking-[0.2em] cursor-pointer hover:bg-orange-50 hover:border-orange-200 transition-all flex items-center gap-2"
+                                className="px-3 md:px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-[10px] font-black text-slate-900 uppercase tracking-[0.2em] cursor-pointer hover:bg-orange-50 hover:border-orange-200 transition-all flex items-center gap-2"
                              >
-                                <ShieldCheck size={14} className="text-orange-500" />
-                                ID: {user.user_code}
+                                <ShieldCheck size={14} className="text-orange-500 hidden sm:block" />
+                                <span className="hidden sm:inline">ID:</span> {user.user_code}
                              </div>
                         )}
                     </div>
                 </header>
 
-                <div className="flex flex-1 pt-20">
+                <div className="flex flex-1 pt-20 relative">
+                    {/* Backdrop for mobile */}
+                    <AnimatePresence>
+                        {isMobileMenuOpen && (
+                            <motion.div 
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[75] lg:hidden"
+                            />
+                        )}
+                    </AnimatePresence>
+
                     {/* Sidebar below header */}
-                    <aside className="w-72 bg-slate-950 flex flex-col fixed h-[calc(100vh-80px)] top-20 z-[80] transition-all duration-300">
+                    <aside className={`w-72 bg-slate-950 flex flex-col fixed h-[calc(100vh-80px)] top-20 z-[80] transition-all duration-500 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
                         <div className="p-8 flex-1 flex flex-col overflow-y-auto custom-scrollbar pt-10">
                             <div className="space-y-2">
                                 {navigationItems.map((item) => (
                                     <button
                                         key={item.id}
-                                        onClick={() => setActiveSection(item.id)}
+                                        onClick={() => {
+                                            setActiveSection(item.id);
+                                            setIsMobileMenuOpen(false);
+                                        }}
                                         className={`w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-sm font-bold transition-all ${
                                             activeSection === item.id 
                                             ? 'bg-orange-600 text-white shadow-xl shadow-orange-900/30' 
@@ -1564,8 +1589,8 @@ export default function ProfilePage() {
                     </aside>
 
                     {/* Main Content Area */}
-                    <main className="flex-1 ml-72 min-h-screen">
-                        <div className="p-10 max-w-[1600px] mx-auto">
+                    <main className="flex-1 lg:ml-72 min-h-screen transition-all duration-300">
+                        <div className="p-4 md:p-10 max-w-[1600px] mx-auto">
 
                         {error && (
                             <motion.div
