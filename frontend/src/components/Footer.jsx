@@ -13,9 +13,13 @@ import {
 const Footer = () => {
     const currentYear = new Date().getFullYear();
     const [dynamicSocialLinks, setDynamicSocialLinks] = React.useState([]);
+    const [isLoggedIn, setIsLoggedIn] = React.useState(false);
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8002/api';
 
     React.useEffect(() => {
+        const token = localStorage.getItem("auth_token");
+        setIsLoggedIn(!!token);
+
         const fetchSocial = async () => {
             try {
                 const res = await fetch(`${API_URL}/footer-social/`);
@@ -49,6 +53,11 @@ const Footer = () => {
             { name: "Terms of Service", href: "/terms" },
         ],
     };
+
+    // Filter sections if logged in - "only view dashboard" implies less navigation
+    const filteredSections = isLoggedIn ? {
+        "Legal": footerSections["Legal"]
+    } : footerSections;
 
     return (
         <footer className="bg-white border-t border-slate-200">
@@ -96,7 +105,7 @@ const Footer = () => {
                     </div>
 
                     {/* Links Sections */}
-                    {Object.entries(footerSections).map(([title, links]) => (
+                    {Object.entries(filteredSections).map(([title, links]) => (
                         <div key={title}>
                             <h3 className="text-sm font-semibold text-slate-900 mb-4">{title}</h3>
                             <ul className="space-y-3">

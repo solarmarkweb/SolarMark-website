@@ -32,11 +32,12 @@ export default function Navbar() {
 
         window.addEventListener("scroll", handleScroll);
         return () => window.removeEventListener("scroll", handleScroll);
-    }, [pathname]);
+    }, [pathname, router]);
 
     const handleLogout = () => {
         localStorage.removeItem("auth_token");
         localStorage.removeItem("user_name");
+        localStorage.removeItem("user_role");
         setIsLoggedIn(false);
         router.push("/login");
     };
@@ -89,13 +90,15 @@ export default function Navbar() {
     const logoTextColor = (isScrolled || !isDarkHeroPage) ? "text-slate-900" : "text-white";
     const hoverTextColor = (isScrolled || !isDarkHeroPage) ? "hover:text-orange-600" : "hover:text-white";
 
+    if (pathname.startsWith("/profile")) return null;
+
     return (
         <nav className="fixed w-full top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-100 transition-all duration-300">
             <div className="max-w-full px-6 md:px-12">
                 <div className="flex justify-between items-center h-16 md:h-20">
                     {/* Logo - Top Left Corner */}
                     <div className="flex items-center">
-                        <Link href="/" className="flex items-center group">
+                        <Link href={isLoggedIn ? "/profile" : "/"} className="flex items-center group">
                             <img
                                 src="/solar_mark_logo.svg"
                                 alt="SolarMark Logo"

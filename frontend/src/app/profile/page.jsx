@@ -1499,7 +1499,7 @@ export default function ProfilePage() {
                 {/* Full Width Top Navbar */}
                 <header className="h-20 bg-white shadow-sm border-b border-slate-100 flex items-center justify-between px-10 fixed top-0 w-full z-[90] backdrop-blur-md bg-white/80">
                     <div className="flex items-center gap-8">
-                        <div className="flex items-center gap-3 group cursor-pointer" onClick={() => router.push('/')}>
+                        <div className="flex items-center gap-3 group cursor-pointer" onClick={() => setActiveSection('dashboard')}>
                             <img 
                                 src="/solar_mark_logo.svg" 
                                 alt="SolarMark Logo" 
@@ -1526,10 +1526,6 @@ export default function ProfilePage() {
                                 ID: {user.user_code}
                              </div>
                         )}
-                        <div className="h-8 w-px bg-slate-100"></div>
-                        <button className="text-slate-400 hover:text-slate-600 transition-colors">
-                            <Settings size={20} />
-                        </button>
                     </div>
                 </header>
 
