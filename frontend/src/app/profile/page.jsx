@@ -813,7 +813,7 @@ export default function ProfilePage() {
                                 </div>
                                 <div className="px-5 py-2.5 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3 cursor-pointer hover:bg-white/10 transition-all backdrop-blur-md" onClick={() => navigator.clipboard.writeText(user?.user_code)}>
                                     <ShieldCheck size={16} className="text-orange-500" />
-                                    <span className="text-xs font-bold text-slate-300 tracking-wider">ID: {user?.user_code}</span>
+                                    <span className="text-xs font-bold text-slate-300 tracking-wider">CLIENT ID: {user?.user_code}</span>
                                 </div>
                             </div>
                         </div>
@@ -1532,7 +1532,7 @@ export default function ProfilePage() {
                                 className="px-3 md:px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-[10px] font-black text-slate-900 uppercase tracking-[0.2em] cursor-pointer hover:bg-orange-50 hover:border-orange-200 transition-all flex items-center gap-2"
                              >
                                 <ShieldCheck size={14} className="text-orange-500 hidden sm:block" />
-                                <span className="hidden sm:inline">ID:</span> {user.user_code}
+                                <span className="hidden sm:inline">CLIENT ID:</span> {user.user_code}
                              </div>
                         )}
                     </div>

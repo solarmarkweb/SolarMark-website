@@ -304,7 +304,7 @@ export default function UserManagementPage() {
                             <thead className="bg-gray-50/50">
                                 <tr>
                                     <th className="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">User</th>
-                                    <th className="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">User ID</th>
+                                    <th className="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Client ID</th>
                                     <th className="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Email</th>
                                     <th className="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Role</th>
                                     <th className="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Joined Date</th>
