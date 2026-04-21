@@ -40,14 +40,14 @@ const TermsPage = () => {
         <div className="min-h-screen bg-white">
             {/* Elegant Minimal Header */}
             <div className="pt-44 pb-12 border-b border-slate-100">
-                <div className="max-w-7xl mx-auto px-8">
+                <div className="max-w-7xl mx-auto px-4 sm:px-8">
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
                         <div className="max-w-2xl">
                             <div className="flex items-center gap-3 mb-6">
                                 <span className="w-12 h-[1px] bg-orange-600"></span>
                                 <span className="text-[11px] font-black text-orange-600 uppercase tracking-[0.4em]">Legal Framework</span>
                             </div>
-                            <h1 className="text-6xl md:text-7xl font-black text-slate-900 leading-none tracking-tight mb-8">
+                            <h1 className="text-4xl md:text-7xl font-black text-slate-900 leading-none tracking-tight mb-8 uppercase">
                                 Terms of <br /><span className="text-slate-300">Service</span>
                             </h1>
                             <p className="text-lg text-slate-500 font-medium leading-relaxed">
@@ -74,7 +74,7 @@ const TermsPage = () => {
             </div>
 
             {/* Main Content Area */}
-            <div className="max-w-7xl mx-auto px-8 py-24">
+            <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 md:py-24">
                 <div className="flex flex-col lg:flex-row gap-20">
                     {/* Left Side: Index/ToC (Subtle) */}
                     <aside className="lg:w-1/4 hidden lg:block sticky top-32 h-fit">

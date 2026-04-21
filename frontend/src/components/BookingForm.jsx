@@ -291,7 +291,7 @@ export default function BookingPage() {
             <section className="py-12 md:py-20 bg-slate-50 relative -mt-16 md:-mt-20 z-20 rounded-t-[3rem]">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     {!user ? (
-                        <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto bg-white rounded-[2.5rem] p-12 md:p-20 border border-slate-200 shadow-2xl flex flex-col items-center text-center text-slate-950">
+                        <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 sm:p-10 md:p-20 border border-slate-200 shadow-2xl flex flex-col items-center text-center text-slate-950">
                             <div className="w-20 h-20 bg-orange-100 rounded-3xl flex items-center justify-center text-orange-600 mb-8">
                                 <Lock size={40} />
                             </div>
@@ -303,7 +303,7 @@ export default function BookingPage() {
                             </div>
                         </motion.div>
                     ) : (
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-5xl mx-auto bg-white rounded-[2.5rem] p-8 md:p-16 border border-slate-200 shadow-2xl relative text-slate-950">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-5xl mx-auto bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 sm:p-10 md:p-16 border border-slate-200 shadow-2xl relative text-slate-950">
                             <div ref={formTopRef} className="absolute -top-32 h-32 invisible" />
 
                             <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 pb-8 border-b border-slate-100 gap-4">

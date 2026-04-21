@@ -271,9 +271,9 @@ export default function BookingPage() {
             {/* Back Button */}
             <button
                 onClick={() => router.back()}
-                className="fixed top-24 left-6 z-50 flex items-center gap-2 px-4 py-2.5 bg-white/90 backdrop-blur-md rounded-xl border border-slate-200 shadow-lg shadow-slate-200/50 text-slate-700 hover:text-orange-600 hover:border-orange-200 transition-all text-sm font-bold group"
+                className="fixed top-20 md:top-24 left-4 md:left-6 z-[100] flex items-center gap-2 px-3 py-2 md:px-4 md:py-2.5 bg-white/90 backdrop-blur-md rounded-xl border border-slate-200 shadow-lg shadow-slate-200/50 text-slate-700 hover:text-orange-600 hover:border-orange-200 transition-all text-xs md:sm font-bold group"
             >
-                <ChevronLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
+                <ChevronLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
                 Back
             </button>
 
@@ -287,8 +287,8 @@ export default function BookingPage() {
                         <Plane size={14} className="animate-pulse" />
                         Aviation Grade Inspections
                     </motion.div>
-                    <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-4xl md:text-7xl font-bold mb-6 tracking-tight leading-tight">
-                        Professional <br /><span className="text-orange-500">Service Booking</span>
+                    <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-3xl sm:text-4xl md:text-7xl font-bold mb-6 tracking-tight leading-tight uppercase">
+                        Service <br className="hidden sm:block" /><span className="text-orange-500">Booking</span>
                     </motion.h1>
                     <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-lg text-slate-400 max-w-2xl mx-auto font-medium">
                         Complete our detailed deployment request to schedule your professional solar inspection. We handle aviation compliance and technical execution.
@@ -300,7 +300,7 @@ export default function BookingPage() {
             <section className="py-12 md:py-20 bg-slate-50 relative -mt-16 md:-mt-20 z-20 rounded-t-[3rem]">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     {!user ? (
-                        <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto bg-white rounded-[2.5rem] p-12 md:p-20 border border-slate-200 shadow-2xl flex flex-col items-center text-center text-slate-950">
+                        <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 sm:p-12 md:p-20 border border-slate-200 shadow-2xl flex flex-col items-center text-center text-slate-950">
                             <div className="w-20 h-20 bg-orange-100 rounded-3xl flex items-center justify-center text-orange-600 mb-8">
                                 <Lock size={40} />
                             </div>
@@ -312,13 +312,13 @@ export default function BookingPage() {
                             </div>
                         </motion.div>
                     ) : (
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-5xl mx-auto bg-white rounded-[2.5rem] p-8 md:p-16 border border-slate-200 shadow-2xl relative text-slate-950">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-5xl mx-auto bg-white rounded-[2rem] md:rounded-[2.5rem] p-5 sm:p-8 md:p-16 border border-slate-200 shadow-2xl relative text-slate-950">
                             <div ref={formTopRef} className="absolute -top-32 h-32 invisible" />
 
                             <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 pb-8 border-b border-slate-100 gap-4">
                                 <div>
-                                    <h2 className="text-3xl font-bold text-slate-900">Inspection Deployment Form</h2>
-                                    <p className="text-slate-500 font-medium">All fields marked with * are required for aviation safety compliance.</p>
+                                    <h2 className="text-xl md:text-3xl font-bold text-slate-900">Deployment Form</h2>
+                                    <p className="text-[10px] md:text-base text-slate-500 font-medium tracking-tight">Required for aviation safety compliance.</p>
                                 </div>
                                 <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-full text-xs font-black uppercase tracking-widest border border-emerald-100">
                                     <ShieldCheck size={16} /> Secure Transmission

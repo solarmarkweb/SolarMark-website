@@ -93,7 +93,7 @@ export default function Navbar() {
     if (pathname.startsWith("/profile")) return null;
 
     return (
-        <nav className="fixed w-full top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-100 transition-all duration-300">
+        <nav className={`fixed w-full top-0 z-50 border-b border-slate-100 transition-all duration-300 ${navBg}`}>
             <div className="max-w-full px-6 md:px-12">
                 <div className="flex justify-between items-center h-16 md:h-20">
                     {/* Logo - Top Left Corner */}
@@ -183,7 +183,7 @@ export default function Navbar() {
                             initial={{ opacity: 0, y: -20, scale: 0.95 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: -20, scale: 0.95 }}
-                            className="lg:hidden mt-4 pb-8 border border-slate-100 p-8 bg-white/95 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl absolute top-full left-4 right-4 text-slate-900"
+                            className="lg:hidden mt-4 pb-8 border border-slate-100 p-8 bg-white/95 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl absolute top-full left-4 right-4 text-slate-900 max-h-[80vh] overflow-y-auto"
                         >
                             <div className="space-y-2">
                                 {(isLoggedIn

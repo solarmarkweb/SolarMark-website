@@ -149,9 +149,9 @@ const ContentProtection = ({ children, isProtected = true, showWatermark = false
             <div className={`transition-none ${isBlurred ? 'opacity-0 invisible h-0 overflow-hidden' : 'opacity-100 visible'}`}>
                 {/* Dynamic Security Watermarks */}
                 {showWatermark && (
-                    <div className="absolute inset-0 pointer-events-none z-[60] opacity-[0.03] select-none flex flex-wrap gap-24 items-center justify-center rotate-[-25deg] overflow-hidden">
-                        {Array(40).fill(`SOLAR MARK`).map((text, i) => (
-                            <span key={i} className="text-3xl font-black whitespace-nowrap tracking-tighter uppercase">{text}</span>
+                    <div className="absolute inset-0 pointer-events-none z-[60] opacity-[0.03] select-none flex flex-wrap gap-12 md:gap-24 items-center justify-center rotate-[-25deg] overflow-hidden">
+                        {Array(40).fill(`AUTHORITY ACCESS ONLY`).map((text, i) => (
+                            <span key={i} className="text-xl md:text-3xl font-black whitespace-nowrap tracking-tighter uppercase">{text}</span>
                         ))}
                     </div>
                 )}

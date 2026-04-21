@@ -24,7 +24,7 @@ export default function SiteAssessmentPage() {
                             <div className="px-4 py-1.5 bg-orange-600 rounded-md text-xs font-bold mb-8 tracking-[0.2em] uppercase inline-block">
                                 Precision Planning Phase
                             </div>
-                            <h1 className="text-6xl md:text-8xl font-bold mb-8 tracking-tight leading-[1.1]">
+                            <h1 className="text-3xl sm:text-5xl md:text-8xl font-bold mb-8 tracking-tight leading-[1.1] uppercase">
                                 High-Fidelity <br /><span className="text-orange-400">Site Intelligence</span>
                             </h1>
                             <p className="text-xl text-slate-300 mb-12 leading-relaxed max-w-2xl mx-auto font-medium">
@@ -52,12 +52,12 @@ export default function SiteAssessmentPage() {
                             { icon: FileText, title: "Hydrological Study", desc: "Simulated drainage and runoff forecasting to prevent multi-year soil erosion." },
                             { icon: CheckCircle, title: "Permit Readiness", desc: "All spatial datasets formatted for immediate regulatory and jurisdictional submission." }
                         ].map((item, i) => (
-                            <div key={i} className="p-12 rounded-[2.5rem] bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-2xl transition-all duration-500 group">
+                             <div key={i} className="p-8 md:p-12 rounded-[2rem] md:rounded-[2.5rem] bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-2xl transition-all duration-500 group">
                                 <div className="w-16 h-16 bg-orange-600 text-white rounded-2xl flex items-center justify-center mb-8 shadow-lg shadow-orange-600/20 group-hover:scale-110 transition-transform">
                                     <item.icon size={32} />
                                 </div>
-                                <h3 className="text-2xl font-bold text-slate-900 mb-4 group-hover:text-orange-600 transition-colors">{item.title}</h3>
-                                <p className="text-slate-500 leading-relaxed text-sm">{item.desc}</p>
+                                <h3 className="text-2xl font-bold text-slate-900 mb-4 group-hover:text-orange-600 transition-colors uppercase">{item.title}</h3>
+                                <p className="text-slate-500 leading-relaxed text-sm font-medium">{item.desc}</p>
                             </div>
                         ))}
                     </div>
@@ -78,7 +78,7 @@ export default function SiteAssessmentPage() {
                             </div>
                         </div>
                         <div>
-                            <h2 className="text-5xl font-bold text-slate-900 mb-8 tracking-tight">Predictive Design <br /><span className="text-orange-600">Decision Engine</span></h2>
+                            <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mb-8 tracking-tight uppercase">Predictive Design <br /><span className="text-orange-600">Decision Engine</span></h2>
                             <p className="text-xl text-slate-600 mb-10 leading-relaxed">
                                 Stop guessing. Our digital-first approach provides the precise data needed for optimal layout design, ensuring you never leave megawatts on the table.
                             </p>
@@ -107,8 +107,8 @@ export default function SiteAssessmentPage() {
             <section className="py-24 bg-slate-950 text-center relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-1/2 h-full bg-orange-600/5 blur-[100px]"></div>
                 <div className="max-w-4xl mx-auto px-4 relative z-10 text-white text-center">
-                    <h2 className="text-5xl font-bold mb-8 tracking-tight">Data-Driven From Day One</h2>
-                    <p className="text-2xl text-slate-400 mb-16 leading-relaxed">
+                    <h2 className="text-3xl md:text-5xl font-bold mb-8 tracking-tight uppercase">Data-Driven From Day One</h2>
+                    <p className="text-lg md:text-2xl text-slate-400 mb-16 leading-relaxed font-medium">
                         Assessments that are dynamic datasets, not just PDF reports. Connect your design workflow to true site intelligence.
                     </p>
                     <Link href="/booking" className="px-16 py-8 bg-orange-600 text-white rounded-xl font-bold text-xl hover:bg-orange-700 transition-all shadow-2xl shadow-orange-900/40 active:scale-95 inline-block">

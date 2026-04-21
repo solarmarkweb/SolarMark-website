@@ -232,11 +232,6 @@ export default function HomePage() {
     fetchHomeStats();
     setIsMounted(true);
 
-    // Significant 10% font size increase for all sections
-    document.documentElement.style.fontSize = '115%';
-    return () => {
-      document.documentElement.style.fontSize = '';
-    };
   }, []);
 
   const fetchHomeStats = async () => {
@@ -814,9 +809,9 @@ export default function HomePage() {
               </div>
 
               <div className="relative">
-                <h1 className="font-extrabold text-4xl md:text-5xl lg:text-6xl text-slate-900 uppercase leading-[1.1] tracking-tight drop-shadow-sm">
+                <h1 className="font-extrabold text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-slate-900 uppercase leading-[1.1] tracking-tight drop-shadow-sm">
                   YOUR PANELS ARE <span className="text-orange-500">FAILING</span><br />
-                  <span className="text-transparent text-5xl md:text-6xl lg:text-[5rem]" style={{ WebkitTextStroke: '1.5px rgba(15,23,42,0.8)' }}>SILENTLY</span>
+                  <span className="text-transparent text-4xl sm:text-5xl md:text-6xl lg:text-[5rem]" style={{ WebkitTextStroke: '1.5px rgba(15,23,42,0.8)' }}>SILENTLY</span>
                 </h1>
               </div>
             </div>
@@ -851,7 +846,7 @@ export default function HomePage() {
 
       {/* ELEGANT MINIMALIST STATS */}
       <section className="bg-white pt-12 pb-24 border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-10">
+        <div className="max-w-7xl mx-auto px-6 md:px-10">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 lg:gap-12">
             {homeStats.map((stat, i) => (
               <div key={i} className="flex flex-col items-center md:items-start group">
@@ -893,8 +888,7 @@ export default function HomePage() {
                 const Icon = item.icon;
                 return (
                   <motion.div key={i} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-                    style={{ fontSize: '130%' }}
-                    className="bg-white px-6 py-8 md:p-8 rounded-[1.5rem] shadow-[0_20px_50px_-20px_rgba(0,0,0,0.08)] border border-orange-100 relative lg:ml-auto w-full lg:max-w-[340px] flex flex-col items-end text-right z-20 hover:-translate-y-1 transition-transform">
+                    className="bg-white px-6 py-8 md:p-8 rounded-[1.5rem] shadow-[0_20px_50px_-20px_rgba(0,0,0,0.08)] border border-orange-100 relative lg:ml-auto w-full lg:max-w-[340px] flex flex-col items-center text-center lg:items-end lg:text-right z-20 hover:-translate-y-1 transition-transform">
 
                     {/* DASHED CONNECTOR LINE TO CENTER */}
                     <div className="hidden lg:block absolute top-[50%] -right-8 xl:-right-16 w-8 xl:w-16 border-t-[1.5px] border-dashed border-orange-300 -z-10">
@@ -902,7 +896,7 @@ export default function HomePage() {
                       <div className="w-1 h-1 rounded-full bg-orange-300 absolute -left-0.5 top-1/2 -translate-y-1/2"></div>
                     </div>
 
-                    <div className="flex items-center justify-end gap-4 mb-4 flex-row-reverse">
+                    <div className="flex items-center justify-center lg:justify-end gap-4 mb-4 flex-col lg:flex-row-reverse">
                       <div className={`w-16 h-16 rounded-full bg-gradient-to-tr ${item.gradient} flex items-center justify-center text-white shrink-0 shadow-[0_10px_20px_-5px_rgba(0,0,0,0.2)] ${item.shadow} ring-4 ring-white relative z-10`}>
                         <Icon size={28} strokeWidth={2} />
                       </div>
@@ -948,8 +942,7 @@ export default function HomePage() {
                 const Icon = item.icon;
                 return (
                   <motion.div key={i} initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-                    style={{ fontSize: '102%' }}
-                    className="bg-white px-6 py-8 md:p-8 rounded-[1.5rem] shadow-[0_20px_50px_-20px_rgba(0,0,0,0.08)] border border-orange-100 relative lg:mr-auto w-full lg:max-w-[340px] flex flex-col items-start text-left z-20 hover:-translate-y-1 transition-transform">
+                    className="bg-white px-6 py-8 md:p-8 rounded-[1.5rem] shadow-[0_20px_50px_-20px_rgba(0,0,0,0.08)] border border-orange-100 relative lg:mr-auto w-full lg:max-w-[340px] flex flex-col items-center text-center lg:items-start lg:text-left z-20 hover:-translate-y-1 transition-transform">
 
                     {/* DASHED CONNECTOR LINE FROM CENTER */}
                     <div className="hidden lg:block absolute top-[50%] -left-8 xl:-left-16 w-8 xl:w-16 border-t-[1.5px] border-dashed border-orange-300 -z-10">
@@ -957,7 +950,7 @@ export default function HomePage() {
                       <div className="w-1.5 h-1.5 rounded-full bg-orange-400 absolute -left-0.5 top-1/2 -translate-y-1/2"></div>
                     </div>
 
-                    <div className="flex items-center gap-4 mb-4">
+                    <div className="flex flex-col lg:flex-row items-center gap-4 mb-4">
                       <div className={`w-16 h-16 rounded-full bg-gradient-to-tr ${item.gradient} flex items-center justify-center text-white shrink-0 shadow-[0_10px_20px_-5px_rgba(0,0,0,0.2)] ${item.shadow} ring-4 ring-white relative z-10`}>
                         <Icon size={28} strokeWidth={2} />
                       </div>
@@ -983,7 +976,7 @@ export default function HomePage() {
             Nothing Missed. <span className="text-orange-500">Everything</span> Mapped.
           </h2>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-12 gap-x-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-12 gap-x-6">
             {[
               // THERMAL
               { name: "Hotspot", type: "Thermal", category: "anomaly-hotspot", style: "radial-gradient(circle at 32% 42%, #fffde0 0%, #FFD700 12%, #FF4500 26%, #8B1500 48%, #2d0a00 72%, #120308 100%)" },
@@ -1620,7 +1613,7 @@ export default function HomePage() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100"
+              className="relative bg-white rounded-[2rem] md:rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-y-auto max-h-[90vh] border border-slate-100"
             >
               <div className="p-8 md:p-12">
                 <div className="text-center mb-8">
@@ -1788,7 +1781,7 @@ export default function HomePage() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100"
+              className="relative bg-white rounded-[2rem] md:rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-y-auto max-h-[90vh] border border-slate-100"
             >
               <div className="p-8 md:p-12">
                 <div className="text-center mb-8">
@@ -1870,7 +1863,7 @@ export default function HomePage() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100"
+              className="relative bg-white rounded-[2rem] md:rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-y-auto max-h-[90vh] border border-slate-100"
             >
               <div className="p-8 md:p-12">
                 <button

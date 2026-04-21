@@ -10,10 +10,10 @@ import {
     AlertTriangle, Clock, ClipboardList,
     CheckCircle2, XCircle, MapPin, Phone,
     ShieldCheck, Trash2, Lock, CreditCard,
-    Shield, X, GitCompare, ArrowUpDown, BarChart3, CheckSquare, Square, Zap, LogOut, Activity, Terminal,
+    Shield, X, Menu, GitCompare, ArrowUpDown, BarChart3, CheckSquare, Square, Zap, LogOut, Activity, Terminal,
     MessageSquarePlus, History, Send, MessageSquare, ListTodo, Share2, Users,
     CloudUpload, Camera, Globe, Database, ArrowRight, ChevronDown, LayoutDashboard, Plus,
-    Contact2, Settings, HelpCircle, ChevronLeft, Info, ChevronRight, Menu
+    Contact2, Settings, HelpCircle, ChevronLeft, Info, ChevronRight
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -41,6 +41,7 @@ export default function ProfilePage() {
     const [userRole, setUserRole] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [bookings, setBookings] = useState([]);
     const [bookingFilter, setBookingFilter] = useState('All');
     const [showBookingsList, setShowBookingsList] = useState(false);
@@ -795,7 +796,7 @@ export default function ProfilePage() {
     ];
 
     const renderDashboard = () => (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="space-y-6">
             {/* Top Row: User Profile & Quick Info */}
             <div className="grid grid-cols-1 gap-8">
                 <div className="bg-slate-900 rounded-[2.5rem] p-8 lg:p-12 relative overflow-hidden text-white shadow-2xl">
@@ -822,7 +823,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
                     { label: 'Total Reports', value: stats.total_pdfs, icon: <FileText size={20} />, color: 'orange' },
                     { label: 'Total Bookings', value: stats.total_bookings, icon: <ClipboardList size={20} />, color: 'blue' },
@@ -834,36 +835,36 @@ export default function ProfilePage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.1 }}
-                        className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all group"
+                        className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg hover:border-orange-100 transition-all group"
                     >
-                        <div className={`w-12 h-12 bg-${stat.color}-50 rounded-2xl flex items-center justify-center mb-4 text-${stat.color}-600 group-hover:bg-${stat.color}-600 group-hover:text-white transition-all`}>
+                        <div className={`w-10 h-10 bg-${stat.color}-50 rounded-2xl flex items-center justify-center mb-4 text-${stat.color}-600 group-hover:bg-${stat.color}-600 group-hover:text-white transition-all`}>
                             {stat.icon}
                         </div>
                         <h3 className="text-2xl font-bold text-slate-900 mb-1">{stat.value}</h3>
-                        <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">{stat.label}</p>
+                        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">{stat.label}</p>
                     </motion.div>
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8">
-                    <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-                        <History size={20} className="text-orange-500" />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+                    <h3 className="text-base font-bold text-slate-900 mb-5 flex items-center gap-2">
+                        <History size={18} className="text-orange-500" />
                         Recent Activity
                     </h3>
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                         {bookings.slice(0, 5).map((booking) => (
-                            <div key={booking.id} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-orange-100 transition-all group">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-orange-500 shadow-sm">
-                                        <Calendar size={18} />
+                            <div key={booking.id} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-orange-100 transition-all gap-4">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center text-orange-500 shadow-sm shrink-0">
+                                        <Calendar size={16} />
                                     </div>
-                                    <div>
-                                        <h4 className="font-bold text-slate-900 text-sm">{booking.service_type || 'General Inquiry'}</h4>
-                                        <p className="text-xs text-slate-400 font-medium">{formatDate(booking.date)}</p>
+                                    <div className="min-w-0">
+                                        <h4 className="font-bold text-slate-900 text-sm truncate">{booking.service_type || 'General Inquiry'}</h4>
+                                        <p className="text-[10px] text-slate-400 font-medium">{formatDate(booking.date)}</p>
                                     </div>
                                 </div>
-                                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shrink-0 ${
                                     booking.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
                                     booking.status === 'pending' ? 'bg-amber-100 text-amber-700' :
                                     'bg-blue-100 text-blue-700'
@@ -872,22 +873,22 @@ export default function ProfilePage() {
                                 </span>
                             </div>
                         ))}
-                        {bookings.length === 0 && <p className="text-center text-slate-400 py-10 font-medium">No recent activity</p>}
-                        <button onClick={() => setActiveSection('bookings')} className="w-full py-4 text-xs font-bold text-slate-400 hover:text-orange-600 transition-colors uppercase tracking-widest border-t border-slate-100 mt-2">
+                        {bookings.length === 0 && <p className="text-center text-slate-400 py-10 font-medium text-sm">No recent activity</p>}
+                        <button onClick={() => setActiveSection('bookings')} className="w-full py-4 text-[10px] font-bold text-slate-400 hover:text-orange-600 transition-colors uppercase tracking-widest border-t border-slate-100 mt-2">
                             View Full History
                         </button>
                     </div>
                 </div>
                 
-                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 flex flex-col items-center justify-center text-center">
-                    <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center text-orange-600 mb-6 shadow-xl shadow-orange-100">
-                        <Zap size={32} />
+                <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 flex flex-col items-center justify-center text-center">
+                    <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center text-orange-600 mb-5 shadow-lg shadow-orange-100">
+                        <Zap size={28} />
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-2">Need an Audit?</h3>
-                    <p className="text-slate-500 text-sm mb-8 leading-relaxed">Schedule a professional drone inspection for your solar asset today.</p>
+                    <h3 className="text-lg font-bold text-slate-900 mb-2">Need an Audit?</h3>
+                    <p className="text-slate-500 text-sm mb-6 leading-relaxed">Schedule a professional drone inspection for your solar asset today.</p>
                     <button 
                         onClick={() => setActiveSection('bookings')}
-                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold text-sm hover:bg-orange-600 transition-all shadow-xl shadow-slate-900/10 uppercase tracking-widest"
+                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold text-xs hover:bg-orange-600 transition-all shadow-lg uppercase tracking-wider"
                     >
                         Book Inspection
                     </button>
@@ -898,11 +899,11 @@ export default function ProfilePage() {
 
     const renderReports = () => (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8">
-                <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-50">
-                    <div>
-                        <h2 className="text-2xl font-bold text-slate-900">Inspection Reports</h2>
-                        <p className="text-sm text-slate-400 font-medium tracking-wide">Secure access to your analyzed solar data</p>
+            <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] border border-slate-100 shadow-sm p-5 md:p-8">
+                <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 pb-6 border-b border-slate-50 gap-4">
+                    <div className="text-center md:text-left">
+                        <h2 className="text-xl md:text-2xl font-bold text-slate-900">Inspection Reports</h2>
+                        <p className="text-xs md:text-sm text-slate-400 font-medium tracking-wide">Secure access to your analyzed solar data</p>
                     </div>
                 </div>
                 
@@ -912,13 +913,13 @@ export default function ProfilePage() {
                             pdfs.map((pdf) => {
                                 const fileMeta = getFileIcon(pdf.filename);
                                 return (
-                                    <div key={pdf.pdf_id} className={`flex flex-col sm:flex-row sm:items-center justify-between p-5 rounded-2xl border transition-all bg-white group gap-4 ${
+                                    <div key={pdf.pdf_id} className={`flex items-center justify-between p-4 rounded-2xl border transition-all bg-white gap-4 group ${
                                         pdf.is_sample_report
-                                            ? 'border-orange-100 bg-orange-50/30 hover:border-orange-300 hover:shadow-lg hover:shadow-orange-100/30'
-                                            : 'border-slate-100 hover:border-orange-200 hover:shadow-lg hover:shadow-slate-200/20'
+                                            ? 'border-orange-100 bg-orange-50/30 hover:border-orange-300 hover:shadow-lg'
+                                            : 'border-slate-100 hover:border-orange-200 hover:shadow-md'
                                     }`}>
-                                        <div className="flex items-center gap-4">
-                                            <div className={`w-12 h-12 ${fileMeta.bg} rounded-xl flex items-center justify-center shadow-sm border ${fileMeta.border} shrink-0`}>
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <div className={`w-10 h-10 md:w-12 md:h-12 ${fileMeta.bg} rounded-xl flex items-center justify-center shadow-sm border ${fileMeta.border} shrink-0`}>
                                                 {fileMeta.icon}
                                             </div>
                                             <div className="min-w-0">
@@ -942,20 +943,20 @@ export default function ProfilePage() {
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center justify-end gap-2 w-full sm:w-auto mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-50">
                                             {!pdf.is_sample_report && (
                                                 <>
-                                                    <button onClick={() => handleShareClick(pdf)} className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Share Report">
+                                                    <button onClick={() => handleShareClick(pdf)} className="p-2 md:p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Share Report">
                                                         <Share2 size={18} />
                                                     </button>
-                                                    <button onClick={() => handleReviewClick(pdf)} className="p-2.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all" title="Request Changes">
+                                                    <button onClick={() => handleReviewClick(pdf)} className="p-2 md:p-2.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all" title="Request Changes">
                                                         <MessageSquarePlus size={18} />
                                                     </button>
                                                 </>
                                             )}
-                                            <button onClick={() => handleDownloadClick(pdf)} className="ml-2 px-5 py-2.5 bg-slate-900 hover:bg-orange-600 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-lg shadow-slate-900/10">
-                                                <Eye size={16} />
-                                                Visualize
+                                            <button onClick={() => handleDownloadClick(pdf)} className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-orange-600 text-white rounded-xl text-[10px] font-bold transition-all shadow-lg hover:shadow-orange-500/20">
+                                                <Eye size={14} />
+                                                <span className="hidden sm:inline">Visualize</span>
                                             </button>
                                         </div>
                                     </div>
@@ -1026,7 +1027,7 @@ export default function ProfilePage() {
                         </div>
                     </div>
 
-                    <form onSubmit={handleBookingSubmit} className="p-8 md:p-12 space-y-12">
+                    <form onSubmit={handleBookingSubmit} className="p-5 sm:p-8 md:p-12 space-y-12">
                         {bookingStatus.message && (
                             <div className={`p-6 rounded-3xl font-bold flex items-center gap-4 border ${
                                 bookingStatus.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
@@ -1366,7 +1367,7 @@ export default function ProfilePage() {
                 <div className="absolute -top-24 -left-24 w-96 h-96 bg-orange-500/5 rounded-full blur-[100px] pointer-events-none" />
                 
                 {/* Left Side: Interaction Zone */}
-                <div className="flex-1 p-10 lg:p-16 relative z-10 flex flex-col">
+                <div className="flex-1 p-6 sm:p-10 lg:p-16 relative z-10 flex flex-col">
                     <div className="mb-12">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="h-0.5 w-12 bg-orange-600 rounded-full" />
@@ -1476,8 +1477,8 @@ export default function ProfilePage() {
                                         {step.icon}
                                     </div>
                                     <div>
-                                        <h4 className="text-[10px] font-black text-white uppercase tracking-widest mb-1 group-hover:text-orange-400 transition-colors uppercase">{step.title}</h4>
-                                        <p className="text-[10px] text-slate-500 font-bold leading-relaxed uppercase tracking-tight">{step.desc}</p>
+                                        <h4 className="text-[11px] font-black text-white uppercase tracking-widest mb-1 group-hover:text-orange-400 transition-colors">{step.title}</h4>
+                                        <p className="text-[10px] sm:text-xs text-slate-500 font-bold leading-relaxed uppercase tracking-tight">{step.desc}</p>
                                     </div>
                                 </div>
                             ))}
@@ -1628,18 +1629,18 @@ export default function ProfilePage() {
                                 initial={{ scale: 0.95, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
                                 exit={{ scale: 0.95, opacity: 0 }}
-                                className="bg-white w-full max-w-6xl h-full max-h-[90vh] rounded-[2.5rem] overflow-hidden flex flex-col shadow-2xl"
+                                className="bg-white w-full max-w-6xl h-full max-h-[95vh] md:max-h-[90vh] rounded-[2rem] md:rounded-[2.5rem] overflow-hidden flex flex-col shadow-2xl"
                             >
-                                <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
+                                <div className="flex items-center justify-between p-4 md:p-6 border-b border-slate-100 shrink-0">
                                     <div className="flex items-center gap-4">
-                                        <div className={`w-12 h-12 ${getFileIcon(selectedPdf?.filename).bg} rounded-2xl flex items-center justify-center shadow-sm border ${getFileIcon(selectedPdf?.filename).border}`}>
-                                            {getFileIcon(selectedPdf?.filename).icon}
+                                        <div className={`w-10 h-10 md:w-12 md:h-12 ${getFileIcon(selectedPdf?.filename).bg} rounded-xl md:rounded-2xl flex items-center justify-center shadow-sm border ${getFileIcon(selectedPdf?.filename).border}`}>
+                                            {React.cloneElement(getFileIcon(selectedPdf?.filename).icon, { size: typeof window !== 'undefined' && window.innerWidth < 768 ? 20 : 24 })}
                                         </div>
                                         <div className="min-w-0">
-                                            <h3 className="text-lg font-bold text-slate-900 truncate max-w-[300px]" title={selectedPdf?.filename}>
+                                            <h3 className="text-sm md:text-lg font-bold text-slate-900 truncate max-w-[150px] sm:max-w-[300px]" title={selectedPdf?.filename}>
                                                 {selectedPdf?.filename}
                                             </h3>
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Inspection Report Visualization</p>
+                                            <p className="text-[8px] md:text-[10px] text-slate-400 font-bold uppercase tracking-widest">Inspection Visualization</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">

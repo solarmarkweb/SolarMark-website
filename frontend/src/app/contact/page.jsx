@@ -70,9 +70,9 @@ export default function ContactPage() {
             {/* Back Button */}
             <button
                 onClick={() => router.back()}
-                className="fixed top-24 left-6 z-50 flex items-center gap-2 px-4 py-2.5 bg-white/90 backdrop-blur-md rounded-xl border border-slate-200 shadow-lg shadow-slate-200/50 text-slate-700 hover:text-orange-600 hover:border-orange-200 transition-all text-sm font-bold group"
+                className="fixed top-20 md:top-24 left-4 md:left-6 z-[100] flex items-center gap-2 px-3 py-2 md:px-4 md:py-2.5 bg-white/90 backdrop-blur-md rounded-xl border border-slate-200 shadow-lg shadow-slate-200/50 text-slate-700 hover:text-orange-600 hover:border-orange-200 transition-all text-xs md:sm font-bold group"
             >
-                <ChevronLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
+                <ChevronLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
                 Back
             </button>
 
@@ -81,7 +81,7 @@ export default function ContactPage() {
                     <motion.h1
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="text-5xl md:text-7xl font-bold text-slate-900 mb-8 tracking-tight"
+                        className="text-4xl md:text-7xl font-bold text-slate-900 mb-8 tracking-tight uppercase"
                     >
                         Get in <span className="text-orange-600">Touch</span>
                     </motion.h1>
@@ -89,9 +89,9 @@ export default function ContactPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.2 }}
-                        className="text-xl md:text-2xl text-slate-600 max-w-2xl mx-auto font-medium leading-relaxed"
+                        className="text-lg md:text-2xl text-slate-600 max-w-2xl mx-auto font-medium leading-relaxed"
                     >
-                        Have questions about our technology or need a drone survey consultation? Our team is here to help you audit your solar infrastructure.
+                        Have questions about our technology? Our team is here to help you audit your solar infrastructure.
                     </motion.p>
                 </div>
 
@@ -143,7 +143,7 @@ export default function ContactPage() {
                         transition={{ delay: 0.4 }}
                         className="lg:col-span-2"
                     >
-                        <div className="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-2xl shadow-slate-200/40 border border-slate-100">
+                        <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 sm:p-8 md:p-12 shadow-2xl shadow-slate-200/40 border border-slate-100">
                             <form onSubmit={handleSubmit} className="space-y-8">
                                 {status.message && (
                                     <motion.div
