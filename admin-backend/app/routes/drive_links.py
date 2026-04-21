@@ -369,13 +369,28 @@ async def download_pdf(pdf_id: str, current_user = Depends(get_current_user)):
         content_type = pdf_meta.get("content_type") or "application/pdf"
         filename = pdf_meta.get("filename", "report.pdf")
         
-        # Create streaming response
+        # Get file from GridFS
+        grid_out = fs.get(file_id)
+        
+        # Get content type from metadata or default to pdf
+        content_type = pdf_meta.get("content_type") or "application/pdf"
+        filename = pdf_meta.get("filename", "report.pdf")
+        
+        # Create streaming response - using 256KB chunks for better throughput
+        def iterate_gridfs():
+            while True:
+                chunk = grid_out.read(256 * 1024)
+                if not chunk:
+                    break
+                yield chunk
+
         return StreamingResponse(
-            iter(lambda: grid_out.read(1024), b''),
+            iterate_gridfs(),
             media_type=content_type,
             headers={
                 "Content-Disposition": f"attachment; filename={filename}",
-                "Content-Length": str(pdf_meta.get("file_size", 0))
+                "Content-Length": str(pdf_meta.get("file_size", 0)),
+                "Accept-Ranges": "bytes"
             }
         )
         
@@ -405,18 +420,27 @@ async def view_pdf(pdf_id: str):
             else:
                 raise HTTPException(status_code=404, detail="PDF file content not found")
         
+        # Get GridFS out
         grid_out = fs.get(file_id)
-        file_content = grid_out.read()
         
         content_type = pdf_meta.get("content_type") or "application/pdf"
         filename = pdf_meta.get("filename", "document.pdf")
         
+        # Correctly stream from GridFS instead of reading entire file into memory
+        def iterate_gridfs():
+            while True:
+                chunk = grid_out.read(256 * 1024)
+                if not chunk:
+                    break
+                yield chunk
+
         return StreamingResponse(
-            iter([file_content]),
+            iterate_gridfs(),
             media_type=content_type,
             headers={
                 "Content-Disposition": f"inline; filename={filename}",
-                "Content-Length": str(pdf_meta.get("file_size", 0))
+                "Content-Length": str(pdf_meta.get("file_size", 0)),
+                "Accept-Ranges": "bytes"
             }
         )
         

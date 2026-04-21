@@ -158,26 +158,26 @@ export default function SampleReportPage() {
     <div className="min-h-screen bg-[#f8fafc]">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
-        <div className="max-w-5xl mx-auto px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-50 rounded-lg">
-                <Star className="w-5 h-5 text-orange-600" />
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16 sm:h-20">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <div className="p-2 sm:p-2.5 bg-orange-50 rounded-xl">
+                <Star className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
               </div>
-              <div>
-                <h1 className="text-sm font-semibold text-gray-900">Sample Report</h1>
-                <p className="text-[11px] text-gray-400 font-medium">
-                  Default report visible to all registered users
+              <div className="min-w-0">
+                <h1 className="text-xs sm:text-sm font-bold text-gray-900 truncate">Sample Report</h1>
+                <p className="text-[9px] sm:text-[11px] text-gray-400 font-medium truncate">
+                  Default report for all registered users
                 </p>
               </div>
             </div>
             <button
               onClick={fetchSampleReports}
               disabled={loading}
-              className="px-4 py-2 bg-orange-600 text-white rounded-lg text-xs font-semibold hover:bg-orange-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+              className="px-3 sm:px-5 py-2 sm:py-2.5 bg-orange-600 text-white rounded-xl text-[10px] sm:text-xs font-bold hover:bg-orange-700 transition-all disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-orange-600/20"
             >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-              Refresh
+              {loading ? <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" /> : <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4" />}
+              <span className="hidden xs:inline">Refresh</span>
             </button>
           </div>
         </div>
@@ -218,11 +218,13 @@ export default function SampleReportPage() {
         )}
 
         {/* Upload Card */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-          <h2 className="text-base font-bold text-gray-900 mb-1">Upload Sample Report</h2>
-          <p className="text-xs text-gray-400 font-medium mb-6">
-            Supported: PDF, HTML, XLSX, CSV, KML/KMZ · Max 50 MB
-          </p>
+        <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-5 sm:p-8">
+          <div className="mb-6">
+            <h2 className="text-sm sm:text-base font-bold text-gray-900 mb-1 uppercase tracking-wider">Upload Sample Report</h2>
+            <p className="text-[10px] sm:text-xs text-gray-400 font-medium">
+              Supported: PDF, HTML, XLSX, CSV, KML/KMZ · Max 50 MB
+            </p>
+          </div>
 
           <input
             ref={fileInputRef}
@@ -235,21 +237,21 @@ export default function SampleReportPage() {
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="w-full flex flex-col items-center justify-center gap-4 p-10 border-2 border-dashed border-orange-200 rounded-xl bg-orange-50/40 hover:bg-orange-50 hover:border-orange-400 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
+            className="w-full flex flex-col items-center justify-center gap-4 p-6 sm:p-12 border-2 border-dashed border-orange-100 rounded-2xl bg-orange-50/20 hover:bg-orange-50 hover:border-orange-300 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
           >
             {uploading ? (
               <>
-                <Loader2 className="w-10 h-10 text-orange-500 animate-spin" />
-                <span className="text-sm font-semibold text-orange-600">Uploading...</span>
+                <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 text-orange-500 animate-spin" />
+                <span className="text-[10px] sm:text-sm font-black text-orange-600 uppercase tracking-[0.2em]">Uploading Asset...</span>
               </>
             ) : (
               <>
-                <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-orange-100 group-hover:shadow-md transition-all">
-                  <Upload className="w-8 h-8 text-orange-500" />
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-orange-100 group-hover:shadow-md transition-all">
+                  <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-orange-500" />
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-bold text-gray-800">Click to upload sample report</p>
-                  <p className="text-xs text-gray-400 mt-1">PDF, HTML, Excel, KML — up to 50 MB</p>
+                  <p className="text-xs sm:text-sm font-bold text-gray-800">Choose sample report file</p>
+                  <p className="text-[9px] sm:text-xs text-gray-400 mt-1 uppercase tracking-widest">Tap to browse local storage</p>
                 </div>
               </>
             )}
@@ -289,43 +291,43 @@ export default function SampleReportPage() {
                 return (
                   <div
                     key={report.pdf_id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 hover:bg-gray-50/60 transition-all"
+                    className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 hover:bg-gray-50/60 transition-all"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${iconClass}`}>
-                        <Globe className="w-6 h-6" />
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                      <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 ${iconClass}`}>
+                        <Globe className="w-5 h-5 sm:w-6 sm:h-6" />
                       </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-sm font-bold text-gray-900 truncate max-w-xs">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <p className="text-xs sm:text-sm font-bold text-gray-900 truncate max-w-[150px] xs:max-w-none">
                             {report.filename}
                           </p>
-                          <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-[9px] font-black uppercase tracking-wider rounded">
+                          <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-[8px] sm:text-[9px] font-black uppercase tracking-wider rounded">
                             SAMPLE
                           </span>
                         </div>
-                        <p className="text-[11px] text-gray-400 font-medium mt-0.5">
+                        <p className="text-[10px] sm:text-[11px] text-gray-400 font-medium">
                           {formatDate(report.uploaded_at)} · {formatSize(report.file_size)}
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between lg:justify-end gap-2 border-t lg:border-t-0 pt-3 lg:pt-0">
                       <button
                         onClick={() => handleView(report.pdf_id)}
-                        className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg text-xs font-semibold transition-colors"
+                        className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl text-[10px] sm:text-xs font-bold transition-all"
                       >
-                        <Eye className="w-4 h-4" />
+                        <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         Preview
                       </button>
                       <button
                         onClick={() => handleDelete(report.pdf_id, report.filename)}
                         disabled={deleting === report.pdf_id}
-                        className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50"
+                        className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl text-[10px] sm:text-xs font-bold transition-all disabled:opacity-50"
                       >
                         {deleting === report.pdf_id
-                          ? <Loader2 className="w-4 h-4 animate-spin" />
-                          : <Trash2 className="w-4 h-4" />}
+                          ? <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
+                          : <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
                         Delete
                       </button>
                     </div>

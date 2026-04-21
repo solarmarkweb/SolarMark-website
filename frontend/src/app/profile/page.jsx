@@ -71,6 +71,8 @@ export default function ProfilePage() {
     const [excelData, setExcelData] = useState(null);
     const [numPages, setNumPages] = useState(null);
     const [pdfReady, setPdfReady] = useState(false);
+    const [visualizing, setVisualizing] = useState(null);
+    const [loadingProgress, setLoadingProgress] = useState(0);
 
     // Review States
     const [showReviewModal, setShowReviewModal] = useState(false);
@@ -390,71 +392,59 @@ export default function ProfilePage() {
         if (!pdf) return;
 
         try {
-            setDownloadingPdf(pdf.pdf_id);
-            setError("");
+            setSelectedPdf(pdf);
+            setVisualizing(pdf.pdf_id);
+            setLoadingProgress(10);
+            
+            const fileExt = pdf.filename.toLowerCase().split('.').pop();
+            
+            // OPTIMIZATION: For PDFs, we can start the modal immediately and let react-pdf handle the streaming download
+            if (fileExt === 'pdf') {
+                setShowViewModal(true);
+                setLoadingProgress(100);
+                // We'll pass the URL directly to react-pdf Document in the modal
+                return;
+            }
 
+            setLoadingProgress(30);
             const response = await authAPI.downloadPDF(pdf.pdf_id);
-
-            const filename = pdf.filename || '';
-            let mimeType = 'application/pdf';
-            if (filename.toLowerCase().endsWith('.html') || filename.toLowerCase().endsWith('.htm')) {
-                mimeType = 'text/html';
-            } else if (filename.toLowerCase().endsWith('.xlsx') || filename.toLowerCase().endsWith('.xls')) {
-                mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-            } else if (filename.toLowerCase().endsWith('.csv')) {
-                mimeType = 'text/csv';
-            } else if (filename.toLowerCase().endsWith('.kml')) {
-                mimeType = 'application/vnd.google-earth.kml+xml';
-            } else if (filename.toLowerCase().endsWith('.kmz')) {
-                mimeType = 'application/vnd.google-earth.kmz';
-            }
-
+            setLoadingProgress(70);
+            
+            const mimeMap = {
+                'pdf': 'application/pdf',
+                'html': 'text/html',
+                'htm': 'text/html',
+                'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'xls': 'application/vnd.ms-excel',
+                'csv': 'text/csv'
+            };
+            const mimeType = mimeMap[fileExt] || response.headers['content-type'] || 'application/octet-stream';
+            
             const blob = new Blob([response.data], { type: mimeType });
-            const url = window.URL.createObjectURL(blob);
-
-            setViewingBlob(url);
             
-            setExcelData(null);
-            
-            if (filename.toLowerCase().match(/\.(xlsx|xls|csv)$/)) {
-                try {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        try {
-                            const data = new Uint8Array(e.target.result);
-                            const workbook = XLSX.read(data, { type: 'array' });
-                            const firstSheetName = workbook.SheetNames[0];
-                            const worksheet = workbook.Sheets[firstSheetName];
-                            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                            setExcelData(jsonData);
-                        } catch (parseErr) {
-                            console.error("Error parsing spreadsheet:", parseErr);
-                            setExcelData([["Error displaying data. Check file format."]]);
-                        }
-                    };
-                    reader.readAsArrayBuffer(blob);
-                } catch (readerErr) {
-                    console.error("FileReader error:", readerErr);
-                }
-            }
-            
-            setShowViewModal(true);
-
-            if (!filename.toLowerCase().endsWith('.pdf')) {
-                setPdfReady(true);
+            if (fileExt === 'xlsx' || fileExt === 'xls' || fileExt === 'csv') {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                    setExcelData(jsonData);
+                    setShowViewModal(true);
+                    setLoadingProgress(100);
+                    setVisualizing(null);
+                };
+                reader.readAsArrayBuffer(blob);
             } else {
-                setPdfReady(false);
+                setViewingBlob(URL.createObjectURL(blob));
+                setShowViewModal(true);
+                setLoadingProgress(100);
+                setVisualizing(null);
             }
-
         } catch (err) {
-            console.error('Error fetching report data:', err);
-            if (err.response?.status === 401) {
-                handleLogout();
-            } else {
-                setError(err.message || "Failed to load visualization data");
-            }
-        } finally {
-            setDownloadingPdf(null);
+            console.error("Error visualizing report:", err);
+            setError("Failed to load visualization. Please try downloading the file instead.");
+            setVisualizing(null);
         }
     };
 
@@ -912,50 +902,62 @@ export default function ProfilePage() {
                             pdfs.map((pdf) => {
                                 const fileMeta = getFileIcon(pdf.filename);
                                 return (
-                                    <div key={pdf.pdf_id} className={`flex flex-col sm:flex-row sm:items-center justify-between p-5 rounded-2xl border transition-all bg-white group gap-4 ${
+                                    <div key={pdf.pdf_id} className={`flex flex-col lg:flex-row lg:items-center justify-between p-4 sm:p-5 rounded-2xl border transition-all bg-white group gap-4 ${
                                         pdf.is_sample_report
                                             ? 'border-orange-100 bg-orange-50/30 hover:border-orange-300 hover:shadow-lg hover:shadow-orange-100/30'
                                             : 'border-slate-100 hover:border-orange-200 hover:shadow-lg hover:shadow-slate-200/20'
                                     }`}>
-                                        <div className="flex items-center gap-4">
-                                            <div className={`w-12 h-12 ${fileMeta.bg} rounded-xl flex items-center justify-center shadow-sm border ${fileMeta.border} shrink-0`}>
+                                        <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                                            <div className={`w-10 h-10 sm:w-12 sm:h-12 ${fileMeta.bg} rounded-xl flex items-center justify-center shadow-sm border ${fileMeta.border} shrink-0`}>
                                                 {fileMeta.icon}
                                             </div>
-                                            <div className="min-w-0">
-                                                <div className="flex flex-wrap items-center gap-2 mb-1">
-                                                    <h4 className="font-bold text-slate-900 text-sm truncate" title={pdf.filename}>{truncateFilename(pdf.filename)}</h4>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
+                                                    <h4 className="font-bold text-slate-900 text-sm truncate max-w-[150px] sm:max-w-none" title={pdf.filename}>
+                                                        {truncateFilename(pdf.filename)}
+                                                    </h4>
                                                     {pdf.is_sample_report && (
-                                                        <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-orange-100 text-orange-700 flex items-center gap-1">
+                                                        <span className="px-1.5 py-0.5 rounded text-[7px] sm:text-[8px] font-black uppercase tracking-widest bg-orange-100 text-orange-700 flex items-center gap-1">
                                                             ★ SAMPLE
                                                         </span>
                                                     )}
                                                     {pdf.report_type && !pdf.is_sample_report && (
-                                                        <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${pdf.report_type === 'rgb' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                                                        <span className={`px-1.5 py-0.5 rounded text-[7px] sm:text-[8px] font-black uppercase tracking-widest ${pdf.report_type === 'rgb' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
                                                             {pdf.report_type === 'rgb' ? 'DRONE DATA' : 'SITE PLAN'}
                                                         </span>
                                                     )}
                                                 </div>
-                                                <div className="flex items-center gap-3 text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">
+                                                <div className="flex items-center gap-2 sm:gap-3 text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">
                                                     <span>{formatDate(pdf.uploaded_at)}</span>
                                                     <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
                                                     <span>{formatFileSize(pdf.file_size)}</span>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            {!pdf.is_sample_report && (
-                                                <>
-                                                    <button onClick={() => handleShareClick(pdf)} className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Share Report">
-                                                        <Share2 size={18} />
-                                                    </button>
-                                                    <button onClick={() => handleReviewClick(pdf)} className="p-2.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all" title="Request Changes">
-                                                        <MessageSquarePlus size={18} />
-                                                    </button>
-                                                </>
-                                            )}
-                                            <button onClick={() => handleDownloadClick(pdf)} className="ml-2 px-5 py-2.5 bg-slate-900 hover:bg-orange-600 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-lg shadow-slate-900/10">
-                                                <Eye size={16} />
-                                                Visualize
+                                        <div className="flex items-center justify-between lg:justify-end gap-2 border-t lg:border-t-0 pt-3 lg:pt-0">
+                                            <div className="flex items-center gap-1 sm:gap-2">
+                                                {!pdf.is_sample_report && (
+                                                    <>
+                                                        <button onClick={() => handleShareClick(pdf)} className="p-2 sm:p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Share Report">
+                                                            <Share2 size={16} className="sm:w-[18px]" />
+                                                        </button>
+                                                        <button onClick={() => handleReviewClick(pdf)} className="p-2 sm:p-2.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all" title="Request Changes">
+                                                            <MessageSquarePlus size={16} className="sm:w-[18px]" />
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
+                                            <button 
+                                                onClick={() => handleDownloadClick(pdf)} 
+                                                disabled={visualizing === pdf.pdf_id}
+                                                className="px-4 sm:px-5 py-2 sm:py-2.5 bg-slate-900 hover:bg-orange-600 text-white rounded-xl text-[10px] sm:text-xs font-bold transition-all flex items-center gap-2 shadow-lg shadow-slate-900/10 whitespace-nowrap disabled:opacity-70"
+                                            >
+                                                {visualizing === pdf.pdf_id ? (
+                                                    <Loader2 size={14} className="sm:w-[16px] animate-spin" />
+                                                ) : (
+                                                    <Eye size={14} className="sm:w-[16px]" />
+                                                )}
+                                                {visualizing === pdf.pdf_id ? 'Loading...' : 'Visualize'}
                                             </button>
                                         </div>
                                     </div>
@@ -1590,7 +1592,7 @@ export default function ProfilePage() {
 
                     {/* Main Content Area */}
                     <main className="flex-1 lg:ml-72 min-h-screen transition-all duration-300">
-                        <div className="p-4 md:p-10 max-w-[1600px] mx-auto">
+                        <div className="p-3 sm:p-6 md:p-10 max-w-[1600px] mx-auto">
 
                         {error && (
                             <motion.div
@@ -1617,7 +1619,7 @@ export default function ProfilePage() {
                 </main>
 
                 <AnimatePresence>
-                    {showViewModal && viewingBlob && (
+                    {showViewModal && (
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -1630,66 +1632,61 @@ export default function ProfilePage() {
                                 exit={{ scale: 0.95, opacity: 0 }}
                                 className="bg-white w-full max-w-6xl h-full max-h-[90vh] rounded-[2.5rem] overflow-hidden flex flex-col shadow-2xl"
                             >
-                                <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
-                                    <div className="flex items-center gap-4">
-                                        <div className={`w-12 h-12 ${getFileIcon(selectedPdf?.filename).bg} rounded-2xl flex items-center justify-center shadow-sm border ${getFileIcon(selectedPdf?.filename).border}`}>
+                                <div className="flex items-center justify-between p-4 sm:p-6 border-b border-slate-100 shrink-0 gap-4">
+                                    <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                                        <div className={`w-10 h-10 sm:w-12 sm:h-12 ${getFileIcon(selectedPdf?.filename).bg} rounded-xl sm:rounded-2xl flex items-center justify-center shadow-sm border ${getFileIcon(selectedPdf?.filename).border} shrink-0`}>
                                             {getFileIcon(selectedPdf?.filename).icon}
                                         </div>
                                         <div className="min-w-0">
-                                            <h3 className="text-lg font-bold text-slate-900 truncate max-w-[300px]" title={selectedPdf?.filename}>
+                                            <h3 className="text-sm sm:text-lg font-bold text-slate-900 truncate max-w-[120px] xs:max-w-[180px] sm:max-w-[300px]" title={selectedPdf?.filename}>
                                                 {selectedPdf?.filename}
                                             </h3>
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Inspection Report Visualization</p>
+                                            <p className="text-[8px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest truncate">Inspection Report Visualization</p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        {!selectedPdf?.is_sample_report && (
-                                            <a 
-                                                href={viewingBlob} 
-                                                download={selectedPdf?.filename}
-                                                className="hidden sm:flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all text-xs font-bold"
-                                                title="Download Original"
-                                            >
-                                                <Download size={16} />
-                                                Download
-                                            </a>
-                                        )}
+                                    <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
                                         <button 
                                             onClick={() => { setShowViewModal(false); setViewingBlob(null); }}
-                                            className="p-3 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                            className="p-2 sm:p-3 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg sm:rounded-xl transition-all"
                                         >
-                                            <X size={20} />
+                                            <X size={18} className="sm:w-[20px]" />
                                         </button>
-                                    </div>
+                    </div>
                                 </div>
 
-                                <div className="flex-1 overflow-auto bg-slate-50 relative custom-scrollbar">
+                                <div className="flex-1 overflow-auto p-4 sm:p-8 bg-slate-50/50 flex flex-col items-center">
                                     {selectedPdf?.filename.toLowerCase().endsWith('.pdf') ? (
-                                        <div className="p-4 md:p-12 flex justify-center">
-                                            <Document
-                                                file={viewingBlob}
-                                                onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-                                                loading={
-                                                    <div className="flex flex-col items-center py-20">
-                                                        <Loader2 className="w-10 h-10 text-orange-500 animate-spin mb-4" />
-                                                        <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Rendering PDF Matrix...</p>
-                                                    </div>
+                                        <Document
+                                            file={viewingBlob || {
+                                                url: `${process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001/api'}/drive-links/pdf/view/${selectedPdf?.pdf_id}`,
+                                                httpHeaders: { 
+                                                    Authorization: `Bearer ${localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token')}` 
                                                 }
-                                                className="shadow-2xl rounded-sm overflow-hidden border border-slate-200"
-                                            >
-                                                {Array.from(new Array(numPages), (el, index) => (
-                                                    <Page 
-                                                        key={`page_${index + 1}`} 
-                                                        pageNumber={index + 1} 
-                                                        width={typeof window !== 'undefined' ? Math.min(window.innerWidth * 0.85, 1000) : 800}
-                                                        className="mb-8 last:mb-0"
-                                                        renderAnnotationLayer={false}
-                                                        renderTextLayer={false}
-                                                        loading={<div className="h-[600px] bg-white animate-pulse" />}
-                                                    />
-                                                ))}
-                                            </Document>
-                                        </div>
+                                            }}
+                                            onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+                                            loading={
+                                                <div className="flex flex-col items-center justify-center p-20 gap-4">
+                                                    <Loader2 className="w-12 h-12 text-orange-500 animate-spin" />
+                                                    <p className="text-sm font-bold text-slate-400 uppercase tracking-widest animate-pulse">Streaming Asset Data...</p>
+                                                </div>
+                                            }
+                                            className="shadow-2xl bg-white"
+                                        >
+                                            {Array.from(new Array(numPages), (el, index) => (
+                                                <Page 
+                                                    key={`page_${index + 1}`} 
+                                                    pageNumber={index + 1} 
+                                                    width={typeof window !== 'undefined' ? 
+                                                        (window.innerWidth < 640 ? window.innerWidth * 0.95 : 
+                                                         window.innerWidth < 1024 ? window.innerWidth * 0.85 : 1000) 
+                                                        : 800}
+                                                    className="mb-4 sm:mb-8 last:mb-0 max-w-full"
+                                                    renderAnnotationLayer={false}
+                                                    renderTextLayer={false}
+                                                    loading={<div className="h-[300px] sm:h-[600px] bg-white animate-pulse" />}
+                                                />
+                                            ))}
+                                        </Document>
                                     ) : selectedPdf?.filename.toLowerCase().match(/\.(xlsx|xls|csv)$/) ? (
                                         <div className="p-4 md:p-8">
                                             <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
